@@ -56,7 +56,7 @@ export default function Chat({ selectedLead, setSelectedLead }: Props) {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
+    <div className="page-content" style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       {/* Lead list */}
       <div style={{ width: 260, background: "#0d0f1a", borderRight: "1px solid #1e2235", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 16px 12px", borderBottom: "1px solid #1e2235" }}>
