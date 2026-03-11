@@ -23,6 +23,75 @@ interface Props {
   setSelectedLead: (lead: Lead) => void;
 }
 
+// ─── Inline renderer: bold + code ───────────────────────────────────────────
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i} style={{ color: "#e2e8f0", fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return <code key={i} style={{ background: "#1e2235", color: "#a78bfa", padding: "1px 6px", borderRadius: 4, fontSize: 12, fontFamily: "monospace" }}>{part.slice(1, -1)}</code>;
+    }
+    return part;
+  });
+}
+
+// ─── Claude-style AI message renderer ───────────────────────────────────────
+function AIMessage({ text }: { text: string }) {
+  const lines = text.split("\n");
+  return (
+    <div style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.8, fontFamily: "inherit" }}>
+      {lines.map((line, i) => {
+        if (line.startsWith("## "))
+          return <div key={i} style={{ fontWeight: 700, fontSize: 15, color: "#e2e8f0", marginTop: 16, marginBottom: 6 }}>{line.replace("## ", "")}</div>;
+        if (line.startsWith("# "))
+          return <div key={i} style={{ fontWeight: 700, fontSize: 17, color: "#e2e8f0", marginTop: 16, marginBottom: 8 }}>{line.replace("# ", "")}</div>;
+        if (line.startsWith("- ") || line.startsWith("• "))
+          return (
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 4, alignItems: "flex-start" }}>
+              <span style={{ color: "#6366f1", flexShrink: 0, fontSize: 18, lineHeight: 1.4 }}>·</span>
+              <span>{renderInline(line.replace(/^[-•]\s/, ""))}</span>
+            </div>
+          );
+        if (/^\d+\.\s/.test(line)) {
+          const num = line.match(/^(\d+)\./)?.[1];
+          return (
+            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 4, alignItems: "flex-start" }}>
+              <span style={{ color: "#6366f1", fontWeight: 700, flexShrink: 0, minWidth: 18, fontSize: 13 }}>{num}.</span>
+              <span>{renderInline(line.replace(/^\d+\.\s/, ""))}</span>
+            </div>
+          );
+        }
+        if (line === "---")
+          return <hr key={i} style={{ border: "none", borderTop: "1px solid #1e2235", margin: "12px 0" }} />;
+        if (line.trim() === "")
+          return <div key={i} style={{ height: 8 }} />;
+        return <div key={i} style={{ marginBottom: 2 }}>{renderInline(line)}</div>;
+      })}
+    </div>
+  );
+}
+
+// ─── Mock AI reply generator ─────────────────────────────────────────────────
+function getAIReply(lead: Lead, question: string): string {
+  const q = question.toLowerCase();
+  if (q.includes("skrip") || q.includes("script")) {
+    return `Berikut skrip panggilan untuk **${lead.name}**:\n\n---\n\n**Pembuka:**\n"Selamat pagi, Pak/Bu ${lead.name.split(" ")[0]}. Saya dari tim SalesBooster Insurance. Apakah ini waktu yang tepat?"\n\n**Identifikasi kebutuhan:**\n"Kami melihat Anda baru saja ${lead.event.toLowerCase()}. Ini momen penting untuk memastikan perlindungan finansial keluarga."\n\n**Rekomendasi:**\n"Saya merekomendasikan **${lead.product}** dengan manfaat:\n- Perlindungan komprehensif\n- Premium terjangkau ${lead.premium}\n- Klaim mudah & cepat"\n\n**Penutup:**\n"Apakah Anda tertarik? Saya bisa kirimkan ilustrasi lengkapnya."`;
+  }
+  if (q.includes("analisis") || q.includes("profil")) {
+    return `## Analisis Profil — ${lead.name}\n\n**AI Score:** ${lead.score}/100 (${lead.scoreLabel} Priority)\n\n**Life Event Terdeteksi:**\n${lead.event} — momen kritis untuk pendekatan penjualan.\n\n**Rekomendasi Produk:**\n**${lead.product}** dengan estimasi premium ${lead.premium}\n\n**Strategi Pendekatan:**\n- Hubungi via WhatsApp sebelum telepon\n- Waktu terbaik: Selasa–Kamis pukul 09.00–11.00\n- Fokus pada manfaat proteksi, bukan harga\n\n**Estimasi Konversi:** ${lead.score > 80 ? "Tinggi (>70%)" : lead.score > 60 ? "Sedang (40–70%)" : "Rendah (<40%)"}`;
+  }
+  if (q.includes("produk") || q.includes("rekomendasi")) {
+    return `Berdasarkan profil **${lead.name}**, berikut rekomendasi produk:\n\n## ${lead.product}\n\n- **Premium:** ${lead.premium}\n- **Alasan:** Cocok untuk kondisi "${lead.event}"\n- **AI Match Score:** ${lead.score}%\n\n**Kenapa produk ini?**\nPelanggan dengan life event "${lead.event}" memiliki kebutuhan perlindungan yang meningkat. Produk ini memberikan coverage optimal sesuai profil.\n\nApakah Anda ingin saya siapkan skrip panggilan?`;
+  }
+  if (q.includes("waktu") || q.includes("hubungi")) {
+    return `**Waktu terbaik menghubungi ${lead.name.split(" ")[0]}:**\n\n- **Hari:** Selasa, Rabu, atau Kamis\n- **Jam:** 09.00–11.00 atau 14.00–16.00\n- **Channel:** WhatsApp dulu, baru telepon jika tidak direspons dalam 2 jam\n\n**Tips:**\nSebutkan life event mereka ("${lead.event}") di awal percakapan untuk membangun relevansi.`;
+  }
+  return `Berdasarkan data **${lead.name}** (Score: ${lead.score}, ${lead.event}):\n\nRekomendasi utama adalah **${lead.product}** dengan premium ${lead.premium}.\n\nAnda bisa tanyakan lebih lanjut tentang:\n- Analisis profil lengkap\n- Skrip panggilan\n- Rekomendasi produk\n- Waktu terbaik hubungi`;
+}
+
+// ─── Main Component ──────────────────────────────────────────────────────────
 export default function Chat({ selectedLead, setSelectedLead }: Props) {
   const [activeLead, setActiveLead] = useState<Lead>(selectedLead || LEADS[0]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,16 +111,13 @@ export default function Chat({ selectedLead, setSelectedLead }: Props) {
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    setMessages(prev => [...prev, { role: "user", text: input, time: now() }]);
+    const question = input;
+    setMessages(prev => [...prev, { role: "user", text: question, time: now() }]);
     setInput("");
     setTyping(true);
     setTimeout(() => {
       setTyping(false);
-      setMessages(prev => [...prev, {
-        role: "assistant",
-        text: `Berdasarkan profil ${activeLead.name} (Score: ${activeLead.score}, ${activeLead.event}), rekomendasi saya adalah **${activeLead.product}** dengan premium ${activeLead.premium}. Apakah Anda ingin saya siapkan skrip panggilan?`,
-        time: now(),
-      }]);
+      setMessages(prev => [...prev, { role: "assistant", text: getAIReply(activeLead, question), time: now() }]);
     }, 1500);
   };
 
@@ -60,7 +126,7 @@ export default function Chat({ selectedLead, setSelectedLead }: Props) {
       {/* Lead list */}
       <div style={{ width: 260, background: "#0d0f1a", borderRight: "1px solid #1e2235", display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 16px 12px", borderBottom: "1px solid #1e2235" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>Conversations</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>Chat History</div>
           <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Select a customer</div>
         </div>
         <div style={{ flex: 1, overflowY: "auto" }}>
@@ -77,7 +143,7 @@ export default function Chat({ selectedLead, setSelectedLead }: Props) {
         </div>
       </div>
 
-      {/* Chat area */}
+      {/* Chat main area */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Header */}
         <div style={{ padding: "16px 24px", borderBottom: "1px solid #1e2235", display: "flex", alignItems: "center", gap: 14, background: "#0d0f1a" }}>
@@ -86,38 +152,48 @@ export default function Chat({ selectedLead, setSelectedLead }: Props) {
             <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{activeLead.name}</div>
             <div style={{ fontSize: 12, color: "#64748b" }}>{activeLead.event} · Score {activeLead.score}</div>
           </div>
-          <div style={{ background: "#22c55e15", border: "1px solid #22c55e30", borderRadius: 6, padding: "4px 10px", fontSize: 11, color: "#22c55e", fontWeight: 600 }}>
-            🤖 AI Online
-          </div>
+          <div style={{ background: "#22c55e15", border: "1px solid #22c55e30", borderRadius: 6, padding: "4px 10px", fontSize: 11, color: "#22c55e", fontWeight: 600 }}>🤖 AI Online</div>
         </div>
 
         {/* Messages */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 24 }}>
           {messages.length === 0 && (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#334155", gap: 12, textAlign: "center", paddingTop: 80 }}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, textAlign: "center", paddingTop: 80 }}>
               <div style={{ fontSize: 40 }}>🤖</div>
               <div style={{ fontSize: 14, color: "#475569" }}>Ask me anything about {activeLead.name.split(" ")[0]}</div>
+              <div style={{ fontSize: 12, color: "#334155" }}>Try: "Analisis profil" or "Siapkan skrip"</div>
             </div>
           )}
+
           {messages.map((msg, i) => (
-            <div key={i} className="message" style={{ display: "flex", flexDirection: msg.role === "user" ? "row-reverse" : "row", gap: 10, alignItems: "flex-end" }}>
-              {msg.role === "assistant" && (
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>🤖</div>
-              )}
-              <div style={{ maxWidth: "70%" }}>
-                <div style={{ background: msg.role === "user" ? "#6366f1" : "#1e2235", borderRadius: msg.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px", padding: "10px 14px", fontSize: 13, color: msg.role === "user" ? "#fff" : "#cbd5e1", lineHeight: 1.6, whiteSpace: "pre-line" }}>
-                  {msg.text.split("**").map((part, j) =>
-                    j % 2 === 1 ? <strong key={j} style={{ color: "#c4b5fd" }}>{part}</strong> : part
-                  )}
+            <div key={i} className="message">
+              {msg.role === "user" ? (
+                // User — right-aligned bubble
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ maxWidth: "65%" }}>
+                    <div style={{ background: "#6366f1", borderRadius: "12px 12px 4px 12px", padding: "10px 14px", fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
+                      {msg.text}
+                    </div>
+                    <div style={{ fontSize: 10, color: "#334155", marginTop: 3, textAlign: "right" }}>{msg.time}</div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: "#334155", marginTop: 3, textAlign: msg.role === "user" ? "right" : "left" }}>{msg.time}</div>
-              </div>
+              ) : (
+                // AI — Claude-style, no bubble, full width
+                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginTop: 2 }}>🤖</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: "#475569", marginBottom: 8, fontWeight: 600 }}>AI Sales Assistant · {msg.time}</div>
+                    <AIMessage text={msg.text} />
+                  </div>
+                </div>
+              )}
             </div>
           ))}
+
           {typing && (
-            <div className="message" style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>🤖</div>
-              <div style={{ background: "#1e2235", borderRadius: "12px 12px 12px 4px", padding: "12px 16px", display: "flex", gap: 4 }}>
+            <div className="message" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>🤖</div>
+              <div style={{ paddingTop: 8, display: "flex", gap: 4 }}>
                 {[0, 1, 2].map(i => (
                   <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366f1", animation: `bounce 1s infinite`, animationDelay: `${i * 0.15}s` }} />
                 ))}
@@ -127,8 +203,8 @@ export default function Chat({ selectedLead, setSelectedLead }: Props) {
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggestions */}
-        <div style={{ padding: "8px 24px 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
+        {/* Suggestion chips */}
+        <div style={{ padding: "8px 28px 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
           {["Analisis profil", "Siapkan skrip", "Produk terbaik?", "Waktu terbaik hubungi?"].map(chip => (
             <button key={chip} className="chip" onClick={() => setInput(chip)}
               style={{ fontSize: 11, padding: "5px 10px", borderRadius: 6, border: "1px solid #1e2235", background: "transparent", color: "#64748b", cursor: "pointer", fontFamily: "inherit" }}>
@@ -138,7 +214,7 @@ export default function Chat({ selectedLead, setSelectedLead }: Props) {
         </div>
 
         {/* Input */}
-        <div style={{ padding: "12px 24px 20px", display: "flex", gap: 10 }}>
+        <div style={{ padding: "12px 28px 20px", display: "flex", gap: 10 }}>
           <input value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && sendMessage()}
             placeholder={`Tanya tentang ${activeLead.name.split(" ")[0]}...`}
