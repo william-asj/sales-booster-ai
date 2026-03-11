@@ -27,7 +27,29 @@ interface Props {
 
 export default function Dashboard({ setActive, setSelectedLead }: Props) {
   const [filter, setFilter] = useState("All");
-  const filtered = filter === "All" ? LEADS : LEADS.filter(l => l.scoreLabel === filter);
+  const [sortCol, setSortCol] = useState<"score" | "name" | "age" | null>("score");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const filtered = (filter === "All" ? LEADS : LEADS.filter(l => l.scoreLabel === filter))
+    .slice()
+    .sort((a, b) => {
+      if (!sortCol) return 0;
+      const valA = sortCol === "name" ? a.name : sortCol === "age" ? a.age : a.score;
+      const valB = sortCol === "name" ? b.name : sortCol === "age" ? b.age : b.score;
+      if (valA < valB) return sortDir === "asc" ? -1 : 1;
+      if (valA > valB) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+
+  const toggleSort = (col: "score" | "name" | "age") => {
+    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
+    else { setSortCol(col); setSortDir("desc"); }
+  };
+
+const SortIcon = ({ col }: { col: "score" | "name" | "age" }) => (
+  <span style={{ marginLeft: 4, opacity: sortCol === col ? 1 : 0.3, fontSize: 10 }}>
+    {sortCol === col ? (sortDir === "asc" ? "▲" : "▼") : "▼"}
+  </span>
+);
 
   return (
     <div className="page-content" style={{ padding: "28px 32px", maxWidth: 1100 }}>
@@ -70,9 +92,20 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ borderBottom: "1px solid #1e2235" }}>
-              {["Customer", "AI Score", "Life Event", "Best Product", "Est. Premium", "Action"].map(h => (
-                <th key={h} style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>{h}</th>
-              ))}
+              <th onClick={() => toggleSort("name")}
+                style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: sortCol === "name" ? "#818cf8" : "#475569", letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", userSelect: "none" }}>
+                Customer <SortIcon col="name" />
+              </th>
+              <th onClick={() => toggleSort("score")}
+                style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: sortCol === "score" ? "#818cf8" : "#475569", letterSpacing: "0.05em", textTransform: "uppercase", cursor: "pointer", userSelect: "none" }}>
+                AI Score <SortIcon col="score" />
+              </th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>Life Event</th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>Best Product</th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+                Est. Premium
+              </th>
+              <th style={{ padding: "12px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#475569", letterSpacing: "0.05em", textTransform: "uppercase" }}>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -84,7 +117,14 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                       <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#6366f130", border: "1.5px solid #6366f160", display: "flex", alignItems: "center", justifyContent: "center", color: "#6366f1", fontWeight: 700, fontSize: 12 }}>{lead.avatar}</div>
                       <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0" }}>{lead.name}</div>
+                        <div
+                          onClick={() => { setSelectedLead(lead); setActive("customers"); }}
+                          style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", cursor: "pointer", transition: "color 0.15s" }}
+                          onMouseEnter={e => (e.currentTarget.style.color = "#818cf8")}
+                          onMouseLeave={e => (e.currentTarget.style.color = "#e2e8f0")}
+                        >
+                          {lead.name}
+                        </div>
                         <div style={{ fontSize: 11, color: "#64748b" }}>Age {lead.age} · {lead.policies} polis aktif</div>
                       </div>
                     </div>

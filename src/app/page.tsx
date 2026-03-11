@@ -47,6 +47,7 @@ export default function Home() {
           <Customers
             setActive={setActive}
             setSelectedLead={setSelectedLead}
+            selectedLead={selectedLead}
           />
         )}
         {active === "analytics" && <Analytics />}

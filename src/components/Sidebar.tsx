@@ -36,7 +36,7 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
             className="nav-item"
             onClick={() => setActive(item.id as Page)}
             style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "9px 10px", borderRadius: 8, border: "none", background: active === item.id ? "#6366f115" : "transparent", color: active === item.id ? "#818cf8" : "#64748b", cursor: "pointer", marginBottom: 2, fontSize: 13, fontWeight: active === item.id ? 600 : 400, textAlign: "left", fontFamily: "inherit" }}>
-            <span>{item.icon}</span>
+            <span style={{ width: 20, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</span>
             {item.label}
           </button>
         ))}

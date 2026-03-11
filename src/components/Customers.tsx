@@ -17,10 +17,11 @@ type Page = "dashboard" | "chat" | "customers" | "analytics";
 interface Props {
   setActive: (page: Page) => void;
   setSelectedLead: (lead: Lead) => void;
+  selectedLead: Lead | null;
 }
 
-export default function Customers({ setActive, setSelectedLead }: Props) {
-  const [selected, setSelected] = useState<Lead>(LEADS[0]);
+export default function Customers({ setActive, setSelectedLead, selectedLead }: Props) {
+  const [selected, setSelected] = useState<Lead>(selectedLead || LEADS[0]);
 
   return (
     <div style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
