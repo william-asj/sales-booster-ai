@@ -1,5 +1,5 @@
 # Sales Booster AI 🚀
-*Developed for the Sinarmas Group Hackathon*
+*Developed for the Sinarmas Digital AI Day*
 
 **Sales Booster AI** is an intelligent, agentic CRM built to empower insurance agents. By leveraging AI-driven lead scoring and contextual chat recommendations, it helps agents prioritize high-value prospects and close deals faster.
 
