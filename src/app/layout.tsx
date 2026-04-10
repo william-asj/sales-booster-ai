@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ChatOverlayPanel from "@/components/chatbot/ChatOverlayPanel";
+import { ChatProvider } from "@/context/ChatContext";
 
 export const metadata: Metadata = {
   title: "Sales Booster AI",
@@ -15,8 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body style={{ margin: 0, background: "#080a12" }}>
-        {children}
-        <ChatOverlayPanel />
+        <ChatProvider>
+          {children}
+          <ChatOverlayPanel />
+        </ChatProvider>
       </body>
     </html>
   );

@@ -1,228 +1,244 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Lead } from "@/app/page";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Plus, Trash2, MessageSquare } from "lucide-react";
+import ChatBubble from "./chatbot/ChatBubble";
+import ChatInput, { AttachedFile } from "./chatbot/ChatInput";
+import { useChatState, AiMessagePart, AiMessage } from "@/context/ChatContext";
 
-const LEADS: Lead[] = [
-  { id: 1, name: "Budi Santoso", age: 34, score: 92, scoreLabel: "High", event: "Recently married", product: "Life Protection Plus", premium: "Rp 2.4M/mo", avatar: "BS", phone: "+62 812-3456-7890", policies: 1 },
-  { id: 2, name: "Sari Dewi", age: 28, score: 78, scoreLabel: "High", event: "New baby", product: "Family Shield", premium: "Rp 1.8M/mo", avatar: "SD", phone: "+62 857-2345-6789", policies: 0 },
-  { id: 3, name: "Reza Pratama", age: 45, score: 61, scoreLabel: "Med", event: "Approaching retirement", product: "Wealth Protector", premium: "Rp 4.2M/mo", avatar: "RP", phone: "+62 878-9012-3456", policies: 2 },
-  { id: 4, name: "Mira Lestari", age: 31, score: 44, scoreLabel: "Low", event: "New home purchase", product: "Mortgage Guard", premium: "Rp 900K/mo", avatar: "ML", phone: "+62 821-4567-8901", policies: 1 },
-  { id: 5, name: "Anton Wijaya", age: 52, score: 88, scoreLabel: "High", event: "Child entering college", product: "Education Saver", premium: "Rp 3.1M/mo", avatar: "AW", phone: "+62 815-6789-0123", policies: 3 },
-  { id: 6, name: "Rina Kusuma", age: 39, score: 55, scoreLabel: "Med", event: "Job promotion", product: "Executive Term", premium: "Rp 1.5M/mo", avatar: "RK", phone: "+62 896-7890-1234", policies: 1 },
-];
-
-interface Message {
-  role: "user" | "assistant";
-  text: string;
-  time: string;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function nowTime(): string {
+  return new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
 
-interface Props {
-  selectedLead: Lead | null;
-  setSelectedLead: (lead: Lead) => void;
-}
-
-// ─── Inline renderer: bold + code ───────────────────────────────────────────
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={i} style={{ color: "#e2e8f0", fontWeight: 600 }}>{part.slice(2, -2)}</strong>;
-    }
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return <code key={i} style={{ background: "#1e2235", color: "#a78bfa", padding: "1px 6px", borderRadius: 4, fontSize: 12, fontFamily: "monospace" }}>{part.slice(1, -1)}</code>;
-    }
-    return part;
-  });
-}
-
-// ─── Claude-style AI message renderer ───────────────────────────────────────
-function AIMessage({ text }: { text: string }) {
-  const lines = text.split("\n");
+function TypingIndicator() {
   return (
-    <div style={{ fontSize: 14, color: "#cbd5e1", lineHeight: 1.8, fontFamily: "inherit" }}>
-      {lines.map((line, i) => {
-        if (line.startsWith("## "))
-          return <div key={i} style={{ fontWeight: 700, fontSize: 15, color: "#e2e8f0", marginTop: 16, marginBottom: 6 }}>{line.replace("## ", "")}</div>;
-        if (line.startsWith("# "))
-          return <div key={i} style={{ fontWeight: 700, fontSize: 17, color: "#e2e8f0", marginTop: 16, marginBottom: 8 }}>{line.replace("# ", "")}</div>;
-        if (line.startsWith("- ") || line.startsWith("• "))
-          return (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 4, alignItems: "flex-start" }}>
-              <span style={{ color: "#6366f1", flexShrink: 0, fontSize: 18, lineHeight: 1.4 }}>·</span>
-              <span>{renderInline(line.replace(/^[-•]\s/, ""))}</span>
-            </div>
-          );
-        if (/^\d+\.\s/.test(line)) {
-          const num = line.match(/^(\d+)\./)?.[1];
-          return (
-            <div key={i} style={{ display: "flex", gap: 10, marginBottom: 4, alignItems: "flex-start" }}>
-              <span style={{ color: "#6366f1", fontWeight: 700, flexShrink: 0, minWidth: 18, fontSize: 13 }}>{num}.</span>
-              <span>{renderInline(line.replace(/^\d+\.\s/, ""))}</span>
-            </div>
-          );
-        }
-        if (line === "---")
-          return <hr key={i} style={{ border: "none", borderTop: "1px solid #1e2235", margin: "12px 0" }} />;
-        if (line.trim() === "")
-          return <div key={i} style={{ height: 8 }} />;
-        return <div key={i} style={{ marginBottom: 2 }}>{renderInline(line)}</div>;
-      })}
+    <div className="message" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+      <div style={{
+        width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0,
+      }}>🤖</div>
+      <div style={{ paddingTop: 6, display: "flex", gap: 4 }}>
+        {[0, 1, 2].map((i) => (
+          <div key={i} style={{
+            width: 6, height: 6, borderRadius: "50%", background: "#6366f1",
+            animation: "bounce 1s infinite", animationDelay: `${i * 0.15}s`,
+          }} />
+        ))}
+      </div>
     </div>
   );
 }
 
-// ─── Mock AI reply generator ─────────────────────────────────────────────────
-function getAIReply(lead: Lead, question: string): string {
-  const q = question.toLowerCase();
-  if (q.includes("skrip") || q.includes("script")) {
-    return `Berikut skrip panggilan untuk **${lead.name}**:\n\n---\n\n**Pembuka:**\n"Selamat pagi, Pak/Bu ${lead.name.split(" ")[0]}. Saya dari tim SalesBooster Insurance. Apakah ini waktu yang tepat?"\n\n**Identifikasi kebutuhan:**\n"Kami melihat Anda baru saja ${lead.event.toLowerCase()}. Ini momen penting untuk memastikan perlindungan finansial keluarga."\n\n**Rekomendasi:**\n"Saya merekomendasikan **${lead.product}** dengan manfaat:\n- Perlindungan komprehensif\n- Premium terjangkau ${lead.premium}\n- Klaim mudah & cepat"\n\n**Penutup:**\n"Apakah Anda tertarik? Saya bisa kirimkan ilustrasi lengkapnya."`;
-  }
-  if (q.includes("analisis") || q.includes("profil")) {
-    return `## Analisis Profil — ${lead.name}\n\n**AI Score:** ${lead.score}/100 (${lead.scoreLabel} Priority)\n\n**Life Event Terdeteksi:**\n${lead.event} — momen kritis untuk pendekatan penjualan.\n\n**Rekomendasi Produk:**\n**${lead.product}** dengan estimasi premium ${lead.premium}\n\n**Strategi Pendekatan:**\n- Hubungi via WhatsApp sebelum telepon\n- Waktu terbaik: Selasa–Kamis pukul 09.00–11.00\n- Fokus pada manfaat proteksi, bukan harga\n\n**Estimasi Konversi:** ${lead.score > 80 ? "Tinggi (>70%)" : lead.score > 60 ? "Sedang (40–70%)" : "Rendah (<40%)"}`;
-  }
-  if (q.includes("produk") || q.includes("rekomendasi")) {
-    return `Berdasarkan profil **${lead.name}**, berikut rekomendasi produk:\n\n## ${lead.product}\n\n- **Premium:** ${lead.premium}\n- **Alasan:** Cocok untuk kondisi "${lead.event}"\n- **AI Match Score:** ${lead.score}%\n\n**Kenapa produk ini?**\nPelanggan dengan life event "${lead.event}" memiliki kebutuhan perlindungan yang meningkat. Produk ini memberikan coverage optimal sesuai profil.\n\nApakah Anda ingin saya siapkan skrip panggilan?`;
-  }
-  if (q.includes("waktu") || q.includes("hubungi")) {
-    return `**Waktu terbaik menghubungi ${lead.name.split(" ")[0]}:**\n\n- **Hari:** Selasa, Rabu, atau Kamis\n- **Jam:** 09.00–11.00 atau 14.00–16.00\n- **Channel:** WhatsApp dulu, baru telepon jika tidak direspons dalam 2 jam\n\n**Tips:**\nSebutkan life event mereka ("${lead.event}") di awal percakapan untuk membangun relevansi.`;
-  }
-  return `Berdasarkan data **${lead.name}** (Score: ${lead.score}, ${lead.event}):\n\nRekomendasi utama adalah **${lead.product}** dengan premium ${lead.premium}.\n\nAnda bisa tanyakan lebih lanjut tentang:\n- Analisis profil lengkap\n- Skrip panggilan\n- Rekomendasi produk\n- Waktu terbaik hubungi`;
-}
+// ─── Component ────────────────────────────────────────────────────────────────
+export default function Chat() {
+  const { sessions, activeSessionId, setActiveSessionId, createNewSession, deleteSession, appendMessage } = useChatState();
+  const [isTyping, setIsTyping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-// ─── Main Component ──────────────────────────────────────────────────────────
-export default function Chat({ selectedLead, setSelectedLead }: Props) {
-  const [activeLead, setActiveLead] = useState<Lead>(selectedLead || LEADS[0]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (selectedLead) setActiveLead(selectedLead);
-  }, [selectedLead]);
+  const activeSession = sessions.find((s) => s.id === activeSessionId);
 
+  // Auto-scroll to bottom of messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, typing]);
+  }, [activeSession?.messages, isTyping]);
 
-  const now = () => new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  // Handle Send Logic (Uses Context)
+  const sendToAI = useCallback(
+    async (userText: string, attachments?: AttachedFile[]) => {
+      let targetSessionId = activeSessionId;
+      if (!targetSessionId) {
+        targetSessionId = createNewSession();
+      }
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    const question = input;
-    setMessages(prev => [...prev, { role: "user", text: question, time: now() }]);
-    setInput("");
-    setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      setMessages(prev => [...prev, { role: "assistant", text: getAIReply(activeLead, question), time: now() }]);
-    }, 1500);
-  };
+      setError(null);
+      setIsTyping(true);
+
+      const userParts: AiMessagePart[] = [];
+      if (attachments && attachments.length > 0) {
+        attachments.forEach((att) => userParts.push({ inlineData: { mimeType: att.mimeType, data: att.base64 } }));
+      }
+      if (userText.trim()) userParts.push({ text: userText.trim() });
+
+      const newAiMessage: AiMessage = { role: "user", parts: userParts };
+
+      // We pass the new AI message history payload directly to context
+      appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
+
+      // Get the freshest history for the fetch call
+      const freshSession = useChatState().sessions.find(s => s.id === targetSessionId);
+      const updatedHistory = [...(freshSession?.aiHistory || []), newAiMessage];
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: updatedHistory }),
+        });
+
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+        const data = await res.json();
+        const replyText: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? data?.content?.parts?.[0]?.text ?? data?.text ?? data?.message ?? "Sorry, I couldn't generate a response.";
+
+        appendMessage(targetSessionId, { role: "assistant", text: replyText, time: nowTime() }, { role: "model", parts: [{ text: replyText }] });
+      } catch (err) {
+        setError(`Failed to reach AI: ${err instanceof Error ? err.message : "Unknown error"}`);
+      } finally {
+        setIsTyping(false);
+      }
+    },
+    [activeSessionId, appendMessage, createNewSession]
+  );
 
   return (
-    <div className="page-content" style={{ display: "flex", height: "100vh", overflow: "hidden" }}>
-      {/* Lead list */}
-      <div style={{ width: 260, background: "#0d0f1a", borderRight: "1px solid #1e2235", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "20px 16px 12px", borderBottom: "1px solid #1e2235" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#e2e8f0" }}>Chat History</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Select a customer</div>
+    <div style={{
+      display: "flex", gap: 24, height: "calc(100vh - 48px)", padding: "24px",
+      fontFamily: "'Segoe UI', sans-serif"
+    }}>
+
+      {/* ─── LEFT SIDEBAR (History) ─── */}
+      <div style={{
+        width: 320, display: "flex", flexDirection: "column",
+        background: "rgba(13, 15, 26, 0.5)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 24, overflow: "hidden",
+      }}>
+        {/* Sidebar Header & Glassmorphic "+" Button */}
+        <div style={{ padding: "20px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0" }}>Chat History</span>
+          <button
+            onClick={() => createNewSession()}
+            title="New Chat"
+            style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: "rgba(255, 255, 255, 0.05)", backdropFilter: "blur(10px)",
+              border: "1px solid rgba(255, 255, 255, 0.1)", color: "#e2e8f0",
+              display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+              transition: "all 0.2s ease"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.transform = "scale(1.05)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.transform = "scale(1)"; }}
+          >
+            <Plus size={18} strokeWidth={2.5} />
+          </button>
         </div>
-        <div style={{ flex: 1, overflowY: "auto" }}>
-          {LEADS.map(lead => (
-            <button key={lead.id} className="nav-item" onClick={() => { setActiveLead(lead); setSelectedLead(lead); setMessages([]); }}
-              style={{ width: "100%", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10, border: "none", borderBottom: "1px solid #1e2235", background: activeLead.id === lead.id ? "#6366f110" : "transparent", cursor: "pointer", textAlign: "left", borderLeft: activeLead.id === lead.id ? "2px solid #6366f1" : "2px solid transparent", fontFamily: "inherit" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: "#6366f130", display: "flex", alignItems: "center", justifyContent: "center", color: "#6366f1", fontWeight: 700, fontSize: 11, flexShrink: 0 }}>{lead.avatar}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: "#e2e8f0" }}>{lead.name}</div>
-                <div style={{ fontSize: 11, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lead.event}</div>
-              </div>
-            </button>
-          ))}
+
+        {/* History List */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
+          {sessions.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#64748b", fontSize: 13 }}>
+              No chat history yet. <br /> Start a new conversation!
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {sessions.map((session) => (
+                <div
+                  key={session.id}
+                  onClick={() => setActiveSessionId(session.id)}
+                  style={{
+                    position: "relative", padding: "14px 16px", borderRadius: 16,
+                    background: activeSessionId === session.id ? "rgba(99, 102, 241, 0.15)" : "transparent",
+                    border: activeSessionId === session.id ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
+                    transition: "all 0.2s ease"
+                  }}
+                  onMouseEnter={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                  onMouseLeave={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "transparent"; }}
+                >
+                  <MessageSquare size={18} color={activeSessionId === session.id ? "#818cf8" : "#64748b"} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, color: activeSessionId === session.id ? "#e2e8f0" : "#cbd5e1", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {session.title}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                      {new Date(session.updatedAt).toLocaleDateString()}
+                    </div>
+                  </div>
+
+                  {/* Hover-to-Delete Trash Button */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
+                    title="Delete Chat"
+                    style={{
+                      position: "absolute", right: 12, width: 32, height: 32, borderRadius: 10,
+                      background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444",
+                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      opacity: 0, transition: "opacity 0.2s ease", // Hidden by default
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; }}
+                    // We reveal it on parent hover using a simple trick
+                    ref={(el) => {
+                      if (el && el.parentElement) {
+                        el.parentElement.onmouseenter = () => { el.style.opacity = "1"; if (activeSessionId !== session.id) el.parentElement!.style.background = "rgba(255,255,255,0.03)"; };
+                        el.parentElement.onmouseleave = () => { el.style.opacity = "0"; if (activeSessionId !== session.id) el.parentElement!.style.background = "transparent"; };
+                      }
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Chat main area */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      {/* ─── RIGHT CHAT WINDOW ─── */}
+      <div style={{
+        flex: 1, display: "flex", flexDirection: "column",
+        background: "rgba(13, 15, 26, 0.5)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 24, overflow: "hidden",
+      }}>
         {/* Header */}
-        <div style={{ padding: "16px 24px", borderBottom: "1px solid #1e2235", display: "flex", alignItems: "center", gap: 14, background: "#0d0f1a" }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#6366f130", display: "flex", alignItems: "center", justifyContent: "center", color: "#6366f1", fontWeight: 700 }}>{activeLead.avatar}</div>
+        <div style={{
+          padding: "20px 24px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+          display: "flex", alignItems: "center", gap: 12, flexShrink: 0
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: "0 2px 10px rgba(99, 102, 241, 0.4)"
+          }}>✦</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0" }}>{activeLead.name}</div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>{activeLead.event} · Score {activeLead.score}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#f8fafc" }}>
+              {activeSession ? activeSession.title : "SalesBooster AI"}
+            </div>
+            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{isTyping ? "● Thinking…" : "● Online"}</div>
           </div>
-          <div style={{ background: "#22c55e15", border: "1px solid #22c55e30", borderRadius: 6, padding: "4px 10px", fontSize: 11, color: "#22c55e", fontWeight: 600 }}>🤖 AI Online</div>
         </div>
 
-        {/* Messages */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px", display: "flex", flexDirection: "column", gap: 24 }}>
-          {messages.length === 0 && (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, textAlign: "center", paddingTop: 80 }}>
-              <div style={{ fontSize: 40 }}>🤖</div>
-              <div style={{ fontSize: 14, color: "#475569" }}>Ask me anything about {activeLead.name.split(" ")[0]}</div>
-              <div style={{ fontSize: 12, color: "#334155" }}>Try: "Analisis profil" or "Siapkan skrip"</div>
+        {/* Message List */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: 24 }}>
+          {(!activeSession || activeSession.messages.length === 0) && !isTyping ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 16 }}>
+              <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(99, 102, 241, 0.1)", border: "1px solid rgba(99, 102, 241, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>✦</div>
+              <div style={{ textAlign: "center" }}>
+                <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 6 }}>How can I help you today?</div>
+                <div style={{ fontSize: 13, color: "#94a3b8" }}>Select a chat from the left or type below to start a new one.</div>
+              </div>
             </div>
+          ) : (
+            <>
+              {activeSession?.messages.map((msg, i) => (
+                <ChatBubble key={i} message={msg} onSubmitQuestionnaire={(t) => sendToAI(t)} />
+              ))}
+              {isTyping && <TypingIndicator />}
+            </>
           )}
 
-          {messages.map((msg, i) => (
-            <div key={i} className="message">
-              {msg.role === "user" ? (
-                // User — right-aligned bubble
-                <div style={{ display: "flex", justifyContent: "flex-end" }}>
-                  <div style={{ maxWidth: "65%" }}>
-                    <div style={{ background: "#6366f1", borderRadius: "12px 12px 4px 12px", padding: "10px 14px", fontSize: 13, color: "#fff", lineHeight: 1.6 }}>
-                      {msg.text}
-                    </div>
-                    <div style={{ fontSize: 10, color: "#334155", marginTop: 3, textAlign: "right" }}>{msg.time}</div>
-                  </div>
-                </div>
-              ) : (
-                // AI — Claude-style, no bubble, full width
-                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0, marginTop: 2 }}>🤖</div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: "#475569", marginBottom: 8, fontWeight: 600 }}>AI Sales Assistant · {msg.time}</div>
-                    <AIMessage text={msg.text} />
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-
-          {typing && (
-            <div className="message" style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>🤖</div>
-              <div style={{ paddingTop: 8, display: "flex", gap: 4 }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} style={{ width: 6, height: 6, borderRadius: "50%", background: "#6366f1", animation: `bounce 1s infinite`, animationDelay: `${i * 0.15}s` }} />
-                ))}
-              </div>
+          {error && (
+            <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#fca5a5", display: "flex", gap: 10 }}>
+              <span>⚠</span> <span>{error}</span>
             </div>
           )}
           <div ref={bottomRef} />
         </div>
 
-        {/* Suggestion chips */}
-        <div style={{ padding: "8px 28px 0", display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["Analisis profil", "Siapkan skrip", "Produk terbaik?", "Waktu terbaik hubungi?"].map(chip => (
-            <button key={chip} className="chip" onClick={() => setInput(chip)}
-              style={{ fontSize: 11, padding: "5px 10px", borderRadius: 6, border: "1px solid #1e2235", background: "transparent", color: "#64748b", cursor: "pointer", fontFamily: "inherit" }}>
-              {chip}
-            </button>
-          ))}
-        </div>
-
         {/* Input */}
-        <div style={{ padding: "12px 28px 20px", display: "flex", gap: 10 }}>
-          <input value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && sendMessage()}
-            placeholder={`Tanya tentang ${activeLead.name.split(" ")[0]}...`}
-            style={{ flex: 1, background: "#1e2235", border: "1px solid #2d3550", borderRadius: 10, padding: "11px 16px", color: "#e2e8f0", fontSize: 13, fontFamily: "inherit", outline: "none", transition: "border-color 0.2s ease" }} />
-          <button className="send-btn" onClick={sendMessage}
-            style={{ width: 44, height: 44, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", border: "none", cursor: "pointer", fontSize: 18, transition: "all 0.2s ease" }}>
-            ➤
-          </button>
+        <div style={{ flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.2)" }}>
+          <ChatInput onSend={(text, files) => sendToAI(text, files)} disabled={isTyping} />
         </div>
       </div>
     </div>
