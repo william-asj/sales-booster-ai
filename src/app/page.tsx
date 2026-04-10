@@ -37,7 +37,7 @@ export default function Home() {
             setSelectedLead={setSelectedLead}
           />
         )}
-        {active === "chat" && <Chat />}
+        {active === "chat" && <Chat key={active} />}
         {active === "customers" && (
           <Customers
             setActive={setActive}

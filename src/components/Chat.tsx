@@ -45,6 +45,11 @@ export default function Chat() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [activeSession?.messages, isTyping]);
 
+  // Reset error when switching sessions
+  useEffect(() => {
+    setError(null);
+  }, [activeSessionId]);
+
   // Handle Send Logic (Uses Context)
   const sendToAI = useCallback(
     async (userText: string, attachments?: AttachedFile[]) => {
@@ -64,12 +69,11 @@ export default function Chat() {
 
       const newAiMessage: AiMessage = { role: "user", parts: userParts };
 
-      // We pass the new AI message history payload directly to context
-      appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
+      // Get current session's AI history BEFORE appending (from the sessions array in scope)
+      const currentSession = sessions.find(s => s.id === targetSessionId);
+      const updatedHistory = [...(currentSession?.aiHistory || []), newAiMessage];
 
-      // Get the freshest history for the fetch call
-      const freshSession = useChatState().sessions.find(s => s.id === targetSessionId);
-      const updatedHistory = [...(freshSession?.aiHistory || []), newAiMessage];
+      appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
 
       try {
         const res = await fetch("/api/chat", {
@@ -90,11 +94,11 @@ export default function Chat() {
         setIsTyping(false);
       }
     },
-    [activeSessionId, appendMessage, createNewSession]
+    [activeSessionId, sessions, appendMessage, createNewSession]  // add `sessions` to deps
   );
 
   return (
-    <div style={{
+    <div className="page-content" style={{
       display: "flex", gap: 24, height: "calc(100vh - 48px)", padding: "24px",
       fontFamily: "'Segoe UI', sans-serif"
     }}>

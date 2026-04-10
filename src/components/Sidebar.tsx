@@ -9,10 +9,10 @@ interface SidebarProps {
 
 export default function Sidebar({ active, setActive }: SidebarProps) {
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: "▦" },
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
     { id: "chat", label: "AI Chat", icon: "💬" },
     { id: "customers", label: "Customers", icon: "👤" },
-    { id: "analytics", label: "Analytics", icon: "📊" },
+    { id: "analytics", label: "Analytics", icon: "📈" },
   ];
 
   return (
@@ -43,10 +43,10 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
       </nav>
 
       {/* Hot leads alert */}
-      <div style={{ padding: "10px", margin: "0 10px 8px", borderRadius: 8, background: "#ef444410", border: "1px solid #ef444420" }}>
+      {/* <div style={{ padding: "10px", margin: "0 10px 8px", borderRadius: 8, background: "#ef444410", border: "1px solid #ef444420" }}>
         <div style={{ color: "#ef4444", fontSize: 12, fontWeight: 600 }}>🔥 3 hot leads today</div>
         <div style={{ color: "#64748b", fontSize: 11, marginTop: 2 }}>Budi, Anton, +1 more</div>
-      </div>
+      </div> */}
 
       {/* Agent */}
       <div style={{ padding: "12px 16px", borderTop: "1px solid #1e2235", display: "flex", alignItems: "center", gap: 10 }}>
