@@ -1,113 +1,76 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@import "tailwindcss";
+
+/* Replaced @theme with standard :root to bypass linter errors */
+:root {
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
+/* Base Body Styling */
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #080a12;
+  font-family: var(--font-sans); /* Apply the font here */
+  background-color: #212529;
   color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  /* Subtle ambient lighting for the glassmorphism to blur against */
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+  background-attachment: fixed;
 }
 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e2235; border-radius: 3px; }
+/* Standard CSS Reusable Components
+  (Bypasses the @apply error while keeping the exact same styling)
+*/
+.glass-panel {
+  background-color: rgba(20, 22, 39, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
+}
 
-input::placeholder { color: #334155; }
-input:focus { border-color: #6366f1 !important; }
+.card-hover {
+  transition: all 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.6), 0 0 20px rgba(99, 102, 241, 0.1);
+}
 
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+.btn-hover {
+  transition: all 0.2s ease;
+}
+.btn-hover:hover {
+  opacity: 0.9;
+}
+.btn-hover:active {
+  transform: scale(0.95);
+}
+
+.row-hover {
+  transition: background-color 0.2s ease;
+}
+.row-hover:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+/* Custom Scrollbar & Animations */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* Smooth transitions on all buttons */
-button {
-  transition: all 0.15s ease !important;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-/* Page fade in */
-.page-content {
-  animation: fadeIn 0.2s ease;
-}
-
-/* Table row hover */
-.lead-row {
-  transition: background 0.1s ease;
-}
-
-.lead-row:hover {
-  background: #ffffff08 !important;
-}
-
-/* Nav item hover */
-.nav-item:hover {
-  background: #6366f110 !important;
-  color: #a5b4fc !important;
-}
-
-/* Chat suggestion chips hover */
-.chip:hover {
-  border-color: #6366f140 !important;
-  color: #818cf8 !important;
-  background: #6366f108 !important;
-}
-
-/* Action button hover */
-.action-btn:hover {
-  background: #6366f125 !important;
-  border-color: #6366f160 !important;
-}
-
-/* Filter button hover */
-.filter-btn:hover {
-  border-color: #6366f140 !important;
-  color: #a5b4fc !important;
-}
-
-/* Card hover lift */
-.stat-card {
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  border-color: #6366f130 !important;
-}
-
-/* Message animation */
-.message {
-  animation: fadeIn 0.2s ease;
-}
-
-/* Sidebar slide in */
-.sidebar-item {
-  animation: slideIn 0.15s ease;
-}
-
-/* Send button pulse on hover */
-.send-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px #6366f140;
-}
-
-/* AI assist button glow */
-.ai-btn:hover {
-  box-shadow: 0 0 20px #6366f140;
-  transform: translateY(-1px);
 }
