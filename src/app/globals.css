@@ -5,22 +5,32 @@
 }
 
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #080a12;
+  /* Use Inter or system fonts for the clean Claude aesthetic */
+  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #080a12;
+  /* Subtle ambient lighting for the glassmorphism to blur against */
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
+  background-attachment: fixed;
   color: #e2e8f0;
+}
+
+/* Glassmorphism Utility Class */
+.glass-panel {
+  background: rgba(20, 22, 39, 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #1e2235; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
 
-input::placeholder { color: #334155; }
-input:focus { border-color: #6366f1 !important; }
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
+input::placeholder { color: #475569; }
+input:focus { border-color: rgba(255, 255, 255, 0.2) !important; outline: none; }
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(8px); }
@@ -32,82 +42,99 @@ input:focus { border-color: #6366f1 !important; }
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* Smooth transitions on all buttons */
 button {
-  transition: all 0.15s ease !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 button:hover {
   opacity: 0.9;
 }
 
-/* Page fade in */
 .page-content {
-  animation: fadeIn 0.2s ease;
+  animation: fadeIn 0.3s ease-out;
 }
 
-/* Table row hover */
+/* Refined, softer hovers */
 .lead-row {
-  transition: background 0.1s ease;
+  transition: background 0.2s ease;
 }
 
 .lead-row:hover {
-  background: #ffffff08 !important;
+  background: rgba(255, 255, 255, 0.03) !important;
 }
 
-/* Nav item hover */
 .nav-item:hover {
-  background: #6366f110 !important;
-  color: #a5b4fc !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #e2e8f0 !important;
 }
 
-/* Chat suggestion chips hover */
-.chip:hover {
-  border-color: #6366f140 !important;
-  color: #818cf8 !important;
-  background: #6366f108 !important;
-}
-
-/* Action button hover */
 .action-btn:hover {
-  background: #6366f125 !important;
-  border-color: #6366f160 !important;
+  background: rgba(99, 102, 241, 0.15) !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
 }
 
-/* Filter button hover */
+.filter-btn {
+  transition: all 0.2s ease;
+}
 .filter-btn:hover {
-  border-color: #6366f140 !important;
-  color: #a5b4fc !important;
+  background: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* Card hover lift */
 .stat-card {
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-2px);
-  border-color: #6366f130 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(20, 22, 39, 0.6) !important;
 }
 
-/* Message animation */
-.message {
-  animation: fadeIn 0.2s ease;
+/* Ensure the table doesn't force its own width beyond the container */
+.priority-actions-table {
+  width: 100%;
+  table-layout: fixed; /* Gives you better control over column widths */
+  border-collapse: collapse;
 }
 
-/* Sidebar slide in */
-.sidebar-item {
-  animation: slideIn 0.15s ease;
+/* Reduce padding and font size slightly to save space */
+.priority-actions-table th,
+.priority-actions-table td {
+  padding: 10px 8px; /* Tighter left/right padding */
+  font-size: 13px; /* Slightly smaller text */
+  white-space: nowrap; /* Prevents text from wrapping and breaking height */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Adds '...' if text is still too long */
 }
 
-/* Send button pulse on hover */
-.send-btn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 20px #6366f140;
+/* Give other columns a smaller percentage of the space */
+.col-customer { width: 20%; }
+.col-life-event { width: 15%; }
+.col-recommendation { width: 25%; }
+.col-action { width: 15%; }
+
+/* Dedicate a specific, generous width to the Match Score column */
+.col-match-score {
+  width: 25%; /* Or a fixed width like 140px */
 }
 
-/* AI assist button glow */
-.ai-btn:hover {
-  box-shadow: 0 0 20px #6366f140;
-  transform: translateY(-1px);
+.match-score-container {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* Space between the bar and the number (e.g., 92) */
+  width: 100%;
+}
+
+.match-score-meter {
+  flex-grow: 1; /* Makes the bar stretch to fill available space */
+  height: 4px; /* Keeps it thin */
+  background-color: #333; /* Dark track background */
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.match-score-fill {
+  height: 100%;
+  /* background-color dynamically set inline (e.g., green, yellow) */
+  border-radius: 4px;
 }
