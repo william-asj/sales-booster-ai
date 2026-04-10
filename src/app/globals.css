@@ -1,140 +1,76 @@
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@import "tailwindcss";
+
+/* Replaced @theme with standard :root to bypass linter errors */
+:root {
+  --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
+/* Base Body Styling */
 body {
-  /* Use Inter or system fonts for the clean Claude aesthetic */
-  font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: #080a12;
+  font-family: var(--font-sans); /* Apply the font here */
+  background-color: #212529;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
   /* Subtle ambient lighting for the glassmorphism to blur against */
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%);
   background-attachment: fixed;
-  color: #e2e8f0;
 }
 
-/* Glassmorphism Utility Class */
+/* Standard CSS Reusable Components
+  (Bypasses the @apply error while keeping the exact same styling)
+*/
 .glass-panel {
-  background: rgba(20, 22, 39, 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background-color: rgba(20, 22, 39, 0.4);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.4);
 }
 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
-
-input::placeholder { color: #475569; }
-input:focus { border-color: rgba(255, 255, 255, 0.2) !important; outline: none; }
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+.card-hover {
+  transition: all 0.3s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 24px 48px rgba(0,0,0,0.6), 0 0 20px rgba(99, 102, 241, 0.1);
 }
 
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(-10px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-button {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-}
-
-button:hover {
-  opacity: 0.9;
-}
-
-.page-content {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Refined, softer hovers */
-.lead-row {
-  transition: background 0.2s ease;
-}
-
-.lead-row:hover {
-  background: rgba(255, 255, 255, 0.03) !important;
-}
-
-.nav-item:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
-  color: #e2e8f0 !important;
-}
-
-.action-btn:hover {
-  background: rgba(99, 102, 241, 0.15) !important;
-  border-color: rgba(99, 102, 241, 0.4) !important;
-}
-
-.filter-btn {
+.btn-hover {
   transition: all 0.2s ease;
 }
-.filter-btn:hover {
-  background: rgba(255, 255, 255, 0.05) !important;
+.btn-hover:hover {
+  opacity: 0.9;
+}
+.btn-hover:active {
+  transform: scale(0.95);
 }
 
-.stat-card {
-  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+.row-hover {
+  transition: background-color 0.2s ease;
+}
+.row-hover:hover {
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
-.stat-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  background: rgba(20, 22, 39, 0.6) !important;
+/* Custom Scrollbar & Animations */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* Ensure the table doesn't force its own width beyond the container */
-.priority-actions-table {
-  width: 100%;
-  table-layout: fixed; /* Gives you better control over column widths */
-  border-collapse: collapse;
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
 }
 
-/* Reduce padding and font size slightly to save space */
-.priority-actions-table th,
-.priority-actions-table td {
-  padding: 10px 8px; /* Tighter left/right padding */
-  font-size: 13px; /* Slightly smaller text */
-  white-space: nowrap; /* Prevents text from wrapping and breaking height */
-  overflow: hidden;
-  text-overflow: ellipsis; /* Adds '...' if text is still too long */
-}
-
-/* Give other columns a smaller percentage of the space */
-.col-customer { width: 20%; }
-.col-life-event { width: 15%; }
-.col-recommendation { width: 25%; }
-.col-action { width: 15%; }
-
-/* Dedicate a specific, generous width to the Match Score column */
-.col-match-score {
-  width: 25%; /* Or a fixed width like 140px */
-}
-
-.match-score-container {
-  display: flex;
-  align-items: center;
-  gap: 12px; /* Space between the bar and the number (e.g., 92) */
-  width: 100%;
-}
-
-.match-score-meter {
-  flex-grow: 1; /* Makes the bar stretch to fill available space */
-  height: 4px; /* Keeps it thin */
-  background-color: #333; /* Dark track background */
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.match-score-fill {
-  height: 100%;
-  /* background-color dynamically set inline (e.g., green, yellow) */
-  border-radius: 4px;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

@@ -12,10 +12,9 @@ import {
   Bell,
   ArrowLeft,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
 } from "lucide-react";
 
-// --- Types & Data Models ---
 type Page = "dashboard" | "chat" | "customers" | "analytics";
 type ViewState = "overview" | "leads" | "events";
 
@@ -39,33 +38,160 @@ interface Props {
 }
 
 const STATS = [
-  { id: 1, label: "AI-Generated Leads", value: "142", delta: "+12%", icon: <Users size={20} color="#a5b4fc" /> },
-  { id: 2, label: "Projected Premium", value: "Rp 850M", delta: "+8.4%", icon: <TrendingUp size={20} color="#a5b4fc" /> },
-  { id: 3, label: "Life Events Detected", value: "28", delta: "+5%", icon: <HeartPulse size={20} color="#a5b4fc" /> },
-  { id: 4, label: "Conversion Rate (AI)", value: "24.5%", delta: "+2.1%", icon: <PieChart size={20} color="#a5b4fc" /> },
+  {
+    id: 1,
+    label: "AI-Generated Leads",
+    value: "142",
+    delta: "+12%",
+    icon: <Users size={20} className="text-indigo-300" />,
+  },
+  {
+    id: 2,
+    label: "Projected Premium",
+    value: "Rp 850M",
+    delta: "+8.4%",
+    icon: <TrendingUp size={20} className="text-indigo-300" />,
+  },
+  {
+    id: 3,
+    label: "Life Events Detected",
+    value: "28",
+    delta: "+5%",
+    icon: <HeartPulse size={20} className="text-indigo-300" />,
+  },
+  {
+    id: 4,
+    label: "Conversion Rate (AI)",
+    value: "24.5%",
+    delta: "+2.1%",
+    icon: <PieChart size={20} className="text-indigo-300" />,
+  },
 ];
 
-const EVENT_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  "New Baby": { bg: "rgba(251,191,36,0.1)", text: "#fbbf24", border: "#fbbf24" },
-  "Home Purchase": { bg: "rgba(59,130,246,0.1)", text: "#60a5fa", border: "#3b82f6" },
-  "Promotion": { bg: "rgba(168,85,247,0.1)", text: "#c084fc", border: "#a855f7" },
-  "Marriage": { bg: "rgba(34,197,94,0.1)", text: "#4ade80", border: "#22c55e" },
-  "Health Flag": { bg: "rgba(239,68,68,0.1)", text: "#f87171", border: "#ef4444" },
+const EVENT_COLORS: Record<
+  string,
+  { bg: string; text: string; border: string }
+> = {
+  "New Baby": {
+    bg: "bg-amber-400/10",
+    text: "text-amber-400",
+    border: "border-amber-400",
+  },
+  "Home Purchase": {
+    bg: "bg-blue-500/10",
+    text: "text-blue-400",
+    border: "border-blue-500",
+  },
+  Promotion: {
+    bg: "bg-purple-500/10",
+    text: "text-purple-400",
+    border: "border-purple-500",
+  },
+  Marriage: {
+    bg: "bg-green-500/10",
+    text: "text-green-400",
+    border: "border-green-500",
+  },
+  "Health Flag": {
+    bg: "bg-red-500/10",
+    text: "text-red-400",
+    border: "border-red-500",
+  },
 };
 
 const PRIORITY_ACTIONS: Lead[] = [
-  { id: 1, name: "Budi Santoso", age: 34, score: 92, scoreLabel: "High", event: "Marriage", product: "Life Protection Plus", premium: "Rp 2.4M/mo", avatar: "BS", phone: "+62 812-3456-7890", policies: 1 },
-  { id: 2, name: "Sari Dewi", age: 28, score: 88, scoreLabel: "High", event: "New Baby", product: "Family Shield", premium: "Rp 1.8M/mo", avatar: "SD", phone: "+62 857-2345-6789", policies: 0 },
-  { id: 3, name: "Anton Wijaya", age: 52, score: 76, scoreLabel: "Med", event: "Promotion", product: "Wealth Protector", premium: "Rp 3.1M/mo", avatar: "AW", phone: "+62 815-6789-0123", policies: 3 },
-  { id: 4, name: "Mira Lestari", age: 31, score: 64, scoreLabel: "Med", event: "Home Purchase", product: "Mortgage Guard", premium: "Rp 900K/mo", avatar: "ML", phone: "+62 821-4567-8901", policies: 1 },
-  { id: 5, name: "Rina Kusuma", age: 39, score: 45, scoreLabel: "Low", event: "Health Flag", product: "Executive Term", premium: "Rp 1.5M/mo", avatar: "RK", phone: "+62 896-7890-1234", policies: 1 },
+  {
+    id: 1,
+    name: "Budi Santoso",
+    age: 34,
+    score: 92,
+    scoreLabel: "High",
+    event: "Marriage",
+    product: "Life Protection Plus",
+    premium: "Rp 2.4M/mo",
+    avatar: "BS",
+    phone: "+62 812-3456-7890",
+    policies: 1,
+  },
+  {
+    id: 2,
+    name: "Sari Dewi",
+    age: 28,
+    score: 88,
+    scoreLabel: "High",
+    event: "New Baby",
+    product: "Family Shield",
+    premium: "Rp 1.8M/mo",
+    avatar: "SD",
+    phone: "+62 857-2345-6789",
+    policies: 0,
+  },
+  {
+    id: 3,
+    name: "Anton Wijaya",
+    age: 52,
+    score: 76,
+    scoreLabel: "Med",
+    event: "Promotion",
+    product: "Wealth Protector",
+    premium: "Rp 3.1M/mo",
+    avatar: "AW",
+    phone: "+62 815-6789-0123",
+    policies: 3,
+  },
+  {
+    id: 4,
+    name: "Mira Lestari",
+    age: 31,
+    score: 64,
+    scoreLabel: "Med",
+    event: "Home Purchase",
+    product: "Mortgage Guard",
+    premium: "Rp 900K/mo",
+    avatar: "ML",
+    phone: "+62 821-4567-8901",
+    policies: 1,
+  },
+  {
+    id: 5,
+    name: "Rina Kusuma",
+    age: 39,
+    score: 45,
+    scoreLabel: "Low",
+    event: "Health Flag",
+    product: "Executive Term",
+    premium: "Rp 1.5M/mo",
+    avatar: "RK",
+    phone: "+62 896-7890-1234",
+    policies: 1,
+  },
 ];
 
 const RECENT_EVENTS = [
-  { id: 1, name: "Rina Kusuma", event: "Health Flag", time: "2 hrs ago", type: "Health Flag", detail: "Missed scheduled checkup 2 weeks running. High risk flag." },
-  { id: 2, name: "Reza Pratama", event: "Home Purchase", time: "1 day ago", type: "Home Purchase", detail: "Mortgage inquiry detected via banking partner API." },
-  { id: 3, name: "Sari Dewi", event: "New Baby", time: "2 days ago", type: "New Baby", detail: "Added dependent to company health portal." },
-  { id: 4, name: "Anton Wijaya", event: "Promotion", time: "3 days ago", type: "Promotion", detail: "LinkedIn status updated to VP of Engineering." },
+  {
+    id: 1,
+    name: "Rina Kusuma",
+    event: "Health Flag",
+    time: "2 hrs ago",
+    type: "Health Flag",
+    detail: "Missed scheduled checkup 2 weeks running. High risk flag.",
+  },
+  {
+    id: 2,
+    name: "Reza Pratama",
+    event: "Home Purchase",
+    time: "1 day ago",
+    type: "Home Purchase",
+    detail: "Mortgage inquiry detected via banking partner API.",
+  },
+  {
+    id: 3,
+    name: "Sari Dewi",
+    event: "New Baby",
+    time: "2 days ago",
+    type: "New Baby",
+    detail: "Added dependent to company health portal.",
+  },
 ];
 
 const getScoreColor = (score: number) => {
@@ -78,64 +204,97 @@ const CircularGauge = ({ score }: { score: number }) => {
   const radius = 26;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
-  const meterColor = getScoreColor(score);
 
   return (
-    <div style={{ position: "relative", width: 60, height: 60, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <svg width="60" height="60" style={{ transform: "rotate(-90deg)" }}>
-        <circle cx="30" cy="30" r={radius} fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" />
+    <div className="relative w-[60px] h-[60px] flex items-center justify-center">
+      <svg width="60" height="60" className="-rotate-90">
         <circle
-          cx="30" cy="30" r={radius} fill="transparent"
-          stroke={meterColor} strokeWidth="2.5"
-          strokeDasharray={circumference} strokeDashoffset={offset}
-          strokeLinecap="round" style={{ transition: "stroke-dashoffset 1s ease, stroke 0.3s ease" }}
+          cx="30"
+          cy="30"
+          r={radius}
+          fill="transparent"
+          stroke="rgba(255,255,255,0.05)"
+          strokeWidth="2.5"
+        />
+        <circle
+          cx="30"
+          cy="30"
+          r={radius}
+          fill="transparent"
+          stroke={getScoreColor(score)}
+          strokeWidth="2.5"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
         />
       </svg>
-      <span style={{ position: "absolute", fontSize: 13, fontWeight: 700, color: "#f8fafc" }}>{score}</span>
+      <span className="absolute text-[13px] font-bold text-slate-50">
+        {score}
+      </span>
     </div>
   );
 };
 
 export default function Dashboard({ setActive, setSelectedLead }: Props) {
   const [currentView, setCurrentView] = useState<ViewState>("overview");
-  const [sortCol, setSortCol] = useState<"name" | "event" | "product" | "score" | null>(null);
+  const [sortCol, setSortCol] = useState<
+    "name" | "event" | "product" | "score" | null
+  >(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const toggleSort = (col: "name" | "event" | "product" | "score") => {
-    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortCol(col); setSortDir("desc"); }
+    if (sortCol === col) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortCol(col);
+      setSortDir("desc");
+    }
   };
 
   const sortedActions = useMemo(() => {
     return [...PRIORITY_ACTIONS].sort((a, b) => {
       if (!sortCol) return 0;
-      const valA = a[sortCol];
-      const valB = b[sortCol];
-      if (valA < valB) return sortDir === "asc" ? -1 : 1;
-      if (valA > valB) return sortDir === "asc" ? 1 : -1;
+      if (a[sortCol] < b[sortCol]) return sortDir === "asc" ? -1 : 1;
+      if (a[sortCol] > b[sortCol]) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
   }, [sortCol, sortDir]);
 
   const renderSortIcon = (col: string) => {
-    if (sortCol !== col) return <span style={{ opacity: 0.3, display: "inline-block", width: 14 }}>↕</span>;
-    return sortDir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
+    if (sortCol !== col)
+      return <span className="opacity-30 inline-block w-3.5">↕</span>;
+    return sortDir === "asc" ? (
+      <ChevronUp size={14} />
+    ) : (
+      <ChevronDown size={14} />
+    );
   };
 
   const renderLeadCards = () => (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 24, paddingBottom: 40 }} className="animate-fade-in">
-      {PRIORITY_ACTIONS.map(lead => (
-        <div key={`grid-${lead.id}`} className="glass-panel card-hover" style={{ borderRadius: 24, padding: 24, display: "flex", flexDirection: "column" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#e2e8f0", fontWeight: 600, fontSize: 14 }}>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10 animate-fade-in">
+      {PRIORITY_ACTIONS.map((lead) => (
+        <div
+          key={lead.id}
+          className="glass-panel card-hover rounded-3xl p-6 flex flex-col"
+        >
+          <div className="flex justify-between items-start mb-5">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-200 font-semibold text-sm">
                 {lead.avatar}
               </div>
               <div>
-                <div onClick={() => { setSelectedLead(lead); setActive("customers"); }} className="btn-hover" style={{ fontSize: 15, fontWeight: 600, color: "#f8fafc", cursor: "pointer" }}>
+                <div
+                  onClick={() => {
+                    setSelectedLead(lead);
+                    setActive("customers");
+                  }}
+                  className="btn-hover text-[15px] font-semibold text-slate-50 cursor-pointer"
+                >
                   {lead.name}
                 </div>
-                <span style={{ display: "inline-block", marginTop: 4, background: EVENT_COLORS[lead.event]?.bg || "rgba(255,255,255,0.1)", color: EVENT_COLORS[lead.event]?.text || "#fff", padding: "2px 8px", borderRadius: 8, fontSize: 11, fontWeight: 600 }}>
+                <span
+                  className={`inline-block mt-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${EVENT_COLORS[lead.event]?.bg || "bg-white/10"} ${EVENT_COLORS[lead.event]?.text || "text-white"}`}
+                >
                   {lead.event}
                 </span>
               </div>
@@ -143,18 +302,28 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
             <CircularGauge score={lead.score} />
           </div>
 
-          <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 12, padding: 16, marginBottom: 20, flex: 1 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>Best Product</span>
-              <span style={{ fontSize: 12, color: "#e2e8f0", fontWeight: 500 }}>{lead.product}</span>
+          <div className="bg-black/20 rounded-xl p-4 mb-5 flex-1">
+            <div className="flex justify-between mb-3">
+              <span className="text-xs text-slate-400">Best Product</span>
+              <span className="text-xs text-slate-200 font-medium">
+                {lead.product}
+              </span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontSize: 12, color: "#94a3b8" }}>Est. Premium</span>
-              <span style={{ fontSize: 13, color: "#a5b4fc", fontWeight: 600 }}>{lead.premium}</span>
+            <div className="flex justify-between">
+              <span className="text-xs text-slate-400">Est. Premium</span>
+              <span className="text-[13px] text-indigo-300 font-semibold">
+                {lead.premium}
+              </span>
             </div>
           </div>
 
-          <button onClick={() => { setSelectedLead(lead); setActive("chat"); }} className="btn-hover" style={{ width: "100%", padding: "12px", background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2))", border: "1px solid rgba(99, 102, 241, 0.3)", borderRadius: 12, color: "#e2e8f0", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+          <button
+            onClick={() => {
+              setSelectedLead(lead);
+              setActive("chat");
+            }}
+            className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
+          >
             <MessageSquare size={16} /> AI Chat Assistant
           </button>
         </div>
@@ -163,60 +332,37 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
   );
 
   return (
-    <div className="animate-fade-in" style={{ padding: "32px 40px", maxWidth: 1400, color: "#e2e8f0", fontFamily: '"Segoe UI", sans-serif' }}>
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-        .glass-panel {
-          background: rgba(13, 15, 26, 0.5);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          box-shadow: 0 24px 48px rgba(0,0,0,0.4);
-        }
-        .card-hover { transition: all 0.3s ease; }
-        .card-hover:hover {
-          transform: translateY(-2px);
-          border-color: rgba(99, 102, 241, 0.3);
-          box-shadow: 0 24px 48px rgba(0,0,0,0.6), 0 0 20px rgba(99, 102, 241, 0.1);
-        }
-        .btn-hover { transition: all 0.2s ease; }
-        .btn-hover:hover { opacity: 0.88; }
-        .btn-hover:active { transform: scale(0.96); }
-        .row-hover { transition: background 0.2s ease; }
-        .row-hover:hover { background: rgba(255, 255, 255, 0.03); }
-        
-        /* Fixed Header Alignment without forcing nowrap on whole table */
-        .sort-header { transition: color 0.2s ease; cursor: pointer; user-select: none; }
-        .sort-header:hover { color: #f8fafc !important; }
-        .header-content { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-      `}</style>
-
-      {/* Top Header */}
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 32 }}>
+    <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
+      {/* Header */}
+      <header className="flex justify-between items-center mb-8">
         <div>
           {currentView === "overview" ? (
             <>
-              <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: "#f8fafc" }}>Welcome back, Agent ✨</h1>
-              <p style={{ margin: "4px 0 0", fontSize: 14, color: "#94a3b8" }}>Here's your AI-curated summary for today.</p>
+              <h1 className="text-2xl font-semibold text-slate-50 m-0">
+                Welcome back, Agent ✨
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Here&apos;s your AI-curated summary for today.
+              </p>
             </>
           ) : (
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => setCurrentView("overview")}
-                className="glass-panel btn-hover"
-                style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#e2e8f0" }}>
+                className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200"
+              >
                 <ArrowLeft size={18} />
               </button>
               <div>
-                <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: "#f8fafc" }}>
-                  {currentView === "leads" ? "Leads Recommendation" : "Recent Life Events"}
+                <h1 className="text-2xl font-semibold text-slate-50 m-0">
+                  {currentView === "leads"
+                    ? "Leads Recommendation"
+                    : "Recent Life Events"}
                 </h1>
-                <p style={{ margin: "4px 0 0", fontSize: 14, color: "#94a3b8" }}>
-                  {currentView === "leads" ? "Full list of AI-curated opportunities." : "All tracked milestones requiring your attention."}
+                <p className="mt-1 text-sm text-slate-400">
+                  {currentView === "leads"
+                    ? "Full list of AI-curated opportunities."
+                    : "All tracked milestones requiring your attention."}
                 </p>
               </div>
             </div>
@@ -224,13 +370,13 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
         </div>
 
         {currentView === "overview" && (
-          <div style={{ display: "flex", gap: 16 }}>
-            <button className="glass-panel btn-hover" style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#e2e8f0" }}>
+          <div className="flex gap-4">
+            <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200">
               <Search size={18} />
             </button>
-            <button className="glass-panel btn-hover" style={{ width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#e2e8f0", position: "relative" }}>
+            <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200 relative">
               <Bell size={18} />
-              <div style={{ position: "absolute", top: 10, right: 10, width: 6, height: 6, background: "#ef4444", borderRadius: "50%" }} />
+              <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
             </button>
           </div>
         )}
@@ -239,81 +385,129 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
       {/* OVERVIEW RENDER */}
       {currentView === "overview" && (
         <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 32 }}>
-            {STATS.map(stat => (
-              <div key={stat.id} className="glass-panel card-hover" style={{ borderRadius: 20, padding: 24 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(99, 102, 241, 0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="grid grid-cols-4 gap-5 mb-8">
+            {STATS.map((stat) => (
+              <div
+                key={stat.id}
+                className="glass-panel card-hover rounded-[20px] p-6"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
                     {stat.icon}
                   </div>
-                  <div style={{ background: "rgba(34, 197, 94, 0.15)", color: "#4ade80", padding: "4px 8px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>
+                  <div className="bg-green-500/15 text-green-400 px-2 py-1 rounded-full text-xs font-semibold">
                     {stat.delta}
                   </div>
                 </div>
-                <div style={{ fontSize: 28, fontWeight: 700, color: "#f8fafc", marginBottom: 4 }}>{stat.value}</div>
-                <div style={{ fontSize: 13, color: "#94a3b8", fontWeight: 500 }}>{stat.label}</div>
+                <div className="text-3xl font-bold text-slate-50 mb-1">
+                  {stat.value}
+                </div>
+                <div className="text-[13px] text-slate-400 font-medium">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "2.5fr 1fr", gap: 24, marginBottom: 32 }}>
-
-            {/* Table Area - Removed minWidth, reduced internal padding and font sizes */}
-            <div className="glass-panel" style={{ borderRadius: 24, padding: "20px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#f8fafc" }}>Priority Actions</h3>
-                <button onClick={() => setCurrentView("leads")} className="btn-hover" style={{ background: "transparent", border: "none", color: "#a5b4fc", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>View All</button>
+          <div className="grid grid-cols-[2.5fr_1fr] gap-6 mb-8">
+            {/* Table Area */}
+            <div className="glass-panel rounded-3xl p-5 flex flex-col overflow-hidden">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-semibold text-slate-50 m-0">
+                  Priority Actions
+                </h3>
+                <button
+                  onClick={() => setCurrentView("leads")}
+                  className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide"
+                >
+                  View All
+                </button>
               </div>
-              <div style={{ flex: 1, overflowX: "auto" }}>
-                {/* Reverted width to 100% to stop horizontal scroll */}
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <div className="flex-1 overflow-x-auto">
+                <table className="w-full border-collapse">
                   <thead>
-                    <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                      <th className="sort-header" onClick={() => toggleSort("name")} style={{ textAlign: "left", padding: "10px", fontSize: 11, color: sortCol === "name" ? "#a5b4fc" : "#475569", fontWeight: 600, letterSpacing: "0.5px" }}>
-                        <div className="header-content">CUSTOMER {renderSortIcon("name")}</div>
+                    <tr className="border-b border-white/5">
+                      {["name", "event", "product", "score"].map((col) => (
+                        <th
+                          key={col}
+                          onClick={() => toggleSort(col as "name" | "event" | "product" | "score")}
+                          className="text-left p-2.5 text-[11px] font-semibold tracking-wide cursor-pointer hover:text-slate-50 transition-colors select-none"
+                        >
+                          <div
+                            className={`inline-flex items-center gap-1 whitespace-nowrap ${sortCol === col ? "text-indigo-300" : "text-slate-500"}`}
+                          >
+                            {col === "name"
+                              ? "CUSTOMER"
+                              : col === "event"
+                                ? "LIFE EVENT"
+                                : col === "product"
+                                  ? "RECOMMENDATION"
+                                  : "MATCH SCORE"}{" "}
+                            {renderSortIcon(col)}
+                          </div>
+                        </th>
+                      ))}
+                      <th className="text-left p-2.5 text-[11px] font-semibold text-slate-500 tracking-wide">
+                        ACTION
                       </th>
-                      <th className="sort-header" onClick={() => toggleSort("event")} style={{ textAlign: "left", padding: "10px", fontSize: 11, color: sortCol === "event" ? "#a5b4fc" : "#475569", fontWeight: 600, letterSpacing: "0.5px" }}>
-                        <div className="header-content">LIFE EVENT {renderSortIcon("event")}</div>
-                      </th>
-                      <th className="sort-header" onClick={() => toggleSort("product")} style={{ textAlign: "left", padding: "10px", fontSize: 11, color: sortCol === "product" ? "#a5b4fc" : "#475569", fontWeight: 600, letterSpacing: "0.5px" }}>
-                        <div className="header-content">RECOMMENDATION {renderSortIcon("product")}</div>
-                      </th>
-                      <th className="sort-header" onClick={() => toggleSort("score")} style={{ textAlign: "left", padding: "10px", fontSize: 11, color: sortCol === "score" ? "#a5b4fc" : "#475569", fontWeight: 600, letterSpacing: "0.5px" }}>
-                        <div className="header-content">MATCH SCORE {renderSortIcon("score")}</div>
-                      </th>
-                      <th style={{ textAlign: "left", padding: "10px", fontSize: 11, color: "#475569", fontWeight: 600, letterSpacing: "0.5px" }}>ACTION</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedActions.slice(0, 4).map((action) => (
-                      <tr key={action.id} className="row-hover" style={{ borderBottom: "1px solid rgba(255,255,255,0.03)" }}>
-                        <td style={{ padding: "12px 10px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 600, flexShrink: 0 }}>{action.avatar}</div>
-                            <span onClick={() => { setSelectedLead(action); setActive("customers"); }} className="btn-hover" style={{ fontSize: 13, fontWeight: 500, color: "#e2e8f0", cursor: "pointer", whiteSpace: "nowrap" }}>
+                      <tr
+                        key={action.id}
+                        className="row-hover border-b border-white/[0.03]"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0">
+                              {action.avatar}
+                            </div>
+                            <span
+                              onClick={() => {
+                                setSelectedLead(action);
+                                setActive("customers");
+                              }}
+                              className="btn-hover text-[13px] font-medium text-slate-200 cursor-pointer whitespace-nowrap"
+                            >
                               {action.name}
                             </span>
                           </div>
                         </td>
-                        <td style={{ padding: "12px 10px" }}>
-                          <span style={{ background: EVENT_COLORS[action.event]?.bg || "rgba(255,255,255,0.1)", color: EVENT_COLORS[action.event]?.text || "#fff", padding: "4px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" }}>
+                        <td className="p-3">
+                          <span
+                            className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${EVENT_COLORS[action.event]?.bg || "bg-white/10"} ${EVENT_COLORS[action.event]?.text || "text-white"}`}
+                          >
                             {action.event}
                           </span>
                         </td>
-                        <td style={{ padding: "12px 10px", fontSize: 13, color: "#e2e8f0" }}>
+                        <td className="p-3 text-[13px] text-slate-200">
                           {action.product}
                         </td>
-                        <td style={{ padding: "12px 10px" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            {/* Thin and long meter: Height lowered to 5px, width explicitly locked at 120px */}
-                            <div style={{ width: 120, height: 5, background: "rgba(255,255,255,0.05)", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
-                              <div style={{ width: `${action.score}%`, height: "100%", background: getScoreColor(action.score), borderRadius: 3, transition: "width 1s ease, background 0.3s ease" }} />
+                        <td className="p-3">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden shrink-0">
+                              <div
+                                style={{
+                                  width: `${action.score}%`,
+                                  backgroundColor: getScoreColor(action.score),
+                                }}
+                                className="h-full rounded-full transition-all duration-1000 ease-out"
+                              />
                             </div>
-                            <span style={{ fontSize: 12, fontWeight: 600, color: "#f8fafc", width: 24 }}>{action.score}</span>
+                            <span className="text-xs font-semibold text-slate-50 w-6">
+                              {action.score}
+                            </span>
                           </div>
                         </td>
-                        <td style={{ padding: "12px 10px" }}>
-                          <button onClick={() => { setSelectedLead(action); setActive("chat"); }} className="btn-hover" style={{ padding: "6px 12px", borderRadius: 8, background: "transparent", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#a5b4fc", fontSize: 12, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" }}>
+                        <td className="p-3">
+                          <button
+                            onClick={() => {
+                              setSelectedLead(action);
+                              setActive("chat");
+                            }}
+                            className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
+                          >
                             Review
                           </button>
                         </td>
@@ -325,33 +519,58 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
             </div>
 
             {/* Side Column */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-              <div className="glass-panel" style={{ borderRadius: 24, padding: "24px", flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600, color: "#f8fafc" }}>Recent Life Events</h3>
-                  <button onClick={() => setCurrentView("events")} className="btn-hover" style={{ background: "transparent", border: "none", color: "#a5b4fc", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>See All</button>
+            <div className="flex flex-col gap-5">
+              <div className="glass-panel rounded-3xl p-6 flex-1">
+                <div className="flex justify-between items-center mb-5">
+                  <h3 className="text-base font-semibold text-slate-50 m-0">
+                    Recent Life Events
+                  </h3>
+                  <button
+                    onClick={() => setCurrentView("events")}
+                    className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide"
+                  >
+                    View All
+                  </button>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {RECENT_EVENTS.slice(0, 3).map(event => (
-                    <div key={event.id} style={{ display: "flex", gap: 12, paddingLeft: 12, borderLeft: `3px solid ${EVENT_COLORS[event.type]?.border || "#fff"}` }}>
-                      <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>👤</div>
+                <div className="flex flex-col gap-4">
+                  {RECENT_EVENTS.map((event) => (
+                    <div
+                      key={event.id}
+                      className={`flex gap-3 pl-3 border-l-2 ${EVENT_COLORS[event.type]?.border || "border-white"}`}
+                    >
+                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm shrink-0">
+                        👤
+                      </div>
                       <div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: "#f8fafc" }}>{event.name}</div>
-                        <div style={{ fontSize: 13, color: EVENT_COLORS[event.type]?.text || "#fff", marginTop: 2 }}>{event.event}</div>
-                        <div style={{ fontSize: 11, color: "#475569", marginTop: 4 }}>{event.time}</div>
+                        <div className="text-sm font-semibold text-slate-50">
+                          {event.name}
+                        </div>
+                        <div
+                          className={`text-[13px] mt-0.5 ${EVENT_COLORS[event.type]?.text || "text-white"}`}
+                        >
+                          {event.event}
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-1">
+                          {event.time}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
 
-              <div className="glass-panel" style={{ borderRadius: 24, padding: "20px", background: "rgba(99, 102, 241, 0.05)" }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                  <div style={{ color: "#a5b4fc", marginTop: 2 }}><Sparkles size={18} /></div>
+              <div className="glass-panel rounded-3xl p-5 bg-indigo-500/5">
+                <div className="flex gap-3 items-start">
+                  <div className="text-indigo-300 mt-0.5">
+                    <Sparkles size={18} />
+                  </div>
                   <div>
-                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: "#f8fafc", marginBottom: 6 }}>AI Tip for Today</h4>
-                    <p style={{ margin: 0, fontSize: 12, color: "#94a3b8", lineHeight: 1.5 }}>
-                      Customers experiencing a "New Baby" life event have a 45% higher conversion rate when approached within 72 hours.
+                    <h4 className="text-sm font-semibold text-slate-50 mb-1.5 m-0">
+                      AI Tip for Today
+                    </h4>
+                    <p className="text-xs text-slate-400 leading-relaxed m-0">
+                      Customers experiencing a &quot;New Baby&quot; life event have a 45%
+                      higher conversion rate when approached within 72 hours.
                     </p>
                   </div>
                 </div>
@@ -359,37 +578,52 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
             </div>
           </div>
 
-          <h3 style={{ margin: "0 0 20px 0", fontSize: 18, fontWeight: 600, color: "#f8fafc" }}>Recommended Leads</h3>
+          <h3 className="text-lg font-semibold text-slate-50 mb-5 m-0">
+            Recommended Leads
+          </h3>
           {renderLeadCards()}
         </>
       )}
 
-      {/* LEADS RECOMMENDATION VIEW */}
       {currentView === "leads" && renderLeadCards()}
 
-      {/* LIFE EVENTS VIEW */}
       {currentView === "events" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }} className="animate-fade-in">
-          {RECENT_EVENTS.map(event => (
-            <div key={event.id} className="glass-panel card-hover" style={{ display: "flex", gap: 20, padding: 24, borderRadius: 20, borderLeft: `4px solid ${EVENT_COLORS[event.type]?.border || "#fff"}` }}>
-              <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>
-                {event.type === "Health Flag" ? "⚠️" : event.type === "New Baby" ? "🍼" : event.type === "Promotion" ? "💼" : "🏠"}
+        <div className="flex flex-col gap-4 animate-fade-in">
+          {RECENT_EVENTS.map((event) => (
+            <div
+              key={event.id}
+              className={`glass-panel card-hover flex gap-5 p-6 rounded-3xl border-l-4 ${EVENT_COLORS[event.type]?.border || "border-white"}`}
+            >
+              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">
+                {event.type === "Health Flag"
+                  ? "⚠️"
+                  : event.type === "New Baby"
+                    ? "🍼"
+                    : event.type === "Promotion"
+                      ? "💼"
+                      : "🏠"}
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div className="flex-1">
+                <div className="flex justify-between items-start">
                   <div>
-                    <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600, color: "#f8fafc" }}>{event.name}</h3>
-                    <span style={{ display: "inline-block", marginTop: 6, background: EVENT_COLORS[event.type]?.bg || "rgba(255,255,255,0.1)", color: EVENT_COLORS[event.type]?.text || "#fff", padding: "4px 10px", borderRadius: 8, fontSize: 12, fontWeight: 600 }}>
+                    <h3 className="text-lg font-semibold text-slate-50 m-0">
+                      {event.name}
+                    </h3>
+                    <span
+                      className={`inline-block mt-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${EVENT_COLORS[event.type]?.bg || "bg-white/10"} ${EVENT_COLORS[event.type]?.text || "text-white"}`}
+                    >
                       {event.event}
                     </span>
                   </div>
-                  <span style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>{event.time}</span>
+                  <span className="text-[13px] text-slate-500 font-medium">
+                    {event.time}
+                  </span>
                 </div>
-                <p style={{ margin: "12px 0 0", fontSize: 14, color: "#cbd5e1", lineHeight: 1.5 }}>
+                <p className="mt-3 text-sm text-slate-300 leading-relaxed">
                   {event.detail}
                 </p>
-                <div style={{ marginTop: 16 }}>
-                  <button className="btn-hover" style={{ padding: "8px 20px", borderRadius: 8, background: "rgba(99, 102, 241, 0.15)", border: "1px solid rgba(99, 102, 241, 0.4)", color: "#a5b4fc", fontSize: 13, fontWeight: 500, cursor: "pointer" }}>
+                <div className="mt-4">
+                  <button className="btn-hover px-5 py-2 rounded-xl bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 text-[13px] font-medium">
                     Take Action
                   </button>
                 </div>
@@ -398,7 +632,6 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
           ))}
         </div>
       )}
-
     </div>
   );
 }
