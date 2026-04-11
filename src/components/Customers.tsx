@@ -17,16 +17,7 @@ import {
   MoreVertical,
   Activity
 } from "lucide-react";
-import { Lead } from "@/app/page";
-
-const LEADS: Lead[] = [
-  { id: 1, name: "Budi Santoso", age: 34, dob: "12 May 1991", score: 92, scoreLabel: "High", event: "Marriage", product: "Life Protection Plus", premium: "Rp 2.4M/mo", avatar: "BS", phone: "+62 812-3456-7890", policies: 1 },
-  { id: 2, name: "Sari Dewi", age: 28, dob: "04 Aug 1997", score: 78, scoreLabel: "High", event: "New Baby", product: "Family Shield", premium: "Rp 1.8M/mo", avatar: "SD", phone: "+62 857-2345-6789", policies: 0 },
-  { id: 3, name: "Reza Pratama", age: 45, dob: "15 Oct 1980", score: 61, scoreLabel: "Med", event: "Retirement Plan", product: "Wealth Protector", premium: "Rp 4.2M/mo", avatar: "RP", phone: "+62 878-9012-3456", policies: 2 },
-  { id: 4, name: "Mira Lestari", age: 31, dob: "22 Jan 1994", score: 44, scoreLabel: "Low", event: "Home Purchase", product: "Mortgage Guard", premium: "Rp 900K/mo", avatar: "ML", phone: "+62 821-4567-8901", policies: 1 },
-  { id: 5, name: "Anton Wijaya", age: 52, dob: "30 Sep 1973", score: 88, scoreLabel: "High", event: "Education Fund", product: "Education Saver", premium: "Rp 3.1M/mo", avatar: "AW", phone: "+62 815-6789-0123", policies: 3 },
-  { id: 6, name: "Rina Kusuma", age: 39, dob: "11 Mar 1986", score: 55, scoreLabel: "Med", event: "Promotion", product: "Executive Term", premium: "Rp 1.5M/mo", avatar: "RK", phone: "+62 896-7890-1234", policies: 1 },
-];
+import { db, Lead } from "@/lib/data";
 
 interface Props {
   setActive: (page: string) => void;
@@ -41,15 +32,16 @@ const getScoreColor = (score: number) => {
 };
 
 export default function Customers({ setActive, setSelectedLead, selectedLead }: Props) {
-  const [selected, setSelected] = useState<Lead>(selectedLead || LEADS[0]);
+  const leads = db.getLeads();
+  const [selected, setSelected] = useState<Lead>(selectedLead || leads[0]);
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredLeads = useMemo(() => {
-    return LEADS.filter(lead => 
+    return leads.filter(lead => 
       lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       lead.event.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [leads, searchQuery]);
 
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden animate-fade-in p-4 lg:p-6 gap-4 lg:gap-6">
@@ -145,7 +137,7 @@ export default function Customers({ setActive, setSelectedLead, selectedLead }: 
                   </button>
                   <button 
                     onClick={() => { setSelectedLead(selected); setActive("chat"); }}
-                    className="flex items-center gap-2 px-4 lg:px-6 py-2 lg:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl lg:rounded-2xl font-bold text-xs lg:text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95 whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl lg:rounded-2xl font-bold text-xs lg:text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95 whitespace-nowrap"
                   >
                     <MessageSquare size={16} />
                     AI Assistant

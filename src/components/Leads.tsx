@@ -2,35 +2,15 @@
 
 import React from "react";
 import { MessageSquare } from "lucide-react";
-
-interface Lead {
-  id: number;
-  name: string;
-  age: number;
-  dob?: string;
-  score: number;
-  scoreLabel: string;
-  event: string;
-  product: string;
-  premium: string;
-  avatar: string;
-  phone: string;
-  policies: number;
-}
-
-const PRIORITY_ACTIONS: Lead[] = [
-  { id: 1, name: "Budi Santoso", age: 34, score: 92, scoreLabel: "High", event: "Marriage", product: "Life Protection Plus", premium: "Rp 2.4M/mo", avatar: "BS", phone: "+62 812-3456-7890", policies: 1 },
-  { id: 2, name: "Sari Dewi", age: 28, score: 88, scoreLabel: "High", event: "New Baby", product: "Family Shield", premium: "Rp 1.8M/mo", avatar: "SD", phone: "+62 857-2345-6789", policies: 0 },
-  { id: 3, name: "Anton Wijaya", age: 52, score: 76, scoreLabel: "Med", event: "Promotion", product: "Wealth Protector", premium: "Rp 3.1M/mo", avatar: "AW", phone: "+62 815-6789-0123", policies: 3 },
-  { id: 4, name: "Mira Lestari", age: 31, score: 64, scoreLabel: "Med", event: "Home Purchase", product: "Mortgage Guard", premium: "Rp 900K/mo", avatar: "ML", phone: "+62 821-4567-8901", policies: 1 },
-  { id: 5, name: "Rina Kusuma", age: 39, score: 45, scoreLabel: "Low", event: "Health Flag", product: "Executive Term", premium: "Rp 1.5M/mo", avatar: "RK", phone: "+62 896-7890-1234", policies: 1 },
-];
+import { db, Lead } from "@/lib/data";
 
 const EVENT_COLORS: Record<string, { bg: string; text: string }> = {
   "New Baby": { bg: "bg-amber-400/10", text: "text-amber-400" },
   "Home Purchase": { bg: "bg-blue-500/10", text: "text-blue-400" },
   Promotion: { bg: "bg-purple-500/10", text: "text-purple-400" },
   Marriage: { bg: "bg-green-500/10", text: "text-green-400" },
+  "Recently Married": { bg: "bg-green-500/10", text: "text-green-400" },
+  "Job Promotion": { bg: "bg-purple-500/10", text: "text-purple-400" },
   "Health Flag": { bg: "bg-red-500/10", text: "text-red-400" },
 };
 
@@ -62,6 +42,8 @@ interface LeadsProps {
 }
 
 export default function Leads({ setActive, setSelectedLead }: LeadsProps) {
+  const leads = db.getLeads();
+
   return (
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
       <header className="mb-8">
@@ -70,7 +52,7 @@ export default function Leads({ setActive, setSelectedLead }: LeadsProps) {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
-        {PRIORITY_ACTIONS.map((lead) => (
+        {leads.map((lead) => (
           <div key={lead.id} className="glass-panel card-hover rounded-3xl p-6 flex flex-col">
             <div className="flex justify-between items-start mb-5">
               <div className="flex items-center gap-3">
