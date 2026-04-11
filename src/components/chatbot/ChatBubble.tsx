@@ -225,7 +225,7 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
         fontSize: 13, flexShrink: 0, marginTop: 2,
         boxShadow: "0 2px 6px rgba(99, 102, 241, 0.3)"
       }}>
-        🤖
+        ✦
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontWeight: 600 }}>
