@@ -5,6 +5,13 @@
   --font-sans: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
+/* Global Interactivity */
+button, 
+[role="button"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
 /* Base Body Styling */
 body {
   font-family: var(--font-sans); /* Apply the font here */

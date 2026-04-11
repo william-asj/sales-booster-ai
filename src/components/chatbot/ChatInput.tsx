@@ -15,6 +15,8 @@ export interface AttachedFile {
 interface Props {
   onSend: (text: string, attachments?: AttachedFile[]) => void;
   disabled?: boolean;
+  value?: string;
+  onValueChange?: (value: string) => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -100,8 +102,8 @@ function FileBadge({ name, mimeType }: { name: string; mimeType: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChatInput({ onSend, disabled = false }: Props) {
-  const [text, setText] = useState("");
+export default function ChatInput({ onSend, disabled = false, value = "", onValueChange }: Props) {
+  const [text, setText] = useState(value);
   const [attachments, setAttachments] = useState<AttachedFile[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -118,6 +120,23 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
     const timer = setTimeout(() => setVoiceSupported(!!getSpeechRecognition()), 0);
     return () => clearTimeout(timer);
   }, []);
+
+  // Sync internal text state with value prop
+  useEffect(() => {
+    setText(value);
+  }, [value]);
+
+  // Auto-focus when re-enabled (e.g. after AI finishes typing)
+  useEffect(() => {
+    if (!disabled && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [disabled]);
+
+  const handleTextChange = useCallback((newText: string) => {
+    setText(newText);
+    if (onValueChange) onValueChange(newText);
+  }, [onValueChange]);
 
   // ─── Buttery Smooth Momentum Scrolling ──────────────────────────────────────
   useEffect(() => {
@@ -182,11 +201,14 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
   const handleSend = useCallback(() => {
     if (!canSend) return;
     onSend(text.trim(), attachments.length > 0 ? attachments : undefined);
-    setText("");
+    handleTextChange("");
     setAttachments([]);
     setFileError(null);
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
-  }, [text, attachments, canSend, onSend]);
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.focus(); // Auto-focus back after sending
+    }
+  }, [text, attachments, canSend, onSend, handleTextChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -251,17 +273,17 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
     recognition.maxAlternatives = 1;
     recognition.onresult = (e: SpeechRecognitionEvent) => {
       const t = e.results[0][0].transcript;
-      setText(prev => prev ? prev + " " + t : t);
+      handleTextChange(text ? text + " " + t : t);
     };
     recognition.onerror = () => setIsRecording(false);
     recognition.onend = () => setIsRecording(false);
     recognitionRef.current = recognition;
     recognition.start();
     setIsRecording(true);
-  }, [isRecording]);
+  }, [isRecording, text, handleTextChange]);
 
   return (
-    <div style={{ padding: "0 12px 16px" }}>
+    <div style={{ padding: "0" }}>
 
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
@@ -274,14 +296,18 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
         </div>
       )}
 
-      {/* Main Input container */}
+      {/* Main Input container - Maximum Glassmorphism for best text masking */}
       <div style={{
-        background: "#1e2235",
-        borderRadius: 18,
-        border: `1.5px solid ${focused ? "#3d4466" : "#262b40"}`,
-        transition: "border-color 0.2s ease",
+        background: "rgba(13, 15, 26, 0.92)",
+        backdropFilter: "blur(32px)",
+        WebkitBackdropFilter: "blur(32px)",
+        borderRadius: 24,
+        border: `1px solid ${focused ? "rgba(99, 102, 241, 0.5)" : "rgba(255, 255, 255, 0.12)"}`,
+        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+        transition: "all 0.2s ease",
         display: "flex",
         flexDirection: "column",
+        overflow: "hidden"
       }}>
 
         {/* Horizontal Attachment Carousel */}
@@ -348,11 +374,11 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
         )}
 
         {/* Textarea */}
-        <div style={{ padding: attachments.length > 0 ? "8px 16px 6px" : "13px 16px 6px" }}>
+        <div style={{ padding: attachments.length > 0 ? "12px 20px 8px" : "18px 20px 8px" }}>
           <textarea
             ref={textareaRef}
             value={text}
-            onChange={e => setText(e.target.value)}
+            onChange={e => handleTextChange(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
@@ -362,15 +388,15 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
             style={{
               width: "100%", background: "transparent", border: "none",
               outline: "none", resize: "none", color: "#e2e8f0",
-              fontSize: 15, fontFamily: "Segoe UI, sans-serif",
-              lineHeight: "22px", overflowY: "hidden",
+              fontSize: 16, fontFamily: "Segoe UI, sans-serif",
+              lineHeight: "24px", overflowY: "hidden",
               boxSizing: "border-box", caretColor: "#818cf8", display: "block",
             }}
           />
         </div>
 
         {/* Bottom toolbar */}
-        <div style={{ padding: "4px 8px 8px", display: "flex", alignItems: "center", gap: 4 }}>
+        <div style={{ padding: "4px 12px 12px", display: "flex", alignItems: "center", gap: 6 }}>
           <input
             ref={fileInputRef}
             type="file"
@@ -385,7 +411,7 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
             title={`Attach files (${attachments.length}/5)`}
             disabled={attachments.length >= 5}
             style={{
-              width: 34, height: 34, borderRadius: "50%", border: "1.5px solid #2d3550",
+              width: 38, height: 38, borderRadius: "50%", border: "1.5px solid #2d3550",
               background: "transparent", cursor: attachments.length >= 5 ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
               transition: "border-color 0.15s, background 0.15s", opacity: attachments.length >= 5 ? 0.5 : 1,
@@ -403,7 +429,7 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
               }
             }}
           >
-            <Plus size={17} color="#94a3b8" strokeWidth={2} />
+            <Plus size={20} color="#94a3b8" strokeWidth={2} />
           </button>
 
           <div style={{ flex: 1 }} />
@@ -416,14 +442,14 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
               onMouseLeave={() => setShowVoiceTooltip(false)}
               title={voiceSupported ? (isRecording ? "Stop recording" : "Voice input") : "Voice not supported in this browser"}
               style={{
-                width: 34, height: 34, borderRadius: "50%",
+                width: 38, height: 38, borderRadius: "50%",
                 border: `1.5px solid ${isRecording ? "#ef4444" : "#2d3550"}`,
                 background: "transparent", cursor: voiceSupported ? "pointer" : "not-allowed",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
                 transition: "border-color 0.15s",
               }}
             >
-              {isRecording ? <MicOff size={16} color="#ef4444" /> : <Mic size={16} color={voiceSupported ? "#94a3b8" : "#3d4466"} />}
+              {isRecording ? <MicOff size={18} color="#ef4444" /> : <Mic size={18} color={voiceSupported ? "#94a3b8" : "#3d4466"} />}
             </button>
           </div>
 
@@ -432,7 +458,7 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
             disabled={!canSend}
             title="Send (Enter)"
             style={{
-              width: 34, height: 34, borderRadius: "50%", border: "none",
+              width: 38, height: 38, borderRadius: "50%", border: "none",
               background: canSend ? "#e2e8f0" : "#1a1d2e", cursor: canSend ? "pointer" : "not-allowed",
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
               transition: "background 0.2s ease, transform 0.1s ease", transform: "scale(1)",
@@ -440,7 +466,7 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
             onMouseEnter={e => { if (canSend) (e.currentTarget as HTMLElement).style.transform = "scale(1.06)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
           >
-            <ArrowUp size={17} color={canSend ? "#080a12" : "#2d3550"} strokeWidth={2.5} />
+            <ArrowUp size={20} color={canSend ? "#080a12" : "#2d3550"} strokeWidth={2.5} />
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
+import { useChatState } from "@/context/ChatContext";
 
 export interface UseChatOverlay {
   isOpen: boolean;
@@ -10,11 +11,25 @@ export interface UseChatOverlay {
 }
 
 export function useChatOverlay(): UseChatOverlay {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOverlayOpen, setIsOverlayOpen, setOverlaySessionId } = useChatState();
 
-  const open = useCallback(() => setIsOpen(true), []);
-  const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen(prev => !prev), []);
+  const open = useCallback(() => {
+    setIsOverlayOpen(true);
+  }, [setIsOverlayOpen]);
 
-  return { isOpen, open, close, toggle };
+  const close = useCallback(() => {
+    setIsOverlayOpen(false);
+    // Clear the ID so next time we open, we start fresh (no session yet)
+    setOverlaySessionId(null);
+  }, [setIsOverlayOpen, setOverlaySessionId]);
+
+  const toggle = useCallback(() => {
+    if (isOverlayOpen) {
+      close();
+    } else {
+      open();
+    }
+  }, [isOverlayOpen, open, close]);
+
+  return { isOpen: isOverlayOpen, open, close, toggle };
 }

@@ -1,19 +1,10 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import ChatBubble, { ChatMessage } from "./ChatBubble";
+import ChatBubble from "./ChatBubble";
 import ChatInput, { AttachedFile } from "./ChatInput";
 import { useChatOverlay } from "@/hooks/useChatOverlay";
-
-interface AiMessagePart {
-  text?: string;
-  inlineData?: { mimeType: string; data: string };
-}
-
-interface AiMessage {
-  role: "user" | "model" | "system";
-  parts: AiMessagePart[];
-}
+import { useChatState, AiMessage, AiMessagePart } from "@/context/ChatContext";
 
 function nowTime(): string {
   return new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
@@ -40,19 +31,33 @@ function TypingIndicator() {
   );
 }
 
-function EmptyState() {
+function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) => void }) {
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center",
-      justifyContent: "center", gap: 14, textAlign: "center", padding: "60px 24px", flex: 1,
+      justifyContent: "center", gap: 20, textAlign: "center", padding: "40px 10px", flex: 1,
     }}>
-      <div style={{
-        width: 52, height: 52, borderRadius: 14, background: "linear-gradient(135deg, #6366f120, #8b5cf620)",
-        border: "1px solid rgba(99, 102, 241, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26,
-      }}>✦</div>
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", marginBottom: 6 }}>SalesBooster AI</div>
-        <div style={{ fontSize: 12, color: "#cbd5e1", lineHeight: 1.6 }}>Ask anything about your leads,<br />products, or sales strategy.</div>
+      <div style={{ fontSize: 22, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.01em" }}>How can I help?</div>
+      <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+        {[
+          "Analyze my recent leads",
+          "Recommend insurance products",
+          "Draft a follow-up email"
+        ].map((suggestion, i) => (
+          <button
+            key={i}
+            onClick={() => onSuggestionClick(suggestion)}
+            style={{
+              padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,0.02)",
+              border: "1px solid rgba(255,255,255,0.05)", color: "#94a3b8", textAlign: "left",
+              fontSize: 13, cursor: "pointer", transition: "all 0.2s ease"
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"; }}
+          >
+            {suggestion}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -60,39 +65,57 @@ function EmptyState() {
 
 export default function ChatOverlayPanel() {
   const { isOpen, toggle, close } = useChatOverlay();
+  const { sessions, overlaySessionId, setOverlaySessionId, createNewSession, appendMessage } = useChatState();
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [aiHistory, setAiHistory] = useState<AiMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const activeSession = sessions.find(s => s.id === overlaySessionId);
+  const messages = activeSession?.messages || [];
+  const aiHistory = activeSession?.aiHistory || [];
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
+  const handleScroll = () => {
+    setIsScrolling(true);
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 1500);
+  };
+
   const sendToAI = useCallback(
     async (userText: string, attachments?: AttachedFile[]) => {
+      let targetSessionId = overlaySessionId;
+      
+      if (!targetSessionId) {
+        targetSessionId = createNewSession("Overlay Chat");
+        setOverlaySessionId(targetSessionId);
+      }
+
       setError(null);
       setIsTyping(true);
 
       const userParts: AiMessagePart[] = [];
-
       if (attachments && attachments.length > 0) {
         attachments.forEach((att) => {
-          userParts.push({
-            inlineData: { mimeType: att.mimeType, data: att.base64 },
-          });
+          userParts.push({ inlineData: { mimeType: att.mimeType, data: att.base64 } });
         });
       }
-
       if (userText.trim()) {
         userParts.push({ text: userText.trim() });
       }
 
-      const updatedHistory: AiMessage[] = [...aiHistory, { role: "user", parts: userParts }];
-      setAiHistory(updatedHistory);
+      const newAiMessage: AiMessage = { role: "user", parts: userParts };
+      const updatedHistory: AiMessage[] = [...aiHistory, newAiMessage];
+
+      appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
 
       try {
         const res = await fetch("/api/chat", {
@@ -109,27 +132,19 @@ export default function ChatOverlayPanel() {
           data?.content?.parts?.[0]?.text ?? data?.text ?? data?.message ??
           "Sorry, I couldn't generate a response.";
 
-        setMessages((prev) => [...prev, { role: "assistant", text: replyText, time: nowTime() }]);
-        setAiHistory((prev) => [...prev, { role: "model", parts: [{ text: replyText }] }]);
+        appendMessage(targetSessionId, { role: "assistant", text: replyText, time: nowTime() }, { role: "model", parts: [{ text: replyText }] });
       } catch (err) {
         setError(`Failed to reach AI: ${err instanceof Error ? err.message : "Unknown error"}`);
-        setAiHistory(aiHistory);
       } finally {
         setIsTyping(false);
       }
     },
-    [aiHistory]
+    [aiHistory, overlaySessionId, appendMessage, createNewSession, setOverlaySessionId]
   );
 
   const handleSend = useCallback(
     (text: string, attachments?: AttachedFile[]) => {
       if (!text.trim() && (!attachments || attachments.length === 0)) return;
-
-      // Passing the attachments directly into the message state!
-      setMessages((prev) => [
-        ...prev,
-        { role: "user", text: text.trim(), time: nowTime(), attachments }
-      ]);
       sendToAI(text, attachments);
     },
     [sendToAI]
@@ -137,7 +152,6 @@ export default function ChatOverlayPanel() {
 
   const handleQuestionnaireSubmit = useCallback(
     (answerText: string) => {
-      setMessages((prev) => [...prev, { role: "user", text: answerText, time: nowTime() }]);
       sendToAI(answerText);
     },
     [sendToAI]
@@ -157,6 +171,22 @@ export default function ChatOverlayPanel() {
           70% { box-shadow: 0 0 0 20px rgba(99, 102, 241, 0); }
           100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
         }
+        .overlay-custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .overlay-custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .overlay-custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+        .overlay-custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          opacity: 1;
+        }
       `}</style>
 
       {isOpen && (
@@ -164,40 +194,86 @@ export default function ChatOverlayPanel() {
       )}
 
       <div onClick={(e) => e.stopPropagation()} style={{
-        position: "fixed", top: 20, right: 20, bottom: 20, width: 400, zIndex: 1000,
+        position: "fixed", top: 20, right: 20, bottom: 20, width: 420, zIndex: 1000,
         display: "flex", flexDirection: "column",
-        background: "rgba(13, 15, 26, 0.75)", backdropFilter: "blur(20px)",
-        border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: 24,
-        boxShadow: isOpen ? "0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05) inset" : "none",
+        background: "rgba(255, 255, 255, 0.04)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 24,
+        boxShadow: isOpen ? "0 24px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06)" : "none",
         transform: isOpen ? "translateX(0) scale(1)" : "translateX(120%) scale(0.95)",
         opacity: isOpen ? 1 : 0, transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
         fontFamily: "'Segoe UI', sans-serif", pointerEvents: isOpen ? "auto" : "none", overflow: "hidden",
       }}>
+        {/* Header */}
         <div style={{
-          padding: "16px 20px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          padding: "16px 20px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
           display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
+          background: "rgba(13, 15, 26, 0.2)",
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
             display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0,
           }}>✦</div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#f8fafc" }}>SalesBooster <span style={{ color: "#818cf8" }}>AI</span></div>
-            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{isTyping ? "● Thinking…" : "● Online"}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#f8fafc" }}>SalesBooster AI</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+              {isTyping ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                  Thinking…
+                </>
+              ) : (
+                <>
+                  <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74, 222, 128, 0.4)" }} className="animate-pulse" />
+                  Online
+                </>
+              )}
+            </div>
           </div>
           <button onClick={close} style={{
-            width: 32, height: 32, borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+            width: 32, height: 32, borderRadius: 10, border: "1px solid rgba(255, 255, 255, 0.1)", background: "rgba(255,255,255,0.03)", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
           }}>✕</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: 20 }}>
-          {messages.length === 0 && !isTyping ? <EmptyState /> : messages.map((msg, i) => <ChatBubble key={i} message={msg} onSubmitQuestionnaire={handleQuestionnaireSubmit} />)}
-          {isTyping && <TypingIndicator />}
-          <div ref={bottomRef} />
+        {/* Scrollable Message Area */}
+        <div 
+          className={`overlay-custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`}
+          onScroll={handleScroll}
+          style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}
+        >
+          <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 24, paddingBottom: 120 }}>
+            {messages.length === 0 && !isTyping ? (
+              <EmptyState onSuggestionClick={(t) => sendToAI(t)} />
+            ) : (
+              <>
+                {messages.map((msg, i) => (
+                  <ChatBubble key={i} message={msg} onSubmitQuestionnaire={handleQuestionnaireSubmit} />
+                ))}
+                {isTyping && <TypingIndicator />}
+              </>
+            )}
+            <div ref={bottomRef} />
+          </div>
         </div>
 
-        <div style={{ flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.2)" }}>
-          <ChatInput onSend={handleSend} disabled={isTyping} />
+        {error && (
+          <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#fca5a5", margin: "0 20px 10px" }}>
+            <span>⚠</span> <span>{error}</span>
+          </div>
+        )}
+
+        {/* Fixed Input area at Bottom */}
+        <div style={{ 
+          position: "absolute", 
+          bottom: 0, 
+          left: 0, 
+          right: 0, 
+          padding: "16px 12px 12px",
+          zIndex: 15,
+          pointerEvents: "none"
+        }}>
+          <div style={{ pointerEvents: "auto" }}>
+            <ChatInput onSend={handleSend} disabled={isTyping} />
+          </div>
         </div>
       </div>
 

@@ -14,6 +14,7 @@ import { Lead, Page } from "@/lib/data";
 export default function Home() {
   const [active, setActive] = useState<Page>("dashboard");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
   return (
     <div style={{ display: "flex", background: "#080a12", minHeight: "100vh" }}>
@@ -26,10 +27,16 @@ export default function Home() {
             <Dashboard
               setActive={setActive}
               setSelectedLead={setSelectedLead}
+              setInitialMessage={setInitialMessage}
             />
           )}
 
-          {active === "chat" && <Chat />}
+          {active === "chat" && (
+            <Chat 
+              initialMessage={initialMessage} 
+              onMessageSent={() => setInitialMessage(null)} 
+            />
+          )}
 
           {active === "customers" && (
             <Customers
@@ -45,6 +52,7 @@ export default function Home() {
             <Leads
               setActive={setActive}
               setSelectedLead={setSelectedLead}
+              setInitialMessage={setInitialMessage}
             />
           )}
           
@@ -52,6 +60,7 @@ export default function Home() {
             <Events
               setActive={setActive}
               setSelectedLead={setSelectedLead}
+              setInitialMessage={setInitialMessage}
             />
           )}
           
