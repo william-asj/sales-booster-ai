@@ -40,6 +40,16 @@ function toBase64(file: File): Promise<string> {
   });
 }
 
+interface SpeechRecognitionEvent extends Event {
+  results: {
+    [key: number]: {
+      [key: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+
 type SpeechRecognitionCtor = new () => {
   lang: string;
   interimResults: boolean;
@@ -104,7 +114,10 @@ export default function ChatInput({ onSend, disabled = false }: Props) {
   const recognitionRef = useRef<InstanceType<SpeechRecognitionCtor> | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setVoiceSupported(!!getSpeechRecognition()); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => setVoiceSupported(!!getSpeechRecognition()), 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   // ─── Buttery Smooth Momentum Scrolling ──────────────────────────────────────
   useEffect(() => {

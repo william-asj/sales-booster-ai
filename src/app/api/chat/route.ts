@@ -1,1 +1,5 @@
-// TODO: Implement Next.js API route
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  return NextResponse.json({ message: "Chat logic not implemented" });
+}

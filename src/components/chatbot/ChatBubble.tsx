@@ -128,9 +128,14 @@ function AssistantBubbleContent({
   text: string;
   onSubmitQuestionnaire?: (answerText: string) => void;
 }) {
+  let parsed: Record<string, unknown> | null = null;
   try {
-    const parsed = JSON.parse(text);
+    parsed = JSON.parse(text);
+  } catch {
+    // not JSON — render as markdown
+  }
 
+  if (parsed && typeof parsed === "object") {
     if (parsed.type === "questionnaire") {
       const data = parsed as QuestionnaireData;
       return (
@@ -147,8 +152,6 @@ function AssistantBubbleContent({
       const data = parsed as VariantsData;
       return <ResponseVariantCard variants={data.variants} />;
     }
-  } catch {
-    // not JSON — render as markdown
   }
 
   return <AITextMessage text={text} />;
