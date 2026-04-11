@@ -1,1 +1,5 @@
-// TODO: Implement core AI logic
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  return NextResponse.json({ message: "AI logic not implemented" });
+}

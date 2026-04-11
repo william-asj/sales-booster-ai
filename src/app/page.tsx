@@ -6,13 +6,27 @@ import Dashboard from "../components/Dashboard";
 import Chat from "../components/Chat";
 import Customers from "../components/Customers";
 import Analytics from "../components/Analytics";
+import Leads from "../components/Leads";
+import Events from "../components/Events";
+import Catalog from "../components/Catalog";
 
-type Page = "dashboard" | "chat" | "customers" | "analytics";
+// 1. Expanded the Page type to include all the new Sidebar sections
+export type Page =
+  | "dashboard"
+  | "leads"
+  | "events"
+  | "products"
+  | "chat"
+  | "customers"
+  | "analytics"
+  | "settings"
+  | string;
 
 export interface Lead {
   id: number;
   name: string;
   age: number;
+  dob?: string;
   score: number;
   scoreLabel: string;
   event: string;
@@ -30,22 +44,49 @@ export default function Home() {
   return (
     <div style={{ display: "flex", background: "#080a12", minHeight: "100vh" }}>
       <Sidebar active={active} setActive={setActive} />
+
       <main style={{ flex: 1, overflowY: "auto", maxHeight: "100vh" }}>
-        {active === "dashboard" && (
-          <Dashboard
-            setActive={setActive}
-            setSelectedLead={setSelectedLead}
-          />
-        )}
-        {active === "chat" && <Chat key={active} />}
-        {active === "customers" && (
-          <Customers
-            setActive={setActive}
-            setSelectedLead={setSelectedLead}
-            selectedLead={selectedLead}
-          />
-        )}
-        {active === "analytics" && <Analytics />}
+        {/* 2. Global Animation Wrapper: Forces React to replay the fade-in on every tab switch */}
+        <div key={active} className="animate-[fadeIn_0.2s_ease-in-out]">
+          {active === "dashboard" && (
+            <Dashboard
+              setActive={setActive}
+              setSelectedLead={setSelectedLead}
+            />
+          )}
+
+          {active === "chat" && <Chat />}
+
+          {active === "customers" && (
+            <Customers
+              setActive={setActive}
+              setSelectedLead={setSelectedLead}
+              selectedLead={selectedLead}
+            />
+          )}
+
+          {active === "analytics" && <Analytics />}
+
+          {active === "leads" && (
+            <Leads
+              setActive={setActive}
+              setSelectedLead={setSelectedLead}
+            />
+          )}
+          
+          {active === "events" && (
+            <Events
+              setActive={setActive}
+              setSelectedLead={setSelectedLead}
+            />
+          )}
+          
+          {active === "products" && <Catalog />}
+          
+          {active === "settings" && (
+            <div className="p-8 text-slate-400">Settings coming soon...</div>
+          )}
+        </div>
       </main>
     </div>
   );

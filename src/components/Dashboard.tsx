@@ -10,18 +10,26 @@ import {
   MessageSquare,
   Search,
   Bell,
-  ArrowLeft,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
 
-type Page = "dashboard" | "chat" | "customers" | "analytics";
-type ViewState = "overview" | "leads" | "events";
+type Page =
+  | "dashboard"
+  | "leads"
+  | "events"
+  | "products"
+  | "chat"
+  | "customers"
+  | "analytics"
+  | "settings"
+  | string;
 
 export interface Lead {
   id: number;
   name: string;
   age: number;
+  dob?: string;
   score: number;
   scoreLabel: string;
   event: string;
@@ -192,6 +200,22 @@ const RECENT_EVENTS = [
     type: "New Baby",
     detail: "Added dependent to company health portal.",
   },
+  {
+    id: 4,
+    name: "Budi Santoso",
+    event: "Recently Married",
+    time: "3 days ago",
+    type: "Marriage",
+    detail: "Relationship status updated to Married.",
+  },
+  {
+    id: 5,
+    name: "Anton Wijaya",
+    event: "Job Promotion",
+    time: "4 days ago",
+    type: "Promotion",
+    detail: "New job title detected on professional network.",
+  },
 ];
 
 const getScoreColor = (score: number) => {
@@ -237,7 +261,6 @@ const CircularGauge = ({ score }: { score: number }) => {
 };
 
 export default function Dashboard({ setActive, setSelectedLead }: Props) {
-  const [currentView, setCurrentView] = useState<ViewState>("overview");
   const [sortCol, setSortCol] = useState<
     "name" | "event" | "product" | "score" | null
   >(null);
@@ -333,305 +356,234 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
 
   return (
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
-      {/* Header */}
       <header className="flex justify-between items-center mb-8">
         <div>
-          {currentView === "overview" ? (
-            <>
-              <h1 className="text-2xl font-semibold text-slate-50 m-0">
-                Welcome back, Agent ✨
-              </h1>
-              <p className="mt-1 text-sm text-slate-400">
-                Here&apos;s your AI-curated summary for today.
-              </p>
-            </>
-          ) : (
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setCurrentView("overview")}
-                className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200"
-              >
-                <ArrowLeft size={18} />
-              </button>
-              <div>
-                <h1 className="text-2xl font-semibold text-slate-50 m-0">
-                  {currentView === "leads"
-                    ? "Leads Recommendation"
-                    : "Recent Life Events"}
-                </h1>
-                <p className="mt-1 text-sm text-slate-400">
-                  {currentView === "leads"
-                    ? "Full list of AI-curated opportunities."
-                    : "All tracked milestones requiring your attention."}
-                </p>
-              </div>
-            </div>
-          )}
+          <h1 className="text-2xl font-semibold text-slate-50 m-0">
+            Welcome back, Agent ✨
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Here&apos;s your AI-curated summary for today.
+          </p>
         </div>
-
-        {currentView === "overview" && (
-          <div className="flex gap-4">
-            <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200">
-              <Search size={18} />
-            </button>
-            <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200 relative">
-              <Bell size={18} />
-              <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
-            </button>
-          </div>
-        )}
+        <div className="flex gap-4">
+          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200">
+            <Search size={18} />
+          </button>
+          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200 relative">
+            <Bell size={18} />
+            <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
+          </button>
+        </div>
       </header>
 
-      {/* OVERVIEW RENDER */}
-      {currentView === "overview" && (
-        <>
-          <div className="grid grid-cols-4 gap-5 mb-8">
-            {STATS.map((stat) => (
-              <div
-                key={stat.id}
-                className="glass-panel card-hover rounded-[20px] p-6"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-                    {stat.icon}
-                  </div>
-                  <div className="bg-green-500/15 text-green-400 px-2 py-1 rounded-full text-xs font-semibold">
-                    {stat.delta}
-                  </div>
-                </div>
-                <div className="text-3xl font-bold text-slate-50 mb-1">
-                  {stat.value}
-                </div>
-                <div className="text-[13px] text-slate-400 font-medium">
-                  {stat.label}
-                </div>
+      <div className="grid grid-cols-4 gap-5 mb-8">
+        {STATS.map((stat) => (
+          <div
+            key={stat.id}
+            className="glass-panel card-hover rounded-[20px] p-6"
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
+                {stat.icon}
               </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-[2.5fr_1fr] gap-6 mb-8">
-            {/* Table Area */}
-            <div className="glass-panel rounded-3xl p-5 flex flex-col overflow-hidden">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-slate-50 m-0">
-                  Priority Actions
-                </h3>
-                <button
-                  onClick={() => setCurrentView("leads")}
-                  className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide"
-                >
-                  View All
-                </button>
-              </div>
-              <div className="flex-1 overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-white/5">
-                      {["name", "event", "product", "score"].map((col) => (
-                        <th
-                          key={col}
-                          onClick={() => toggleSort(col as "name" | "event" | "product" | "score")}
-                          className="text-left p-2.5 text-[11px] font-semibold tracking-wide cursor-pointer hover:text-slate-50 transition-colors select-none"
-                        >
-                          <div
-                            className={`inline-flex items-center gap-1 whitespace-nowrap ${sortCol === col ? "text-indigo-300" : "text-slate-500"}`}
-                          >
-                            {col === "name"
-                              ? "CUSTOMER"
-                              : col === "event"
-                                ? "LIFE EVENT"
-                                : col === "product"
-                                  ? "RECOMMENDATION"
-                                  : "MATCH SCORE"}{" "}
-                            {renderSortIcon(col)}
-                          </div>
-                        </th>
-                      ))}
-                      <th className="text-left p-2.5 text-[11px] font-semibold text-slate-500 tracking-wide">
-                        ACTION
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedActions.slice(0, 4).map((action) => (
-                      <tr
-                        key={action.id}
-                        className="row-hover border-b border-white/[0.03]"
-                      >
-                        <td className="p-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0">
-                              {action.avatar}
-                            </div>
-                            <span
-                              onClick={() => {
-                                setSelectedLead(action);
-                                setActive("customers");
-                              }}
-                              className="btn-hover text-[13px] font-medium text-slate-200 cursor-pointer whitespace-nowrap"
-                            >
-                              {action.name}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <span
-                            className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${EVENT_COLORS[action.event]?.bg || "bg-white/10"} ${EVENT_COLORS[action.event]?.text || "text-white"}`}
-                          >
-                            {action.event}
-                          </span>
-                        </td>
-                        <td className="p-3 text-[13px] text-slate-200">
-                          {action.product}
-                        </td>
-                        <td className="p-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden shrink-0">
-                              <div
-                                style={{
-                                  width: `${action.score}%`,
-                                  backgroundColor: getScoreColor(action.score),
-                                }}
-                                className="h-full rounded-full transition-all duration-1000 ease-out"
-                              />
-                            </div>
-                            <span className="text-xs font-semibold text-slate-50 w-6">
-                              {action.score}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="p-3">
-                          <button
-                            onClick={() => {
-                              setSelectedLead(action);
-                              setActive("chat");
-                            }}
-                            className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
-                          >
-                            Review
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="bg-green-500/15 text-green-400 px-2 py-1 rounded-full text-xs font-semibold">
+                {stat.delta}
               </div>
             </div>
+            <div className="text-3xl font-bold text-slate-50 mb-1">
+              {stat.value}
+            </div>
+            <div className="text-[13px] text-slate-400 font-medium">
+              {stat.label}
+            </div>
+          </div>
+        ))}
+      </div>
 
-            {/* Side Column */}
-            <div className="flex flex-col gap-5">
-              <div className="glass-panel rounded-3xl p-6 flex-1">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="text-base font-semibold text-slate-50 m-0">
-                    Recent Life Events
-                  </h3>
-                  <button
-                    onClick={() => setCurrentView("events")}
-                    className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide"
-                  >
-                    View All
-                  </button>
-                </div>
-                <div className="flex flex-col gap-4">
-                  {RECENT_EVENTS.map((event) => (
-                    <div
-                      key={event.id}
-                      className={`flex gap-3 pl-3 border-l-2 ${EVENT_COLORS[event.type]?.border || "border-white"}`}
+      <div className="grid grid-cols-[2.5fr_1fr] gap-6 mb-8">
+        <div className="glass-panel card-hover rounded-3xl p-5 flex flex-col overflow-hidden">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-base font-semibold text-slate-50 m-0">
+              Priority Actions
+            </h3>
+            <button
+              onClick={() => setActive("leads")}
+              className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide"
+            >
+              View All
+            </button>
+          </div>
+          <div className="flex-1 overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="border-b border-white/5">
+                  {["name", "event", "product", "score"].map((col) => (
+                    <th
+                      key={col}
+                      onClick={() =>
+                        toggleSort(
+                          col as "name" | "event" | "product" | "score",
+                        )
+                      }
+                      className="text-left p-2.5 text-[11px] font-semibold tracking-wide cursor-pointer hover:text-slate-50 transition-colors select-none"
                     >
-                      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-sm shrink-0">
-                        👤
+                      <div
+                        className={`inline-flex items-center gap-1 whitespace-nowrap ${sortCol === col ? "text-indigo-300" : "text-slate-500"}`}
+                      >
+                        {col === "name"
+                          ? "CUSTOMER"
+                          : col === "event"
+                            ? "LIFE EVENT"
+                            : col === "product"
+                              ? "RECOMMENDATION"
+                              : "MATCH SCORE"}{" "}
+                        {renderSortIcon(col)}
                       </div>
-                      <div>
-                        <div className="text-sm font-semibold text-slate-50">
-                          {event.name}
+                    </th>
+                  ))}
+                  <th className="text-left p-2.5 text-[11px] font-semibold text-slate-500 tracking-wide">
+                    ACTION
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedActions.slice(0, 4).map((action) => (
+                  <tr
+                    key={action.id}
+                    className="row-hover border-b border-white/[0.03]"
+                  >
+                    <td className="p-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0">
+                          {action.avatar}
                         </div>
-                        <div
-                          className={`text-[13px] mt-0.5 ${EVENT_COLORS[event.type]?.text || "text-white"}`}
+                        <span
+                          onClick={() => {
+                            setSelectedLead(action);
+                            setActive("customers");
+                          }}
+                          className="btn-hover text-[13px] font-medium text-slate-200 cursor-pointer whitespace-nowrap"
                         >
-                          {event.event}
+                          {action.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <span
+                        className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${EVENT_COLORS[action.event]?.bg || "bg-white/10"} ${EVENT_COLORS[action.event]?.text || "text-white"}`}
+                      >
+                        {action.event}
+                      </span>
+                    </td>
+                    <td className="p-3 text-[13px] text-slate-200">
+                      {action.product}
+                    </td>
+                    <td className="p-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden shrink-0">
+                          <div
+                            style={{
+                              width: `${action.score}%`,
+                              backgroundColor: getScoreColor(action.score),
+                            }}
+                            className="h-full rounded-full transition-all duration-1000 ease-out"
+                          />
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-1">
-                          {event.time}
-                        </div>
+                        <span className="text-xs font-semibold text-slate-50 w-6">
+                          {action.score}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => {
+                          setSelectedLead(action);
+                          setActive("chat");
+                        }}
+                        className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
+                      >
+                        Review
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <div className="glass-panel card-hover rounded-[32px] p-5 flex-1 border border-white/10 backdrop-blur-xl bg-white/[0.02] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center mb-4 shrink-0 px-1">
+              <h3 className="text-[14px] font-bold text-slate-100 m-0 tracking-tight">
+                Recent Life Events
+              </h3>
+              <button
+                onClick={() => setActive("events")}
+                className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide uppercase hover:underline transition-all"
+              >
+                View All
+              </button>
+            </div>
+            <div className="flex flex-col gap-1 overflow-y-auto pr-1 scrollbar-hide">
+              {RECENT_EVENTS.map((event) => (
+                <div
+                  key={event.id}
+                  className={`flex gap-3 p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-300 group cursor-pointer border border-transparent hover:border-white/5 shrink-0`}
+                >
+                  <div
+                    className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-base shrink-0 border border-white/5 group-hover:scale-105 transition-transform`}
+                  >
+                    {event.type === "Health Flag"
+                      ? "⚠️"
+                      : event.type === "New Baby"
+                        ? "🍼"
+                        : event.type === "Promotion"
+                          ? "💼"
+                          : "🏠"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex justify-between items-baseline gap-2">
+                      <div className="text-[12px] font-bold text-slate-100 truncate">
+                        {event.name}
+                      </div>
+                      <div className="text-[9px] font-bold text-slate-500 uppercase shrink-0">
+                        {event.time}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="glass-panel rounded-3xl p-5 bg-indigo-500/5">
-                <div className="flex gap-3 items-start">
-                  <div className="text-indigo-300 mt-0.5">
-                    <Sparkles size={18} />
-                  </div>
-                  <div>
-                    <h4 className="text-sm font-semibold text-slate-50 mb-1.5 m-0">
-                      AI Tip for Today
-                    </h4>
-                    <p className="text-xs text-slate-400 leading-relaxed m-0">
-                      Customers experiencing a &quot;New Baby&quot; life event have a 45%
-                      higher conversion rate when approached within 72 hours.
-                    </p>
+                    <div
+                      className={`text-[11px] font-medium ${EVENT_COLORS[event.type]?.text || "text-slate-400"} truncate`}
+                    >
+                      {event.event}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          <h3 className="text-lg font-semibold text-slate-50 mb-5 m-0">
-            Recommended Leads
-          </h3>
-          {renderLeadCards()}
-        </>
-      )}
-
-      {currentView === "leads" && renderLeadCards()}
-
-      {currentView === "events" && (
-        <div className="flex flex-col gap-4 animate-fade-in">
-          {RECENT_EVENTS.map((event) => (
-            <div
-              key={event.id}
-              className={`glass-panel card-hover flex gap-5 p-6 rounded-3xl border-l-4 ${EVENT_COLORS[event.type]?.border || "border-white"}`}
-            >
-              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-lg shrink-0">
-                {event.type === "Health Flag"
-                  ? "⚠️"
-                  : event.type === "New Baby"
-                    ? "🍼"
-                    : event.type === "Promotion"
-                      ? "💼"
-                      : "🏠"}
+          <div className="glass-panel card-hover rounded-[28px] p-4 bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-md shrink-0">
+            <div className="flex gap-3 items-start">
+              <div className="text-indigo-300 mt-0.5">
+                <Sparkles size={16} />
               </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="text-lg font-semibold text-slate-50 m-0">
-                      {event.name}
-                    </h3>
-                    <span
-                      className={`inline-block mt-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold ${EVENT_COLORS[event.type]?.bg || "bg-white/10"} ${EVENT_COLORS[event.type]?.text || "text-white"}`}
-                    >
-                      {event.event}
-                    </span>
-                  </div>
-                  <span className="text-[13px] text-slate-500 font-medium">
-                    {event.time}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm text-slate-300 leading-relaxed">
-                  {event.detail}
+              <div>
+                <h4 className="text-[12px] font-bold text-slate-100 mb-1 m-0 uppercase tracking-wider">
+                  AI Tip
+                </h4>
+                <p className="text-[11px] text-slate-400 leading-snug m-0 font-medium">
+                  New Baby events have 45% higher conversion within 72h.
                 </p>
-                <div className="mt-4">
-                  <button className="btn-hover px-5 py-2 rounded-xl bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 text-[13px] font-medium">
-                    Take Action
-                  </button>
-                </div>
               </div>
             </div>
-          ))}
+          </div>
         </div>
-      )}
+      </div>
+
+      <h3 className="text-lg font-semibold text-slate-50 mb-5 m-0">
+        Recommended Leads
+      </h3>
+      {renderLeadCards()}
     </div>
   );
 }
