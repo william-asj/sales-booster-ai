@@ -109,12 +109,12 @@ const EVENTS: LifeEvent[] = [
 ];
 
 const PRODUCTS: Product[] = [
-  { id: 1, name: "Life Protection Plus", category: "Life", iconName: "ShieldCheck", description: "Comprehensive life coverage with flexible premium options.", premium: "From Rp 500K/mo" },
-  { id: 2, name: "Wealth Protector", category: "Investment", iconName: "TrendingUp", description: "Unit-linked insurance with high-yield potential.", premium: "From Rp 1.5M/mo" },
-  { id: 3, name: "Family Shield", category: "Health", iconName: "HeartPulse", description: "Full medical coverage for you and your dependents.", premium: "From Rp 1.2M/mo" },
+  { id: 1, name: "Simas Legacy Life", category: "Life", iconName: "ShieldCheck", description: "Comprehensive life coverage with flexible premium options.", premium: "From Rp 500K/mo" },
+  { id: 2, name: "Simas Wealth Protector", category: "Investment", iconName: "TrendingUp", description: "Unit-linked insurance with high-yield potential.", premium: "From Rp 1.5M/mo" },
+  { id: 3, name: "Siji Fixed Link", category: "Health", iconName: "HeartPulse", description: "Full medical coverage for you and your dependents.", premium: "From Rp 1.2M/mo" },
   { id: 4, name: "Simas Scholarship", category: "Education", iconName: "GraduationCap", description: "Secure your child's future with guaranteed education funds.", premium: "From Rp 800K/mo" },
-  { id: 5, name: "Mortgage Guard", category: "Asset", iconName: "Home", description: "Protect your home and family from mortgage burdens.", premium: "From Rp 300K/mo" },
-  { id: 6, name: "Executive Term", category: "Corporate", iconName: "Briefcase", description: "High-value term life protection for professionals.", premium: "From Rp 2M/mo" },
+  { id: 5, name: "Simas Mortgage Guard", category: "Asset", iconName: "Home", description: "Protect your home and family from mortgage burdens.", premium: "From Rp 300K/mo" },
+  { id: 6, name: "Simas Executive Term", category: "Corporate", iconName: "Briefcase", description: "High-value term life protection for professionals.", premium: "From Rp 2M/mo" },
 ];
 
 const STATS: Stat[] = [
