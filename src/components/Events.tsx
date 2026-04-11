@@ -16,80 +16,12 @@ import {
   MessageSquare,
   Users
 } from "lucide-react";
-
-// 1. Define the TypeScript interfaces
-interface LifeEvent {
-  id: string;
-  customerName: string;
-  eventType: "New Baby" | "Home Purchase" | "Promotion" | "Health Flag" | "Marriage";
-  description: string;
-  timestamp: string;
-  priority: "High" | "Medium" | "Low";
-}
-
-interface Lead {
-  id: number;
-  name: string;
-  age: number;
-  dob?: string;
-  score: number;
-  scoreLabel: string;
-  event: string;
-  product: string;
-  premium: string;
-  avatar: string;
-  phone: string;
-  policies: number;
-}
+import { db, Lead } from "@/lib/data";
 
 interface EventsProps {
   setActive: (page: string) => void;
   setSelectedLead: (lead: Lead) => void;
 }
-
-// 2. Mock Data aligned with dashboard.tsx
-const MOCK_EVENTS: LifeEvent[] = [
-  {
-    id: "evt_001",
-    customerName: "Rina Kusuma",
-    eventType: "Health Flag",
-    description: "Missed scheduled checkup 2 weeks running. High risk flag detected via hospital partnership API.",
-    timestamp: "2 hrs ago",
-    priority: "High",
-  },
-  {
-    id: "evt_002",
-    customerName: "Reza Pratama",
-    eventType: "Home Purchase",
-    description: "Mortgage inquiry detected via banking partner API. Customer is likely seeking homeowner insurance.",
-    timestamp: "1 day ago",
-    priority: "Medium",
-  },
-  {
-    id: "evt_003",
-    customerName: "Sari Dewi",
-    eventType: "New Baby",
-    description: "Added dependent to company health portal. High propensity for education funds and family life plans.",
-    timestamp: "2 days ago",
-    priority: "High",
-  },
-  {
-    id: "evt_004",
-    customerName: "Budi Santoso",
-    eventType: "Marriage",
-    description: "Relationship status updated to Married. Opportunity for joint policies and beneficiary updates.",
-    timestamp: "3 days ago",
-    priority: "Medium",
-  },
-  {
-    id: "evt_005",
-    customerName: "Anton Wijaya",
-    eventType: "Promotion",
-    description: "New job title detected on professional network. Income increase suggests wealth protector up-sell.",
-    timestamp: "4 days ago",
-    priority: "Low",
-  },
-];
 
 // 3. Helper to determine styles based on event type
 const getEventStyles = (type: string) => {
@@ -153,25 +85,11 @@ const getPriorityStyles = (priority: string) => {
   }
 };
 
-// Mock mapping to Lead object for redirection
-const getLeadFromEvent = (event: LifeEvent): Lead => ({
-  id: Math.random(),
-  name: event.customerName,
-  age: 35,
-  score: event.priority === 'High' ? 90 : 60,
-  scoreLabel: event.priority,
-  event: event.eventType,
-  product: "Life Protection Plus",
-  premium: "Rp 2.4M/mo",
-  avatar: event.customerName.split(' ').map(n => n[0]).join(''),
-  phone: "+62 812-3456-7890",
-  policies: 1
-});
-
 export default function EventsTimeline({ setActive, setSelectedLead }: EventsProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const events = db.getEvents();
 
-  const filteredEvents = MOCK_EVENTS.filter(event => 
+  const filteredEvents = events.filter(event => 
     event.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     event.eventType.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -263,8 +181,11 @@ export default function EventsTimeline({ setActive, setSelectedLead }: EventsPro
                     <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-white/5">
                       <button 
                         onClick={() => {
-                          setSelectedLead(getLeadFromEvent(event));
-                          setActive("customers");
+                          const lead = db.getLeadByName(event.customerName);
+                          if (lead) {
+                            setSelectedLead(lead);
+                            setActive("customers");
+                          }
                         }}
                         className="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-[18px] text-[13px] font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 active:scale-[0.98]"
                       >
@@ -273,8 +194,11 @@ export default function EventsTimeline({ setActive, setSelectedLead }: EventsPro
                       </button>
                       <button 
                         onClick={() => {
-                          setSelectedLead(getLeadFromEvent(event));
-                          setActive("chat");
+                          const lead = db.getLeadByName(event.customerName);
+                          if (lead) {
+                            setSelectedLead(lead);
+                            setActive("chat");
+                          }
                         }}
                         className="px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-200 rounded-[18px] text-[13px] font-bold transition-all border border-white/10 flex items-center justify-center gap-2 active:scale-[0.98]"
                       >

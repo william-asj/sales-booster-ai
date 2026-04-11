@@ -137,7 +137,7 @@ function AssistantBubbleContent({
 
   if (parsed && typeof parsed === "object") {
     if (parsed.type === "questionnaire") {
-      const data = parsed as QuestionnaireData;
+      const data = parsed as unknown as QuestionnaireData;
       return (
         <QuestionnaireCard
           question={data.question}
@@ -149,7 +149,7 @@ function AssistantBubbleContent({
     }
 
     if (parsed.type === "variants") {
-      const data = parsed as VariantsData;
+      const data = parsed as unknown as VariantsData;
       return <ResponseVariantCard variants={data.variants} />;
     }
   }

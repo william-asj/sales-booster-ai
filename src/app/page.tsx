@@ -9,33 +9,7 @@ import Analytics from "../components/Analytics";
 import Leads from "../components/Leads";
 import Events from "../components/Events";
 import Catalog from "../components/Catalog";
-
-// 1. Expanded the Page type to include all the new Sidebar sections
-export type Page =
-  | "dashboard"
-  | "leads"
-  | "events"
-  | "products"
-  | "chat"
-  | "customers"
-  | "analytics"
-  | "settings"
-  | string;
-
-export interface Lead {
-  id: number;
-  name: string;
-  age: number;
-  dob?: string;
-  score: number;
-  scoreLabel: string;
-  event: string;
-  product: string;
-  premium: string;
-  avatar: string;
-  phone: string;
-  policies: number;
-}
+import { Lead, Page } from "@/lib/data";
 
 export default function Home() {
   const [active, setActive] = useState<Page>("dashboard");
