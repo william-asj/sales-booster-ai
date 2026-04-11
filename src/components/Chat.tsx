@@ -31,10 +31,18 @@ function TypingIndicator() {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function Chat() {
+interface ChatProps {
+  initialMessage?: string | null;
+  onMessageSent?: () => void;
+}
+
+export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
   const { sessions, activeSessionId, setActiveSessionId, createNewSession, deleteSession, appendMessage } = useChatState();
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [inputText, setInputText] = useState("");
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -50,12 +58,23 @@ export default function Chat() {
     setError(null);
   }, [activeSessionId]);
 
+  // Scrollbar hide logic
+  const handleScroll = () => {
+    setIsScrolling(true);
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      setIsScrolling(false);
+    }, 1500);
+  };
+
   // Handle Send Logic (Uses Context)
   const sendToAI = useCallback(
     async (userText: string, attachments?: AttachedFile[]) => {
       let targetSessionId = activeSessionId;
+      
       if (!targetSessionId) {
         targetSessionId = createNewSession();
+        setActiveSessionId(targetSessionId);
       }
 
       setError(null);
@@ -69,7 +88,6 @@ export default function Chat() {
 
       const newAiMessage: AiMessage = { role: "user", parts: userParts };
 
-      // Get current session's AI history BEFORE appending (from the sessions array in scope)
       const currentSession = sessions.find(s => s.id === targetSessionId);
       const updatedHistory = [...(currentSession?.aiHistory || []), newAiMessage];
 
@@ -94,94 +112,147 @@ export default function Chat() {
         setIsTyping(false);
       }
     },
-    [activeSessionId, sessions, appendMessage, createNewSession]  // add `sessions` to deps
+    [activeSessionId, sessions, appendMessage, createNewSession, setActiveSessionId]
   );
+
+  useEffect(() => {
+    if (initialMessage) {
+      setInputText(initialMessage);
+      if (onMessageSent) onMessageSent();
+    }
+  }, [initialMessage, onMessageSent]);
 
   return (
     <div className="page-content" style={{
       display: "flex", gap: 24, height: "calc(100vh - 48px)", padding: "24px",
-      fontFamily: "'Segoe UI', sans-serif"
+      fontFamily: "'Segoe UI', sans-serif", background: "#080a12"
     }}>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+        .custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          opacity: 1;
+        }
+        .chat-container {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          background: rgba(255, 255, 255, 0.04);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          overflow: hidden;
+        }
+        .centered-content {
+          width: 100%;
+          max-width: 850px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          position: relative;
+        }
+        .messages-max-width {
+          width: 100%;
+          max-width: 750px;
+          margin: 0 auto;
+        }
+        .glass-sidebar {
+          width: 300px;
+          display: flex;
+          flex-direction: column;
+          background: rgba(255, 255, 255, 0.04);
+          backdrop-filter: blur(32px);
+          -webkit-backdrop-filter: blur(32px);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 24px;
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          overflow: hidden;
+        }
+      `}</style>
 
       {/* ─── LEFT SIDEBAR (History) ─── */}
-      <div style={{
-        width: 320, display: "flex", flexDirection: "column",
-        background: "rgba(13, 15, 26, 0.5)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 24, overflow: "hidden",
-      }}>
-        {/* Sidebar Header & Glassmorphic "+" Button */}
-        <div style={{ padding: "20px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: "#e2e8f0" }}>Chat History</span>
+      <div className={`glass-sidebar custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
+        <div style={{ padding: "24px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.05em", textTransform: "uppercase" }}>Chat History</span>
           <button
-            onClick={() => createNewSession()}
+            onClick={() => {
+              const newId = createNewSession();
+              setActiveSessionId(newId);
+            }}
             title="New Chat"
             style={{
-              width: 36, height: 36, borderRadius: "50%",
-              background: "rgba(255, 255, 255, 0.05)", backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255, 255, 255, 0.1)", color: "#e2e8f0",
+              width: 32, height: 32, borderRadius: 8,
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.08)", color: "#e2e8f0",
               display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
               transition: "all 0.2s ease"
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.1)"; e.currentTarget.style.transform = "scale(1.05)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
           >
-            <Plus size={18} strokeWidth={2.5} />
+            <Plus size={16} strokeWidth={2.5} />
           </button>
         </div>
 
-        {/* History List */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "12px" }}>
+        <div className={`custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} style={{ flex: 1, overflowY: "auto", padding: "8px" }} onScroll={handleScroll}>
           {sessions.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "#64748b", fontSize: 13 }}>
-              No chat history yet. <br /> Start a new conversation!
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "#475569", fontSize: 13 }}>
+              No chat history yet.
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {sessions.map((session) => (
                 <div
                   key={session.id}
                   onClick={() => setActiveSessionId(session.id)}
                   style={{
-                    position: "relative", padding: "14px 16px", borderRadius: 16,
-                    background: activeSessionId === session.id ? "rgba(99, 102, 241, 0.15)" : "transparent",
-                    border: activeSessionId === session.id ? "1px solid rgba(99, 102, 241, 0.3)" : "1px solid transparent",
-                    cursor: "pointer", display: "flex", alignItems: "center", gap: 12,
+                    position: "relative", padding: "10px 12px", borderRadius: 10,
+                    background: activeSessionId === session.id ? "rgba(255, 255, 255, 0.05)" : "transparent",
+                    cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
                     transition: "all 0.2s ease"
                   }}
-                  onMouseEnter={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+                  onMouseEnter={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
                   onMouseLeave={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "transparent"; }}
                 >
-                  <MessageSquare size={18} color={activeSessionId === session.id ? "#818cf8" : "#64748b"} />
+                  <MessageSquare size={16} color={activeSessionId === session.id ? "#e2e8f0" : "#64748b"} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, color: activeSessionId === session.id ? "#e2e8f0" : "#cbd5e1", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: 13.5, color: activeSessionId === session.id ? "#f8fafc" : "#94a3b8", fontWeight: activeSessionId === session.id ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {session.title}
-                    </div>
-                    <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                      {new Date(session.updatedAt).toLocaleDateString()}
                     </div>
                   </div>
 
-                  {/* Hover-to-Delete Trash Button */}
                   <button
                     onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
-                    title="Delete Chat"
                     style={{
-                      position: "absolute", right: 12, width: 32, height: 32, borderRadius: 10,
-                      background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", color: "#ef4444",
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      opacity: 0, transition: "opacity 0.2s ease", // Hidden by default
+                      width: 24, height: 24, borderRadius: 6,
+                      color: "#475569", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      opacity: 0, transition: "all 0.2s ease",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.2)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; }}
-                    // We reveal it on parent hover using a simple trick
                     ref={(el) => {
                       if (el && el.parentElement) {
-                        el.parentElement.onmouseenter = () => { el.style.opacity = "1"; if (activeSessionId !== session.id) el.parentElement!.style.background = "rgba(255,255,255,0.03)"; };
+                        el.parentElement.onmouseenter = () => { el.style.opacity = "1"; if (activeSessionId !== session.id) el.parentElement!.style.background = "rgba(255,255,255,0.02)"; };
                         el.parentElement.onmouseleave = () => { el.style.opacity = "0"; if (activeSessionId !== session.id) el.parentElement!.style.background = "transparent"; };
                       }
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "#475569"; }}
                   >
-                    <Trash2 size={16} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               ))}
@@ -190,59 +261,114 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* ─── RIGHT CHAT WINDOW ─── */}
-      <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        background: "rgba(13, 15, 26, 0.5)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 24, overflow: "hidden",
-      }}>
-        {/* Header */}
-        <div style={{
-          padding: "20px 24px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-          display: "flex", alignItems: "center", gap: 12, flexShrink: 0
-        }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0, boxShadow: "0 2px 10px rgba(99, 102, 241, 0.4)"
-          }}>✦</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: "#f8fafc" }}>
-              {activeSession ? activeSession.title : "SalesBooster AI"}
-            </div>
-            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{isTyping ? "● Thinking…" : "● Online"}</div>
-          </div>
-        </div>
-
-        {/* Message List */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px", display: "flex", flexDirection: "column", gap: 24 }}>
-          {(!activeSession || activeSession.messages.length === 0) && !isTyping ? (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, gap: 16 }}>
-              <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(99, 102, 241, 0.1)", border: "1px solid rgba(99, 102, 241, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>✦</div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 16, fontWeight: 600, color: "#e2e8f0", marginBottom: 6 }}>How can I help you today?</div>
-                <div style={{ fontSize: 13, color: "#94a3b8" }}>Select a chat from the left or type below to start a new one.</div>
+      {/* ─── MAIN CHAT AREA ─── */}
+      <div className="chat-container">
+        <div className="centered-content">
+          {/* Header */}
+          <div className="messages-max-width" style={{
+            padding: "20px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
+            display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
+            background: "transparent", zIndex: 10
+          }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#f8fafc" }}>
+                {activeSession ? activeSession.title : "SalesBooster AI"}
+              </div>
+              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                {isTyping ? (
+                  <>
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                    Thinking…
+                  </>
+                ) : (
+                  <>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74, 222, 128, 0.4)" }} className="animate-pulse" />
+                    Online
+                  </>
+                )}
               </div>
             </div>
-          ) : (
-            <>
-              {activeSession?.messages.map((msg, i) => (
-                <ChatBubble key={i} message={msg} onSubmitQuestionnaire={(t) => sendToAI(t)} />
-              ))}
-              {isTyping && <TypingIndicator />}
-            </>
-          )}
+          </div>
 
-          {error && (
-            <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#fca5a5", display: "flex", gap: 10 }}>
-              <span>⚠</span> <span>{error}</span>
+          {/* Messages */}
+          <div 
+            className={`custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} 
+            style={{ 
+              flex: 1, 
+              overflowY: "auto", 
+              display: "flex", 
+              flexDirection: "column",
+              position: "relative"
+            }}
+            onScroll={handleScroll}
+          >
+            <div className="messages-max-width" style={{ padding: "40px 0 180px", display: "flex", flexDirection: "column", gap: 32 }}>
+              {(!activeSession || activeSession.messages.length === 0) && !isTyping ? (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "50vh", gap: 24 }}>
+                  <div style={{ fontSize: 28, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.02em" }}>How can I help you today?</div>
+                  <div style={{ width: "100%", maxWidth: "600px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    {[
+                      "Analyze my recent leads",
+                      "Draft a follow-up email",
+                      "Recommend insurance products",
+                      "Sales strategy for Q2"
+                    ].map((suggestion, i) => (
+                      <button
+                        key={i}
+                        onClick={() => sendToAI(suggestion)}
+                        style={{
+                          padding: "16px", borderRadius: 12, background: "rgba(255,255,255,0.02)",
+                          border: "1px solid rgba(255,255,255,0.05)", color: "#94a3b8", textAlign: "left",
+                          fontSize: 14, cursor: "pointer", transition: "all 0.2s ease"
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"; }}
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {activeSession?.messages.map((msg, i) => (
+                    <ChatBubble key={i} message={msg} onSubmitQuestionnaire={(t) => sendToAI(t)} />
+                  ))}
+                  {isTyping && <TypingIndicator />}
+                </>
+              )}
+
+              {error && (
+                <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#fca5a5", display: "flex", gap: 10 }}>
+                  <span>⚠</span> <span>{error}</span>
+                </div>
+              )}
+              <div ref={bottomRef} />
             </div>
-          )}
-          <div ref={bottomRef} />
-        </div>
+          </div>
 
-        {/* Input */}
-        <div style={{ flexShrink: 0, borderTop: "1px solid rgba(255,255,255,0.05)", background: "rgba(0,0,0,0.2)" }}>
-          <ChatInput onSend={(text, files) => sendToAI(text, files)} disabled={isTyping} />
+          {/* Input Box Fixed at Bottom Center */}
+          <div style={{ 
+            position: "absolute", 
+            bottom: 0, 
+            left: 0, 
+            right: 0, 
+            padding: "20px 0 12px",
+            zIndex: 15,
+            pointerEvents: "none"
+          }}>
+            <div style={{ pointerEvents: "auto" }}>
+              <ChatInput 
+                onSend={(text, files) => sendToAI(text, files)} 
+                disabled={isTyping} 
+                value={inputText}
+                onValueChange={setInputText}
+              />
+              <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "#475569" }}>
+                AI can make mistakes. Check important info.
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

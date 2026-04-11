@@ -18,6 +18,7 @@ import { db, Lead, Page } from "@/lib/data";
 interface Props {
   setActive: (page: Page) => void;
   setSelectedLead: (lead: Lead) => void;
+  setInitialMessage: (message: string) => void;
 }
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -62,7 +63,7 @@ const CircularGauge = ({ score }: { score: number }) => {
   );
 };
 
-export default function Dashboard({ setActive, setSelectedLead }: Props) {
+export default function Dashboard({ setActive, setSelectedLead, setInitialMessage }: Props) {
   const stats = db.getStats();
   const leads = db.getLeads();
   const events = db.getEvents();
@@ -132,7 +133,11 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
           </div>
 
           <button
-            onClick={() => { setSelectedLead(lead); setActive("chat"); }}
+            onClick={() => { 
+              setSelectedLead(lead); 
+              setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
+              setActive("chat"); 
+            }}
             className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
           >
             <MessageSquare size={16} /> AI Chat Assistant
@@ -217,7 +222,16 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
                       </div>
                     </td>
                     <td className="p-3">
-                      <button onClick={() => { setSelectedLead(action); setActive("chat"); }} className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap">Review</button>
+                      <button 
+                        onClick={() => { 
+                          setSelectedLead(action); 
+                          setInitialMessage(`Get Latest Info for ${action.name}, what is the best product i can offer to him/her?`);
+                          setActive("chat"); 
+                        }} 
+                        className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
+                      >
+                        Review
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -230,7 +244,7 @@ export default function Dashboard({ setActive, setSelectedLead }: Props) {
           <div className="glass-panel card-hover rounded-[32px] p-5 flex-1 border border-white/10 backdrop-blur-xl bg-white/[0.02] flex flex-col overflow-hidden">
             <div className="flex justify-between items-center mb-4 shrink-0 px-1">
               <h3 className="text-[14px] font-bold text-slate-100 m-0 tracking-tight">Recent Life Events</h3>
-              <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide uppercase hover:underline transition-all">View All</button>
+              <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide hover:underline transition-all">View All</button>
             </div>
             <div className="flex flex-col gap-1 overflow-y-auto pr-1 scrollbar-hide">
               {events.map((event) => (

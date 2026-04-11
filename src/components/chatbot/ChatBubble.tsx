@@ -169,8 +169,8 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
   // USER BUBBLE
   if (message.role === "user") {
     return (
-      <div className="message" style={{ display: "flex", justifyContent: "flex-end" }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, maxWidth: "85%" }}>
+      <div className="message" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, maxWidth: "80%" }}>
 
           {/* ATTACHMENTS RENDERER */}
           {message.attachments && message.attachments.length > 0 && (
@@ -178,7 +178,7 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
               {message.attachments.map((att, idx) => (
                 <div key={idx} style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  background: "rgba(30, 34, 53, 0.6)",
+                  background: "rgba(255, 255, 255, 0.03)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
                   borderRadius: 12, padding: "6px 12px 6px 6px",
                   maxWidth: 220
@@ -195,44 +195,41 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
             </div>
           )}
 
-          {/* TEXT BUBBLE */}
+          {/* TEXT BUBBLE - Claude-like round square */}
           {message.text && (
             <div style={{
-              background: "#6366f1",
-              borderRadius: "12px 12px 4px 12px",
-              padding: "9px 13px",
-              fontSize: 13, color: "#fff", lineHeight: 1.6, wordBreak: "break-word",
+              background: "#3d4466",
+              borderRadius: "16px",
+              padding: "12px 16px",
+              fontSize: "14.5px",
+              color: "#f8fafc",
+              lineHeight: "1.6",
+              wordBreak: "break-word",
+              border: "1px solid rgba(255, 255, 255, 0.05)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
             }}>
               {message.text}
             </div>
           )}
-
-          <div style={{ fontSize: 10, color: "#64748b", marginTop: 2, textAlign: "right" }}>
-            {message.time}
-          </div>
         </div>
       </div>
     );
   }
 
-  // ASSISTANT BUBBLE
+  // ASSISTANT BUBBLE - Ultra-minimalist: Just text
   return (
-    <div className="message" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-      <div style={{
-        width: 26, height: 26, borderRadius: 7,
-        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 13, flexShrink: 0, marginTop: 2,
-        boxShadow: "0 2px 6px rgba(99, 102, 241, 0.3)"
-      }}>
-        ✦
-      </div>
+    <div className="message" style={{ 
+      display: "flex", 
+      gap: 16, 
+      alignItems: "flex-start",
+      padding: "4px 0",
+      marginBottom: 16
+    }}>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontWeight: 600 }}>
-          AI Sales Assistant <span style={{ color: "#475569", fontWeight: 400 }}>· {message.time}</span>
+        <div style={{ fontSize: "15.5px", color: "#e2e8f0", lineHeight: "1.75" }}>
+          <AssistantBubbleContent text={message.text} onSubmitQuestionnaire={onSubmitQuestionnaire} />
         </div>
-        <AssistantBubbleContent text={message.text} onSubmitQuestionnaire={onSubmitQuestionnaire} />
       </div>
     </div>
   );
-}
+  }

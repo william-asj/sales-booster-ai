@@ -39,9 +39,10 @@ const CircularGauge = ({ score }: { score: number }) => {
 interface LeadsProps {
   setActive: (page: string) => void;
   setSelectedLead: (lead: Lead) => void;
+  setInitialMessage: (message: string) => void;
 }
 
-export default function Leads({ setActive, setSelectedLead }: LeadsProps) {
+export default function Leads({ setActive, setSelectedLead, setInitialMessage }: LeadsProps) {
   const leads = db.getLeads();
 
   return (
@@ -86,10 +87,14 @@ export default function Leads({ setActive, setSelectedLead }: LeadsProps) {
             </div>
 
             <button
-              onClick={() => { setSelectedLead(lead); setActive("chat"); }}
+              onClick={() => { 
+                setSelectedLead(lead); 
+                setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
+                setActive("chat"); 
+              }}
               className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
             >
-              <MessageSquare size={16} /> AI Chat Assistant
+              <MessageSquare size={16} /> Ask AI
             </button>
           </div>
         ))}

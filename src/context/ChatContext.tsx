@@ -28,9 +28,15 @@ interface ChatContextType {
     sessions: ChatSession[];
     activeSessionId: string | null;
     setActiveSessionId: (id: string | null) => void;
-    createNewSession: () => string;
+    createNewSession: (title?: string) => string;
     deleteSession: (id: string) => void;
     appendMessage: (sessionId: string, message: ChatMessage, aiMessage?: AiMessage) => void;
+
+    // Overlay state
+    isOverlayOpen: boolean;
+    setIsOverlayOpen: (open: boolean) => void;
+    overlaySessionId: string | null;
+    setOverlaySessionId: (id: string | null) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -38,18 +44,19 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 export function ChatProvider({ children }: { children: ReactNode }) {
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+    const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+    const [overlaySessionId, setOverlaySessionId] = useState<string | null>(null);
 
-    const createNewSession = () => {
+    const createNewSession = (title: string = "New Chat") => {
         const id = Date.now().toString();
         const newSession: ChatSession = {
             id,
-            title: "New Chat",
+            title: title,
             updatedAt: Date.now(),
             messages: [],
             aiHistory: [],
         };
         setSessions((prev) => [newSession, ...prev]);
-        setActiveSessionId(id);
         return id;
     };
 
@@ -57,6 +64,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
         setSessions((prev) => prev.filter((s) => s.id !== id));
         if (activeSessionId === id) {
             setActiveSessionId(null);
+        }
+        if (overlaySessionId === id) {
+            setOverlaySessionId(null);
         }
     };
 
@@ -85,13 +95,23 @@ export function ChatProvider({ children }: { children: ReactNode }) {
 
     return (
         <ChatContext.Provider
-            value={{ sessions, activeSessionId, setActiveSessionId, createNewSession, deleteSession, appendMessage }}
+            value={{ 
+                sessions, 
+                activeSessionId, 
+                setActiveSessionId, 
+                createNewSession, 
+                deleteSession, 
+                appendMessage,
+                isOverlayOpen,
+                setIsOverlayOpen,
+                overlaySessionId,
+                setOverlaySessionId
+            }}
         >
             {children}
         </ChatContext.Provider>
     );
 }
-
 export function useChatState() {
     const context = useContext(ChatContext);
     if (!context) throw new Error("useChatState must be used within a ChatProvider");

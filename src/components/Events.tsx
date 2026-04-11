@@ -21,6 +21,7 @@ import { db, Lead } from "@/lib/data";
 interface EventsProps {
   setActive: (page: string) => void;
   setSelectedLead: (lead: Lead) => void;
+  setInitialMessage: (message: string) => void;
 }
 
 // 3. Helper to determine styles based on event type
@@ -85,7 +86,7 @@ const getPriorityStyles = (priority: string) => {
   }
 };
 
-export default function EventsTimeline({ setActive, setSelectedLead }: EventsProps) {
+export default function EventsTimeline({ setActive, setSelectedLead, setInitialMessage }: EventsProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const events = db.getEvents();
 
@@ -197,6 +198,7 @@ export default function EventsTimeline({ setActive, setSelectedLead }: EventsPro
                           const lead = db.getLeadByName(event.customerName);
                           if (lead) {
                             setSelectedLead(lead);
+                            setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
                             setActive("chat");
                           }
                         }}
