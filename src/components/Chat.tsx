@@ -43,6 +43,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
   const [inputText, setInputText] = useState("");
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const processedMessageRef = useRef<string | null>(null);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -116,11 +117,15 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
   );
 
   useEffect(() => {
-    if (initialMessage) {
+    if (initialMessage && initialMessage !== processedMessageRef.current) {
+      // Force a new session for every new automated trigger
+      processedMessageRef.current = initialMessage;
+      const newId = createNewSession();
+      setActiveSessionId(newId);
       setInputText(initialMessage);
       if (onMessageSent) onMessageSent();
     }
-  }, [initialMessage, onMessageSent]);
+  }, [initialMessage, onMessageSent, createNewSession, setActiveSessionId]);
 
   return (
     <div className="page-content" style={{

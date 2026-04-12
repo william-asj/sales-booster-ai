@@ -48,7 +48,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     const [overlaySessionId, setOverlaySessionId] = useState<string | null>(null);
 
     const createNewSession = (title: string = "New Chat") => {
-        const id = Date.now().toString();
+        const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const newSession: ChatSession = {
             id,
             title: title,
