@@ -14,6 +14,7 @@ export interface AttachedFile {
 
 interface Props {
   onSend: (text: string, attachments?: AttachedFile[]) => void;
+  onSlashCommand?: (command: "recommend") => void;
   disabled?: boolean;
   value?: string;
   onValueChange?: (value: string) => void;
@@ -102,7 +103,16 @@ function FileBadge({ name, mimeType }: { name: string; mimeType: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function ChatInput({ onSend, disabled = false, value = "", onValueChange }: Props) {
+const SLASH_COMMANDS = [
+  { 
+    command: "recommend" as const, 
+    icon: "⚡", 
+    label: "/recommend", 
+    description: "Panduan rekomendasi produk / Product recommendation guide" 
+  }
+];
+
+export default function ChatInput({ onSend, onSlashCommand, disabled = false, value = "", onValueChange }: Props) {
   const [text, setText] = useState(value);
   const [attachments, setAttachments] = useState<AttachedFile[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -110,6 +120,7 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
   const [voiceSupported, setVoiceSupported] = useState(false);
   const [showVoiceTooltip, setShowVoiceTooltip] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -135,8 +146,15 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
 
   const handleTextChange = useCallback((newText: string) => {
     setText(newText);
+    setShowCommandPalette(newText.startsWith("/"));
     if (onValueChange) onValueChange(newText);
   }, [onValueChange]);
+
+  const handleCommandSelect = (command: "recommend") => {
+    handleTextChange("");
+    setShowCommandPalette(false);
+    onSlashCommand?.(command);
+  };
 
   // ─── Buttery Smooth Momentum Scrolling ──────────────────────────────────────
   useEffect(() => {
@@ -147,30 +165,19 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
     let animationFrameId: number;
 
     const handleWheel = (e: WheelEvent) => {
-      // Only intercept if scrolling predominantly vertically.
-      // If e.deltaX is larger, they are using a trackpad to swipe horizontally, 
-      // so we let the native OS scrolling handle it perfectly.
       if (e.deltaY !== 0 && Math.abs(e.deltaX) < Math.abs(e.deltaY)) {
         e.preventDefault();
-
-        // Calculate target destination (1.5x multiplier for responsive feel)
         targetScroll += e.deltaY * 1.5;
-
-        // Clamp target so it doesn't "wind up" past the edges
         const maxScroll = el.scrollWidth - el.clientWidth;
         targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
 
         const step = () => {
           if (!el) return;
           const diff = targetScroll - el.scrollLeft;
-
-          // Snap to target if close enough
           if (Math.abs(diff) < 1) {
             el.scrollLeft = targetScroll;
             return;
           }
-
-          // Move 15% of the remaining distance per frame (Easing)
           el.scrollLeft += diff * 0.15;
           animationFrameId = requestAnimationFrame(step);
         };
@@ -200,15 +207,24 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
 
   const handleSend = useCallback(() => {
     if (!canSend) return;
+    
+    if (text.trim() === "/recommend" && onSlashCommand) {
+      onSlashCommand("recommend");
+      handleTextChange("");
+      setAttachments([]);
+      setFileError(null);
+      return;
+    }
+
     onSend(text.trim(), attachments.length > 0 ? attachments : undefined);
     handleTextChange("");
     setAttachments([]);
     setFileError(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
-      textareaRef.current.focus(); // Auto-focus back after sending
+      textareaRef.current.focus();
     }
-  }, [text, attachments, canSend, onSend, handleTextChange]);
+  }, [text, attachments, canSend, onSend, handleTextChange, onSlashCommand]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -288,6 +304,7 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .command-row:hover { background: rgba(99, 102, 241, 0.08); }
       `}</style>
 
       {fileError && (
@@ -296,7 +313,6 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
         </div>
       )}
 
-      {/* Main Input container - Maximum Glassmorphism for best text masking */}
       <div style={{
         background: "rgba(13, 15, 26, 0.92)",
         backdropFilter: "blur(32px)",
@@ -307,8 +323,51 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
         transition: "all 0.2s ease",
         display: "flex",
         flexDirection: "column",
-        overflow: "hidden"
+        overflow: "hidden",
+        position: "relative"
       }}>
+
+        {/* Command Palette */}
+        {showCommandPalette && (
+          <div style={{
+            position: "absolute", bottom: "100%", left: 0, right: 0,
+            marginBottom: 8, zIndex: 20,
+            background: "rgba(13, 15, 26, 0.97)",
+            backdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: 16,
+            overflow: "hidden"
+          }}>
+            {SLASH_COMMANDS.map((cmd) => (
+              <div
+                key={cmd.command}
+                className="command-row"
+                onClick={() => handleCommandSelect(cmd.command)}
+                style={{
+                  padding: "10px 14px",
+                  display: "flex",
+                  gap: 10,
+                  alignItems: "center",
+                  cursor: "pointer",
+                  transition: "background 0.2s"
+                }}
+              >
+                <div style={{
+                  background: "rgba(99, 102, 241, 0.15)",
+                  borderRadius: 8,
+                  padding: "4px 8px",
+                  fontSize: 14
+                }}>
+                  {cmd.icon}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ color: "#818cf8", fontSize: 13, fontWeight: 600 }}>{cmd.label}</span>
+                  <span style={{ color: "#475569", fontSize: 11 }}>{cmd.description}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Horizontal Attachment Carousel */}
         {attachments.length > 0 && (
@@ -321,7 +380,6 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
               padding: "16px 16px 0 16px",
               overflowX: "auto",
               WebkitOverflowScrolling: "touch"
-              // Removed native CSS scrollBehavior: "smooth" so our momentum logic works cleanly
             }}
           >
             {attachments.map((att, idx) => {
@@ -334,16 +392,13 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
                   flexShrink: 0, maxWidth: 220, position: "relative",
                   marginTop: 6
                 }}>
-                  {/* File Type Badge */}
                   <FileBadge name={att.name} mimeType={att.mimeType} />
-
                   <span style={{
                     fontSize: 13, color: "#cbd5e1", fontWeight: 500,
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                   }}>
                     {att.name}
                   </span>
-
                   <button
                     onClick={() => removeAttachment(idx)}
                     style={{
@@ -470,6 +525,12 @@ export default function ChatInput({ onSend, disabled = false, value = "", onValu
           </button>
         </div>
       </div>
+      
+      {!showCommandPalette && text.toLowerCase().includes("recommend") && (
+        <div style={{ fontSize: 11, color: "#6366f1", marginTop: 6, paddingLeft: 4 }}>
+          💡 Coba /recommend untuk panduan rekomendasi produk
+        </div>
+      )}
     </div>
   );
 }

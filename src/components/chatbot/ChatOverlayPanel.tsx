@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Sparkles } from "lucide-react";
 import ChatBubble from "./ChatBubble";
 import ChatInput, { AttachedFile } from "./ChatInput";
 import { useChatOverlay } from "@/hooks/useChatOverlay";
 import { useChatState, AiMessage, AiMessagePart } from "@/context/ChatContext";
+import { useChatFlow } from "@/hooks/useChatFlow";
+import { buildRecommendPrompt } from "@/lib/prompts";
+import { db } from "@/lib/data";
 
 function nowTime(): string {
   return new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
@@ -12,20 +16,42 @@ function nowTime(): string {
 
 function TypingIndicator() {
   return (
-    <div className="message" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+    <div className="message" style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 24, animation: "fadeIn 0.3s ease-out" }}>
       <div style={{
-        width: 26, height: 26, borderRadius: 7,
-        background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 13, flexShrink: 0,
-      }}>🤖</div>
-      <div style={{ paddingTop: 6, display: "flex", gap: 4 }}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} style={{
-            width: 6, height: 6, borderRadius: "50%",
-            background: "#6366f1", animation: "bounce 1s infinite", animationDelay: `${i * 0.15}s`,
-          }} />
-        ))}
+        width: 30, height: 30, borderRadius: 10, 
+        background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
+        display: "flex", alignItems: "center", justifyContent: "center", 
+        flexShrink: 0,
+        boxShadow: "0 0 12px rgba(155, 114, 203, 0.3)",
+        animation: "gemini-pulse 2s infinite ease-in-out"
+      }}>
+        <Sparkles size={16} color="white" />
+      </div>
+      <div style={{ 
+        display: "flex", 
+        flexDirection: "column",
+        gap: 8,
+        paddingTop: 4
+      }}>
+        <div style={{ 
+          display: "flex", 
+          gap: 5, 
+          padding: "12px 16px", 
+          background: "rgba(255, 255, 255, 0.03)", 
+          border: "1px solid rgba(255, 255, 255, 0.05)",
+          borderRadius: "4px 16px 16px 16px",
+          width: "fit-content",
+          alignItems: "center"
+        }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{
+              width: 5, height: 5, borderRadius: "50%", 
+              background: "linear-gradient(135deg, #4285f4, #9b72cb)",
+              animation: "gemini-bounce 1.4s infinite", animationDelay: `${i * 0.2}s`,
+            }} />
+          ))}
+          <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 500, color: "#94a3b8", letterSpacing: "0.01em" }}>Gemini is thinking...</span>
+        </div>
       </div>
     </div>
   );
@@ -66,6 +92,7 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
 export default function ChatOverlayPanel() {
   const { isOpen, toggle, close } = useChatOverlay();
   const { sessions, overlaySessionId, setOverlaySessionId, createNewSession, appendMessage } = useChatState();
+  const { flowState, startFlow, submitAnswer } = useChatFlow();
 
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,11 +177,42 @@ export default function ChatOverlayPanel() {
     [sendToAI]
   );
 
+  async function handleSlashCommand(command: "recommend") {
+    if (command === "recommend") {
+      let targetSessionId = overlaySessionId;
+      if (!targetSessionId) {
+        targetSessionId = createNewSession("Overlay Chat");
+        setOverlaySessionId(targetSessionId);
+      }
+      const firstQuestion = startFlow();
+      appendMessage(targetSessionId, firstQuestion);
+    }
+  }
+
   const handleQuestionnaireSubmit = useCallback(
-    (answerText: string) => {
-      sendToAI(answerText);
+    async (answer: string) => {
+      if (flowState) {
+        const { nextQuestion, finalAnswers } = submitAnswer(answer);
+
+        let targetSessionId = overlaySessionId;
+        if (!targetSessionId) {
+          targetSessionId = createNewSession("Overlay Chat");
+          setOverlaySessionId(targetSessionId);
+        }
+
+        if (nextQuestion) {
+          appendMessage(targetSessionId, nextQuestion);
+        }
+
+        if (finalAnswers) {
+          const prompt = buildRecommendPrompt(finalAnswers, db.getProducts());
+          await sendToAI(prompt);
+        }
+      } else {
+        await sendToAI(answer);
+      }
     },
-    [sendToAI]
+    [flowState, submitAnswer, overlaySessionId, appendMessage, createNewSession, setOverlaySessionId, sendToAI]
   );
 
   return (
@@ -187,6 +245,29 @@ export default function ChatOverlayPanel() {
           background: rgba(255, 255, 255, 0.2);
           opacity: 1;
         }
+        @keyframes gemini-gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes gemini-pulse {
+          0% { transform: scale(1); box-shadow: 0 0 12px rgba(155, 114, 203, 0.3); }
+          50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(155, 114, 203, 0.5); }
+          100% { transform: scale(1); box-shadow: 0 0 12px rgba(155, 114, 203, 0.3); }
+        }
+        @keyframes gemini-bounce {
+          0%, 100% { transform: translateY(0); opacity: 0.4; }
+          50% { transform: translateY(-4px); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes gemini-fab-glow {
+          0% { box-shadow: 0 0 0 0 rgba(155, 114, 203, 0.6); }
+          70% { box-shadow: 0 0 0 20px rgba(155, 114, 203, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(155, 114, 203, 0); }
+        }
       `}</style>
 
       {isOpen && (
@@ -210,16 +291,33 @@ export default function ChatOverlayPanel() {
           background: "rgba(13, 15, 26, 0.2)",
         }}>
           <div style={{
-            width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0,
-          }}>✦</div>
+            width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
+            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+            boxShadow: "0 0 10px rgba(155, 114, 203, 0.3)"
+          }}>
+            <Sparkles size={16} color="white" />
+          </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: "#f8fafc" }}>SalesBooster AI</div>
             <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
               {isTyping ? (
                 <>
-                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                  Thinking…
+                  <div style={{ 
+                    width: 8, height: 8, borderRadius: "50%", 
+                    background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
+                    backgroundSize: "200% 200%",
+                    animation: "gemini-gradient 2s linear infinite"
+                  }} />
+                  <span style={{ 
+                    background: "linear-gradient(90deg, #4285f4, #9b72cb, #d96570, #4285f4)",
+                    backgroundSize: "200% auto",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    animation: "gemini-gradient 3s linear infinite",
+                    fontWeight: 600
+                  }}>
+                    Gemini is thinking…
+                  </span>
                 </>
               ) : (
                 <>
@@ -272,7 +370,11 @@ export default function ChatOverlayPanel() {
           pointerEvents: "none"
         }}>
           <div style={{ pointerEvents: "auto" }}>
-            <ChatInput onSend={handleSend} disabled={isTyping} />
+            <ChatInput 
+              onSend={handleSend} 
+              onSlashCommand={handleSlashCommand}
+              disabled={isTyping} 
+            />
           </div>
         </div>
       </div>
@@ -284,17 +386,26 @@ export default function ChatOverlayPanel() {
           style={{
             position: "fixed", bottom: 24, right: 24, zIndex: 1001,
             width: 56, height: 56, borderRadius: "50%",
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+            background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
             border: "none", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 24, color: "#fff",
-            animation: "fab-elastic-entrance 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, fab-pulse-glow 2.5s infinite 1s",
-            transition: "filter 0.2s ease",
+            animation: "fab-elastic-entrance 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, gemini-fab-glow 2.5s infinite 1s",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            boxShadow: "0 8px 32px rgba(155, 114, 203, 0.4)",
           }}
-          onMouseEnter={e => { e.currentTarget.style.filter = "brightness(1.15)"; }}
-          onMouseLeave={e => { e.currentTarget.style.filter = "brightness(1)"; }}
+          onMouseEnter={e => { 
+            e.currentTarget.style.transform = "scale(1.1) translateY(-5px)";
+            e.currentTarget.style.filter = "brightness(1.1)";
+            e.currentTarget.style.boxShadow = "0 12px 40px rgba(155, 114, 203, 0.6)";
+          }}
+          onMouseLeave={e => { 
+            e.currentTarget.style.transform = "scale(1) translateY(0)";
+            e.currentTarget.style.filter = "brightness(1)";
+            e.currentTarget.style.boxShadow = "0 8px 32px rgba(155, 114, 203, 0.4)";
+          }}
         >
-          ✦
+          <Sparkles size={28} />
         </button>
       )}
     </>

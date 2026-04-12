@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Plus, Trash2, MessageSquare } from "lucide-react";
+import { Plus, Trash2, MessageSquare, Sparkles } from "lucide-react";
 import ChatBubble from "./chatbot/ChatBubble";
 import ChatInput, { AttachedFile } from "./chatbot/ChatInput";
 import { useChatState, AiMessagePart, AiMessage } from "@/context/ChatContext";
+import { useChatFlow } from "@/hooks/useChatFlow";
+import { buildRecommendPrompt } from "@/lib/prompts";
+import { db } from "@/lib/data";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function nowTime(): string {
@@ -13,18 +16,42 @@ function nowTime(): string {
 
 function TypingIndicator() {
   return (
-    <div className="message" style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+    <div className="message" style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 24, animation: "fadeIn 0.3s ease-out" }}>
       <div style={{
-        width: 26, height: 26, borderRadius: 7, background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-        display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, flexShrink: 0,
-      }}>🤖</div>
-      <div style={{ paddingTop: 6, display: "flex", gap: 4 }}>
-        {[0, 1, 2].map((i) => (
-          <div key={i} style={{
-            width: 6, height: 6, borderRadius: "50%", background: "#6366f1",
-            animation: "bounce 1s infinite", animationDelay: `${i * 0.15}s`,
-          }} />
-        ))}
+        width: 30, height: 30, borderRadius: 10, 
+        background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
+        display: "flex", alignItems: "center", justifyContent: "center", 
+        flexShrink: 0,
+        boxShadow: "0 0 12px rgba(155, 114, 203, 0.3)",
+        animation: "gemini-pulse 2s infinite ease-in-out"
+      }}>
+        <Sparkles size={16} color="white" />
+      </div>
+      <div style={{ 
+        display: "flex", 
+        flexDirection: "column",
+        gap: 8,
+        paddingTop: 4
+      }}>
+        <div style={{ 
+          display: "flex", 
+          gap: 5, 
+          padding: "12px 16px", 
+          background: "rgba(255, 255, 255, 0.03)", 
+          border: "1px solid rgba(255, 255, 255, 0.05)",
+          borderRadius: "4px 16px 16px 16px",
+          width: "fit-content",
+          alignItems: "center"
+        }}>
+          {[0, 1, 2].map((i) => (
+            <div key={i} style={{
+              width: 5, height: 5, borderRadius: "50%", 
+              background: "linear-gradient(135deg, #4285f4, #9b72cb)",
+              animation: "gemini-bounce 1.4s infinite", animationDelay: `${i * 0.2}s`,
+            }} />
+          ))}
+          <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 500, color: "#94a3b8", letterSpacing: "0.01em" }}>Gemini is thinking...</span>
+        </div>
       </div>
     </div>
   );
@@ -38,6 +65,7 @@ interface ChatProps {
 
 export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
   const { sessions, activeSessionId, setActiveSessionId, createNewSession, deleteSession, appendMessage } = useChatState();
+  const { flowState, startFlow, submitAnswer, resetFlow } = useChatFlow();
   const [isTyping, setIsTyping] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
@@ -116,9 +144,43 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
     [activeSessionId, sessions, appendMessage, createNewSession, setActiveSessionId]
   );
 
+  async function handleSlashCommand(command: "recommend") {
+    if (command === "recommend") {
+      let targetSessionId = activeSessionId;
+      if (!targetSessionId) {
+        targetSessionId = createNewSession();
+        setActiveSessionId(targetSessionId);
+      }
+      const firstQuestion = startFlow();
+      appendMessage(targetSessionId, firstQuestion);
+    }
+  }
+
+  async function handleQuestionnaireSubmit(answer: string) {
+    if (flowState) {
+      const { nextQuestion, finalAnswers } = submitAnswer(answer);
+      
+      let targetSessionId = activeSessionId;
+      if (!targetSessionId) {
+        targetSessionId = createNewSession();
+        setActiveSessionId(targetSessionId);
+      }
+
+      if (nextQuestion) {
+        appendMessage(targetSessionId, nextQuestion);
+      }
+
+      if (finalAnswers) {
+        const prompt = buildRecommendPrompt(finalAnswers, db.getProducts());
+        await sendToAI(prompt);
+      }
+    } else {
+      await sendToAI(answer);
+    }
+  }
+
   useEffect(() => {
     if (initialMessage && initialMessage !== processedMessageRef.current) {
-      // Force a new session for every new automated trigger
       processedMessageRef.current = initialMessage;
       const newId = createNewSession();
       setActiveSessionId(newId);
@@ -188,6 +250,24 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
           box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
           overflow: hidden;
         }
+        @keyframes gemini-gradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes gemini-pulse {
+          0% { transform: scale(1); box-shadow: 0 0 12px rgba(155, 114, 203, 0.3); }
+          50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(155, 114, 203, 0.5); }
+          100% { transform: scale(1); box-shadow: 0 0 12px rgba(155, 114, 203, 0.3); }
+        }
+        @keyframes gemini-bounce {
+          0%, 100% { transform: translateY(0); opacity: 0.4; }
+          50% { transform: translateY(-4px); opacity: 1; }
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
       {/* ─── LEFT SIDEBAR (History) ─── */}
@@ -198,6 +278,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             onClick={() => {
               const newId = createNewSession();
               setActiveSessionId(newId);
+              resetFlow();
             }}
             title="New Chat"
             style={{
@@ -224,7 +305,10 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  onClick={() => setActiveSessionId(session.id)}
+                  onClick={() => {
+                    setActiveSessionId(session.id);
+                    resetFlow();
+                  }}
                   style={{
                     position: "relative", padding: "10px 12px", borderRadius: 10,
                     background: activeSessionId === session.id ? "rgba(255, 255, 255, 0.05)" : "transparent",
@@ -282,8 +366,22 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
               <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
                 {isTyping ? (
                   <>
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                    Thinking…
+                    <div style={{ 
+                      width: 8, height: 8, borderRadius: "50%", 
+                      background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
+                      backgroundSize: "200% 200%",
+                      animation: "gemini-gradient 2s linear infinite"
+                    }} />
+                    <span style={{ 
+                      background: "linear-gradient(90deg, #4285f4, #9b72cb, #d96570, #4285f4)",
+                      backgroundSize: "200% auto",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      animation: "gemini-gradient 3s linear infinite",
+                      fontWeight: 600
+                    }}>
+                      Gemini is thinking…
+                    </span>
                   </>
                 ) : (
                   <>
@@ -337,7 +435,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
               ) : (
                 <>
                   {activeSession?.messages.map((msg, i) => (
-                    <ChatBubble key={i} message={msg} onSubmitQuestionnaire={(t) => sendToAI(t)} />
+                    <ChatBubble key={i} message={msg} onSubmitQuestionnaire={handleQuestionnaireSubmit} />
                   ))}
                   {isTyping && <TypingIndicator />}
                 </>
@@ -368,6 +466,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                 disabled={isTyping} 
                 value={inputText}
                 onValueChange={setInputText}
+                onSlashCommand={handleSlashCommand}
               />
               <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "#475569" }}>
                 AI can make mistakes. Check important info.
