@@ -3,18 +3,21 @@
 import React, { useState } from "react";
 import {
   Baby,
-  Home,
   TrendingUp,
   Activity,
   MoreVertical,
   HeartPulse,
-  Briefcase,
   Search,
   Filter,
   Clock,
   ArrowUpRight,
   MessageSquare,
-  Users
+  ShieldCheck,
+  CircleAlert,
+  Eye,
+  RefreshCw,
+  CircleMinus,
+  CheckCircle2
 } from "lucide-react";
 import { db, Lead } from "@/lib/data";
 
@@ -24,58 +27,101 @@ interface EventsProps {
   setInitialMessage: (message: string) => void;
 }
 
+interface ColorStyle {
+  bg: string;
+  border: string;
+  text: string;
+  glow: string;
+}
+
 // 3. Helper to determine styles based on event type
 const getEventStyles = (type: string) => {
+  const colorMap: Record<string, ColorStyle> = {
+    rose: {
+      bg: "bg-rose-400/5",
+      border: "border-rose-500/20",
+      text: "text-rose-400",
+      glow: "bg-rose-400/20"
+    },
+    blue: {
+      bg: "bg-blue-400/5",
+      border: "border-blue-500/20",
+      text: "text-blue-400",
+      glow: "bg-blue-400/20"
+    },
+    amber: {
+      bg: "bg-amber-400/5",
+      border: "border-amber-500/20",
+      text: "text-amber-400",
+      glow: "bg-amber-400/20"
+    },
+    emerald: {
+      bg: "bg-emerald-400/5",
+      border: "border-emerald-500/20",
+      text: "text-emerald-400",
+      glow: "bg-emerald-400/20"
+    },
+    purple: {
+      bg: "bg-purple-400/5",
+      border: "border-purple-500/20",
+      text: "text-purple-400",
+      glow: "bg-purple-400/20"
+    },
+    indigo: {
+      bg: "bg-indigo-400/5",
+      border: "border-indigo-500/20",
+      text: "text-indigo-400",
+      glow: "bg-indigo-400/20"
+    }
+  };
+
+  // Categorized colors based on event type
+  const typeToColor: Record<string, string> = {
+    "Birthday": "emerald",
+    "Inforce": "emerald",
+    "Policy Being Processed": "amber",
+    "Health Claim": "rose",
+    "Lapse": "rose",
+    "Surrender": "rose",
+    "Freelook": "blue",
+    "Reinstate": "indigo"
+  };
+
+  const color = typeToColor[type] || "indigo";
+  const style = colorMap[color] || colorMap.indigo;
+
+  let IconComponent = HeartPulse;
   switch (type) {
-    case "Health Flag":
-      return {
-        icon: <Activity size={18} className="text-rose-400" />,
-        bg: "bg-rose-400/5",
-        border: "border-rose-500/20",
-        text: "text-rose-400",
-        glow: "bg-rose-400/20"
-      };
-    case "Home Purchase":
-      return {
-        icon: <Home size={18} className="text-blue-400" />,
-        bg: "bg-blue-400/5",
-        border: "border-blue-500/20",
-        text: "text-blue-400",
-        glow: "bg-blue-400/20"
-      };
-    case "New Baby":
-      return {
-        icon: <Baby size={18} className="text-amber-400" />,
-        bg: "bg-amber-400/5",
-        border: "border-amber-500/20",
-        text: "text-amber-400",
-        glow: "bg-amber-400/20"
-      };
-    case "Promotion":
-      return {
-        icon: <Briefcase size={18} className="text-purple-400" />,
-        bg: "bg-purple-400/5",
-        border: "border-purple-500/20",
-        text: "text-purple-400",
-        glow: "bg-purple-400/20"
-      };
-    case "Marriage":
-      return {
-        icon: <Users size={18} className="text-emerald-400" />,
-        bg: "bg-emerald-400/5",
-        border: "border-emerald-500/20",
-        text: "text-emerald-400",
-        glow: "bg-emerald-400/20"
-      };
-    default:
-      return {
-        icon: <HeartPulse size={18} className="text-indigo-400" />,
-        bg: "bg-indigo-400/5",
-        border: "border-indigo-500/20",
-        text: "text-indigo-400",
-        glow: "bg-indigo-400/20"
-      };
+    case "Birthday":
+      IconComponent = Baby;
+      break;
+    case "Policy Being Processed":
+      IconComponent = Clock;
+      break;
+    case "Lapse":
+      IconComponent = CircleAlert;
+      break;
+    case "Inforce":
+      IconComponent = ShieldCheck;
+      break;
+    case "Surrender":
+      IconComponent = CircleMinus;
+      break;
+    case "Freelook":
+      IconComponent = Eye;
+      break;
+    case "Reinstate":
+      IconComponent = RefreshCw;
+      break;
+    case "Health Claim":
+      IconComponent = Activity;
+      break;
   }
+
+  return {
+    ...style,
+    icon: <IconComponent size={16} className={style.text} />
+  };
 };
 
 const getPriorityStyles = (priority: string) => {
@@ -86,14 +132,44 @@ const getPriorityStyles = (priority: string) => {
   }
 };
 
+const getEventCategory = (timestamp: string) => {
+  const ts = timestamp.toLowerCase();
+  if (ts.includes("tomorrow") || ts.includes("in ")) return "Future";
+  if (ts.includes("today") || ts.includes("hr") || ts.includes("min")) return "Today";
+  return "Past";
+};
+
 export default function EventsTimeline({ setActive, setSelectedLead, setInitialMessage }: EventsProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const events = db.getEvents();
 
-  const filteredEvents = events.filter(event => 
-    event.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.eventType.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const birthdayTypes = ["Birthday"];
+  const policyStatusTypes = ["Inforce", "Policy Being Processed", "Lapse", "Surrender", "Reinstate"];
+  const claimWaiverTypes = ["Health Claim", "Freelook"];
+
+  const filteredEvents = events.filter(event => {
+    const matchesSearch = event.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         event.eventType.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (!matchesSearch) return false;
+
+    if (activeFilter === "Birthday Greetings") return birthdayTypes.includes(event.eventType);
+    if (activeFilter === "Policy Milestones") return policyStatusTypes.includes(event.eventType);
+    if (activeFilter === "Claims & Requests") return claimWaiverTypes.includes(event.eventType);
+    
+    return true;
+  });
+
+  const categories = [
+    { id: "Future", label: "Upcoming Milestones", icon: <TrendingUp size={14} className="text-indigo-400" />, bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
+    { id: "Today", label: "Happening Today", icon: <Activity size={14} className="text-emerald-400" />, bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { id: "Past", label: "Previous Events", icon: <Clock size={14} className="text-slate-400" />, bg: "bg-white/5", border: "border-white/10" }
+  ];
+
+  const birthdayCount = events.filter(e => birthdayTypes.includes(e.eventType)).length;
+  const policyStatusCount = events.filter(e => policyStatusTypes.includes(e.eventType)).length;
+  const claimWaiverCount = events.filter(e => claimWaiverTypes.includes(e.eventType)).length;
 
   return (
     <div className="animate-fade-in px-6 md:px-10 py-8 max-w-[1400px] w-full mx-auto min-h-screen">
@@ -101,8 +177,8 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
       <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-[20px] bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
-              <HeartPulse size={22} />
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
+              <HeartPulse size={20} />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-slate-100 tracking-tight m-0">Recent Life Events</h1>
           </div>
@@ -122,7 +198,11 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="glass-panel p-3 rounded-[18px] hover:bg-white/[0.08] transition-colors text-slate-400 border border-white/10 backdrop-blur-lg shrink-0">
+          <button 
+            onClick={() => { setSearchQuery(""); setActiveFilter(null); }}
+            className={`glass-panel p-3 rounded-[18px] transition-colors border backdrop-blur-lg shrink-0 ${activeFilter || searchQuery ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30' : 'text-slate-400 border-white/10 hover:bg-white/[0.08]'}`}
+            title="Reset Filters"
+          >
             <Filter size={20} />
           </button>
         </div>
@@ -130,89 +210,126 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-10 items-start">
         {/* MAIN TIMELINE */}
-        <div className="space-y-6">
-          {filteredEvents.map((event, idx) => {
-            const styles = getEventStyles(event.eventType);
-            const isLast = idx === filteredEvents.length - 1;
+        <div className="space-y-12">
+          {categories.map((cat) => {
+            const categoryEvents = filteredEvents.filter(e => getEventCategory(e.timestamp) === cat.id);
+            if (categoryEvents.length === 0) return null;
 
             return (
-              <div key={event.id} className="group relative flex gap-6">
-                {/* Timeline connector */}
-                <div className="flex flex-col items-center shrink-0">
-                  <div className={`w-12 h-12 rounded-[18px] flex items-center justify-center border transition-all duration-500 group-hover:scale-110 z-10 backdrop-blur-xl ${styles.bg} ${styles.border}`}>
-                    {styles.icon}
+              <div key={cat.id} className="space-y-6">
+                <div className="flex items-center gap-3 px-1 mb-8">
+                  <div className={`flex items-center gap-2 ${cat.bg} border ${cat.border} px-3 py-1.5 rounded-xl`}>
+                    {cat.icon}
+                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-300">
+                      {cat.label}
+                    </span>
                   </div>
-                  {!isLast && <div className="w-px h-full bg-gradient-to-b from-white/10 to-transparent my-2" />}
+                  <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                 </div>
 
-                {/* Event Card */}
-                <div className="flex-1 pb-10">
-                  <div className="glass-panel card-hover rounded-[32px] p-6 md:p-8 border border-white/10 backdrop-blur-xl bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-500 relative overflow-hidden group/card">
-                    {/* Background decoration - Fixed bug by strictly containing it with overflow-hidden */}
-                    <div className={`absolute -top-20 -right-20 w-40 h-40 rounded-full blur-[80px] opacity-0 group-hover/card:opacity-20 transition-opacity duration-700 pointer-events-none ${styles.glow}`} />
-                    
-                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3">
-                          <h3 className="text-xl font-bold text-slate-100 tracking-tight">{event.customerName}</h3>
-                          <span className={`px-2.5 py-0.5 rounded-[10px] text-[10px] font-bold uppercase tracking-wider border ${getPriorityStyles(event.priority)}`}>
-                            {event.priority}
-                          </span>
+                <div className="space-y-2">
+                  {categoryEvents.map((event, idx) => {
+                    const styles = getEventStyles(event.eventType);
+                    const isLast = idx === categoryEvents.length - 1;
+
+                    return (
+                      <div key={event.id} className="group relative flex gap-6">
+                        {/* Timeline connector */}
+                        <div className="flex flex-col items-center shrink-0">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 group-hover:scale-110 z-10 backdrop-blur-xl ${styles.bg} ${styles.border}`}>
+                            {styles.icon}
+                          </div>
+                          {!isLast && <div className="w-px h-full bg-gradient-to-b from-white/10 to-transparent my-1" />}
                         </div>
-                        <div className={`text-xs font-bold uppercase tracking-widest flex items-center gap-2 ${styles.text}`}>
-                          {event.eventType}
+
+                        {/* Event Card */}
+                        <div className="flex-1 pb-2">
+                          <div className="glass-panel card-hover rounded-[24px] p-4 md:p-5 border border-white/10 backdrop-blur-xl bg-white/[0.02] hover:bg-white/[0.04] transition-all duration-500 relative overflow-hidden group/card">
+                            {/* Background decoration */}
+                            <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full blur-[50px] opacity-0 group-hover/card:opacity-20 transition-opacity duration-700 pointer-events-none ${styles.glow}`} />
+                            
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="text-lg font-bold text-slate-100 tracking-tight">{event.customerName}</h3>
+                                  <span className={`px-2 py-0.5 rounded-[8px] text-[9px] font-bold uppercase tracking-wider border ${getPriorityStyles(event.priority)}`}>
+                                    {event.priority}
+                                  </span>
+                                </div>
+                                <div className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${styles.text}`}>
+                                  {event.eventType}
+                                </div>
+                              </div>
+                              
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-4 text-slate-500 text-[10px] font-bold uppercase tracking-tighter">
+                                  <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
+                                    <Clock size={10} />
+                                    {event.timestamp}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button 
+                                    onClick={() => {
+                                      const lead = db.getLeadByName(event.customerName);
+                                      if (lead) {
+                                        setSelectedLead(lead);
+                                        setActive("customers");
+                                      }
+                                    }}
+                                    className="h-9 w-9 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center active:scale-[0.95]"
+                                    title="Review Profile"
+                                  >
+                                    <ArrowUpRight size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={() => {
+                                      const lead = db.getLeadByName(event.customerName);
+                                      if (lead) {
+                                        setSelectedLead(lead);
+                                        setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
+                                        setActive("chat");
+                                      }
+                                    }}
+                                    className="h-9 w-9 bg-white/5 hover:bg-white/10 text-slate-200 rounded-xl transition-all border border-white/10 flex items-center justify-center active:scale-[0.95]"
+                                    title="Ask AI"
+                                  >
+                                    <MessageSquare size={16} className="text-indigo-400" />
+                                  </button>
+                                  <button className="h-9 w-9 rounded-xl hover:bg-white/5 transition-colors text-slate-500 flex items-center justify-center">
+                                    <MoreVertical size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <p className="text-slate-400 text-xs md:text-sm leading-relaxed max-w-4xl mt-3 font-medium line-clamp-2 group-hover/card:line-clamp-none transition-all">
+                              {event.description}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-4 text-slate-500 text-[11px] font-bold uppercase tracking-tighter">
-                        <span className="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/5">
-                          <Clock size={12} />
-                          {event.timestamp}
-                        </span>
-                        <button className="p-2 rounded-xl hover:bg-white/5 transition-colors">
-                          <MoreVertical size={18} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <p className="text-slate-400 text-sm md:text-base leading-relaxed max-w-3xl mb-8 font-medium">
-                      {event.description}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-3 pt-6 border-t border-white/5">
-                      <button 
-                        onClick={() => {
-                          const lead = db.getLeadByName(event.customerName);
-                          if (lead) {
-                            setSelectedLead(lead);
-                            setActive("customers");
-                          }
-                        }}
-                        className="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white rounded-[18px] text-[13px] font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 active:scale-[0.98]"
-                      >
-                        Review Profile
-                        <ArrowUpRight size={16} />
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const lead = db.getLeadByName(event.customerName);
-                          if (lead) {
-                            setSelectedLead(lead);
-                            setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
-                            setActive("chat");
-                          }
-                        }}
-                        className="px-6 py-3 bg-white/5 hover:bg-white/10 text-slate-200 rounded-[18px] text-[13px] font-bold transition-all border border-white/10 flex items-center justify-center gap-2 active:scale-[0.98]"
-                      >
-                        <MessageSquare size={16} className="text-indigo-400" />
-                        Ask AI
-                      </button>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
             );
           })}
+          {filteredEvents.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 bg-white/[0.02] border border-dashed border-white/10 rounded-[32px]">
+              <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-slate-500 mb-4">
+                <Search size={32} />
+              </div>
+              <h3 className="text-slate-200 font-bold text-lg mb-1">No matches found</h3>
+              <p className="text-slate-500 text-sm">Try adjusting your filters or search query.</p>
+              <button 
+                onClick={() => { setSearchQuery(""); setActiveFilter(null); }}
+                className="mt-6 px-6 py-2 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-xl text-xs font-bold transition-all border border-indigo-500/20"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
         </div>
 
         {/* SIDEBAR WIDGETS */}
@@ -221,16 +338,42 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
             <h3 className="text-sm font-bold text-slate-100 mb-6 uppercase tracking-widest px-2">Insights Summary</h3>
             <div className="space-y-4">
               {[
-                { label: "High Urgency", value: "02", color: "rose" },
-                { label: "Detected Today", value: "12", color: "indigo" },
-                { label: "Actioned", value: "08", color: "emerald" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/5 group hover:bg-white/[0.05] transition-colors">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{item.label}</span>
-                  <span className={`text-lg font-bold text-${item.color}-400`}>{item.value}</span>
-                </div>
-              ))}
+                { label: "Birthday Greetings", value: birthdayCount.toString().padStart(2, "0"), color: "emerald" },
+                { label: "Policy Milestones", value: policyStatusCount.toString().padStart(2, "0"), color: "amber" },
+                { label: "Claims & Requests", value: claimWaiverCount.toString().padStart(2, "0"), color: "rose" },
+              ].map((item, i) => {
+                const isActive = activeFilter === item.label;
+                return (
+                  <button 
+                    key={i} 
+                    onClick={() => setActiveFilter(isActive ? null : item.label)}
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border duration-300 group ${
+                      isActive 
+                        ? `bg-${item.color}-500/20 border-${item.color}-500/30 shadow-lg shadow-${item.color}-500/10` 
+                        : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.05] hover:border-white/10'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full transition-transform duration-300 ${isActive ? 'scale-125' : 'scale-100'} bg-${item.color}-400`} />
+                      <span className={`text-xs font-bold uppercase tracking-wider transition-colors ${isActive ? `text-${item.color}-300` : 'text-slate-400 group-hover:text-slate-200'}`}>
+                        {item.label}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-lg font-bold transition-colors text-${item.color}-400`}>
+                        {item.value}
+                      </span>
+                      {isActive && <CheckCircle2 size={16} className={`text-${item.color}-400 animate-in zoom-in-50 duration-300`} />}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
+            {activeFilter && (
+              <p className="text-[10px] text-slate-500 font-medium text-center mt-4 uppercase tracking-tighter">
+                Click a category again to clear filter
+              </p>
+            )}
           </div>
 
           <div className="glass-panel rounded-[32px] p-6 border border-indigo-500/20 backdrop-blur-xl bg-indigo-500/[0.03]">

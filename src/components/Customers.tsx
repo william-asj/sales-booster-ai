@@ -3,25 +3,26 @@
 import React, { useState, useMemo } from "react";
 import { 
   Search, 
-  User, 
   Phone, 
-  Mail, 
   MapPin, 
   Calendar, 
   ShieldCheck, 
   TrendingUp, 
   MessageSquare,
   AlertCircle,
-  ChevronRight,
   Filter,
   MoreVertical,
-  Activity
+  Activity,
+  Mail,
+  SortAsc,
+  SortDesc
 } from "lucide-react";
 import { db, Lead } from "@/lib/data";
 
 interface Props {
   setActive: (page: string) => void;
   setSelectedLead: (lead: Lead) => void;
+  setInitialMessage: (message: string) => void;
   selectedLead: Lead | null;
 }
 
@@ -31,26 +32,63 @@ const getScoreColor = (score: number) => {
   return "text-rose-400";
 };
 
-export default function Customers({ setActive, setSelectedLead, selectedLead }: Props) {
+export default function Customers({ setActive, setSelectedLead, setInitialMessage, selectedLead }: Props) {
   const leads = db.getLeads();
-  const [selected, setSelected] = useState<Lead>(selectedLead || leads[0]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
-  const filteredLeads = useMemo(() => {
-    return leads.filter(lead => 
-      lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.event.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [leads, searchQuery]);
+  const filteredAndSortedLeads = useMemo(() => {
+    return [...leads]
+      .filter(lead => 
+        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.event.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.phone.includes(searchQuery)
+      )
+      .sort((a, b) => {
+        if (sortOrder === "asc") {
+          return a.name.localeCompare(b.name);
+        } else {
+          return b.name.localeCompare(a.name);
+        }
+      });
+  }, [leads, searchQuery, sortOrder]);
+
+  const [selected, setSelected] = useState<Lead>(selectedLead || filteredAndSortedLeads[0]);
+  const lastProcessedLeadId = React.useRef<number | null>(selectedLead?.id || null);
+
+  // Sync selection dynamically
+  React.useEffect(() => {
+    // 1. If a NEW specific lead is passed from parent (different from what we last processed), prioritize it
+    if (selectedLead && selectedLead.id !== lastProcessedLeadId.current) {
+      setSelected(selectedLead);
+      lastProcessedLeadId.current = selectedLead.id;
+      return;
+    }
+
+    // 2. Otherwise, handle filtering logic: if current selection disappears from list, pick first visible
+    if (filteredAndSortedLeads.length > 0) {
+      const isStillVisible = filteredAndSortedLeads.some(l => l.id === selected?.id);
+      if (!isStillVisible) {
+        setSelected(filteredAndSortedLeads[0]);
+      }
+    }
+  }, [filteredAndSortedLeads, selectedLead, selected?.id]);
 
   return (
     <div className="flex flex-col md:flex-row h-screen overflow-hidden animate-fade-in p-4 lg:p-6 gap-4 lg:gap-6">
       {/* Sidebar List */}
-      <div className="w-full md:w-72 lg:w-80 flex flex-col gap-4 h-[300px] md:h-full shrink-0">
+      <div className="w-full md:w-72 lg:w-80 flex flex-col gap-4 h-[350px] md:h-full shrink-0">
         <div className="glass-panel rounded-3xl p-4 flex flex-col gap-4 overflow-hidden shadow-xl h-full">
           <div className="flex items-center justify-between px-2">
             <h2 className="text-base lg:text-lg font-bold text-slate-50 tracking-tight">Customers</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-1">
+              <button 
+                onClick={() => setSortOrder(prev => prev === "asc" ? "desc" : "asc")}
+                className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-colors"
+                title={`Sort ${sortOrder === "asc" ? "Descending" : "Ascending"}`}
+              >
+                {sortOrder === "asc" ? <SortAsc size={18} /> : <SortDesc size={18} />}
+              </button>
               <button className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-colors">
                 <Filter size={18} />
               </button>
@@ -61,7 +99,7 @@ export default function Customers({ setActive, setSelectedLead, selectedLead }: 
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
             <input 
               type="text"
-              placeholder="Search customers..."
+              placeholder="Search by name, event, or phone..."
               className="w-full bg-white/5 border border-white/10 rounded-2xl py-2 pl-10 pr-4 text-xs lg:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -69,7 +107,7 @@ export default function Customers({ setActive, setSelectedLead, selectedLead }: 
           </div>
 
           <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col gap-2">
-            {filteredLeads.map(lead => (
+            {filteredAndSortedLeads.map(lead => (
               <button 
                 key={lead.id}
                 onClick={() => setSelected(lead)}
@@ -93,6 +131,11 @@ export default function Customers({ setActive, setSelectedLead, selectedLead }: 
                 )}
               </button>
             ))}
+            {filteredAndSortedLeads.length === 0 && (
+              <div className="text-center py-10 text-slate-500 text-xs italic">
+                No customers found matching your search.
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -262,7 +305,11 @@ export default function Customers({ setActive, setSelectedLead, selectedLead }: 
               </div>
 
               <button 
-                onClick={() => { setSelectedLead(selected); setActive("chat"); }}
+                onClick={() => { 
+                  setSelectedLead(selected); 
+                  setInitialMessage(`Generate pitch for ${selected.name} to offer ${selected.product}`);
+                  setActive("chat"); 
+                }}
                 className="w-full py-3.5 lg:py-4 bg-white text-slate-900 rounded-xl lg:rounded-2xl font-black text-[10px] md:text-xs lg:text-sm transition-all hover:bg-slate-100 active:scale-[0.98] shadow-xl whitespace-nowrap"
               >
                 GENERATE PITCH

@@ -1,67 +1,99 @@
 "use client";
 
+import React from "react";
+import { TrendingUp, PieChart, Activity, ArrowUpRight } from "lucide-react";
+import { db } from "@/lib/data";
+
 export default function Analytics() {
-  const bars = [
-    { label: "Jan", value: 62 }, { label: "Feb", value: 74 },
-    { label: "Mar", value: 58 }, { label: "Apr", value: 81 },
-    { label: "May", value: 69 }, { label: "Jun", value: 91 },
-  ];
-  const max = Math.max(...bars.map(b => b.value));
+  const analytics = db.getAnalytics();
+  const max = Math.max(...analytics.conversionChart.map(b => b.value));
 
   return (
-    <div className="page-content" style={{ padding: "28px 32px", maxWidth: 900 }}>
-      <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#e2e8f0", margin: 0 }}>Analytics</h1>
-        <p style={{ color: "#64748b", margin: "4px 0 0", fontSize: 13 }}>Conversion & performance overview</p>
-      </div>
+    <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto min-h-screen">
+      <header className="mb-10">
+        <h1 className="text-3xl font-bold text-slate-50 tracking-tight m-0">Analytics</h1>
+        <p className="mt-1 text-sm text-slate-400 font-medium">Conversion performance and product distribution overview.</p>
+      </header>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Bar chart */}
-        <div className="stat-card" style={{ background: "#0d0f1a", border: "1px solid #1e2235", borderRadius: 12, padding: "20px 24px" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 20 }}>Leads Converted / Month</div>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 12, height: 120 }}>
-            {bars.map((b, i) => (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                <div style={{ width: "100%", background: "linear-gradient(180deg, #6366f1, #8b5cf680)", borderRadius: "4px 4px 0 0", height: `${(b.value / max) * 100}px`, position: "relative", transition: "height 0.3s ease" }}>
-                  <div style={{ position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)", fontSize: 10, color: "#818cf8", fontWeight: 600 }}>{b.value}</div>
+        <div className="glass-panel card-hover rounded-[32px] p-8 border border-white/5 flex flex-col h-[350px]">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+              <Activity size={20} />
+            </div>
+            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-widest">Leads Converted / Month</h3>
+          </div>
+          
+          <div className="flex-1 flex items-end gap-4 md:gap-6 px-2">
+            {analytics.conversionChart.map((b, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
+                <div className="w-full relative">
+                  <div 
+                    className="w-full bg-gradient-to-t from-indigo-500/40 to-indigo-400 rounded-t-lg transition-all duration-700 group-hover:from-indigo-500/60 group-hover:to-indigo-300 relative"
+                    style={{ height: `${(b.value / max) * 180}px` }}
+                  >
+                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-bold text-indigo-300 bg-indigo-500/10 px-2 py-0.5 rounded-full border border-indigo-500/20">
+                      {b.value}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: "#475569" }}>{b.label}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">{b.label}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Product breakdown */}
-        <div className="stat-card" style={{ background: "#0d0f1a", border: "1px solid #1e2235", borderRadius: 12, padding: "20px 24px" }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#e2e8f0", marginBottom: 20 }}>Top Products</div>
-          {[
-            { name: "Life Protection Plus", pct: 68, color: "#6366f1" },
-            { name: "Family Shield", pct: 54, color: "#8b5cf6" },
-            { name: "Wealth Protector", pct: 41, color: "#a78bfa" },
-          ].map((p, i) => (
-            <div key={i} style={{ marginBottom: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
-                <span style={{ color: "#94a3b8" }}>{p.name}</span>
-                <span style={{ color: "#e2e8f0", fontWeight: 600 }}>{p.pct}%</span>
-              </div>
-              <div style={{ height: 6, background: "#1e2235", borderRadius: 3 }}>
-                <div style={{ height: "100%", borderRadius: 3, background: p.color, width: `${p.pct}%`, transition: "width 0.5s ease" }} />
-              </div>
+        <div className="glass-panel card-hover rounded-[32px] p-8 border border-white/5 flex flex-col h-[350px]">
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <PieChart size={20} />
             </div>
-          ))}
+            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-widest">Top Products Distribution</h3>
+          </div>
+          
+          <div className="flex-1 flex flex-col justify-center gap-6">
+            {analytics.topProducts.map((p, i) => (
+              <div key={i} className="space-y-3">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-xs font-bold text-slate-300">{p.name}</span>
+                  <span className="text-xs font-black text-slate-100">{p.pct}%</span>
+                </div>
+                <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(99,102,241,0.2)]"
+                    style={{ 
+                      width: `${p.pct}%`, 
+                      backgroundColor: p.color 
+                    }} 
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
 
-        {/* KPI cards */}
-        {[
-          { label: "Conversion Rate", value: "23.4%", delta: "+4.2% vs last month", color: "#22c55e" },
-          { label: "Avg. Deal Size", value: "Rp 2.3M", delta: "+8.1% vs last month", color: "#6366f1" },
-        ].map(kpi => (
-          <div key={kpi.label} className="stat-card" style={{ background: "#0d0f1a", border: "1px solid #1e2235", borderRadius: 12, padding: "24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div>
-              <div style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>{kpi.label}</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: "#e2e8f0" }}>{kpi.value}</div>
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {analytics.kpis.map(kpi => (
+          <div key={kpi.label} className="glass-panel card-hover rounded-[32px] p-8 border border-white/5 flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{kpi.label}</div>
+              <div className="text-4xl font-black text-slate-50 tracking-tighter">{kpi.value}</div>
             </div>
-            <div style={{ fontSize: 12, color: kpi.color, fontWeight: 600, background: kpi.color + "15", padding: "4px 10px", borderRadius: 6 }}>{kpi.delta}</div>
+            <div 
+              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl text-xs font-bold transition-all border shrink-0"
+              style={{ 
+                color: kpi.color, 
+                backgroundColor: `${kpi.color}15`,
+                borderColor: `${kpi.color}20`
+              }}
+            >
+              <TrendingUp size={14} />
+              {kpi.delta}
+            </div>
           </div>
         ))}
       </div>

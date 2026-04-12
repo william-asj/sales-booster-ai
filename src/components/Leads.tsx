@@ -1,17 +1,17 @@
 "use client";
 
-import React from "react";
-import { MessageSquare } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { MessageSquare, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { db, Lead } from "@/lib/data";
 
 const EVENT_COLORS: Record<string, { bg: string; text: string }> = {
-  "New Baby": { bg: "bg-amber-400/10", text: "text-amber-400" },
-  "Home Purchase": { bg: "bg-blue-500/10", text: "text-blue-400" },
-  Promotion: { bg: "bg-purple-500/10", text: "text-purple-400" },
-  Marriage: { bg: "bg-green-500/10", text: "text-green-400" },
-  "Recently Married": { bg: "bg-green-500/10", text: "text-green-400" },
-  "Job Promotion": { bg: "bg-purple-500/10", text: "text-purple-400" },
-  "Health Flag": { bg: "bg-red-500/10", text: "text-red-400" },
+  "Birthday": { bg: "bg-amber-400/10", text: "text-amber-400" },
+  "Inforce": { bg: "bg-emerald-500/10", text: "text-emerald-400" },
+  "Policy Being Processed": { bg: "bg-indigo-500/10", text: "text-indigo-400" },
+  "Lapse": { bg: "bg-rose-500/10", text: "text-rose-400" },
+  "Surrender": { bg: "bg-orange-500/10", text: "text-orange-400" },
+  "Freelook": { bg: "bg-blue-500/10", text: "text-blue-400" },
+  "Reinstate": { bg: "bg-purple-500/10", text: "text-purple-400" },
 };
 
 const getScoreColor = (score: number) => {
@@ -42,18 +42,73 @@ interface LeadsProps {
   setInitialMessage: (message: string) => void;
 }
 
+type SortField = "score" | "name" | "event";
+type SortOrder = "asc" | "desc";
+
 export default function Leads({ setActive, setSelectedLead, setInitialMessage }: LeadsProps) {
   const leads = db.getLeads();
+  const [sortBy, setSortBy] = useState<SortField>("score");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
+  const sortedLeads = useMemo(() => {
+    return [...leads].sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === "score") {
+        comparison = a.score - b.score;
+      } else if (sortBy === "name") {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortBy === "event") {
+        comparison = a.event.localeCompare(b.event);
+      }
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+  }, [leads, sortBy, sortOrder]);
+
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+  };
+
+  const SortButton = ({ field, label }: { field: SortField, label: string }) => (
+    <button
+      onClick={() => handleSort(field)}
+      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+        sortBy === field
+          ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+      }`}
+    >
+      {label}
+      {sortBy === field ? (
+        sortOrder === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+      ) : (
+        <ArrowUpDown size={14} className="opacity-30" />
+      )}
+    </button>
+  );
 
   return (
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
-      <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-50 m-0">Leads Recommendation</h1>
-        <p className="mt-1 text-sm text-slate-400">Full list of AI-curated opportunities.</p>
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-50 m-0 text-3xl font-bold tracking-tight">Leads Recommendation</h1>
+          <p className="mt-1 text-sm text-slate-400 font-medium">Full list of AI-curated opportunities sorted by your priority.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 bg-white/[0.02] p-2 rounded-2xl border border-white/5">
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Sort By</span>
+          <SortButton field="score" label="Match Score" />
+          <SortButton field="name" label="Customer Name" />
+          <SortButton field="event" label="Life Event" />
+        </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10">
-        {leads.map((lead) => (
+        {sortedLeads.map((lead) => (
           <div key={lead.id} className="glass-panel card-hover rounded-3xl p-6 flex flex-col">
             <div className="flex justify-between items-start mb-5">
               <div className="flex items-center gap-3">

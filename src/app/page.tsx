@@ -42,6 +42,7 @@ export default function Home() {
             <Customers
               setActive={setActive}
               setSelectedLead={setSelectedLead}
+              setInitialMessage={setInitialMessage}
               selectedLead={selectedLead}
             />
           )}

@@ -12,6 +12,14 @@ import {
   Bell,
   ChevronDown,
   ChevronUp,
+  Baby,
+  Clock,
+  CircleAlert,
+  ShieldCheck,
+  CircleMinus,
+  Eye,
+  RefreshCw,
+  Activity
 } from "lucide-react";
 import { db, Lead, Page } from "@/lib/data";
 
@@ -28,23 +36,35 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   PieChart: <PieChart size={20} className="text-indigo-300" />,
 };
 
-const EVENT_COLORS: Record<
-  string,
-  { bg: string; text: string; border: string }
-> = {
-  "New Baby": { bg: "bg-amber-400/10", text: "text-amber-400", border: "border-amber-400" },
-  "Home Purchase": { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500" },
-  Promotion: { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500" },
-  Marriage: { bg: "bg-green-500/10", text: "text-green-400", border: "border-green-500" },
-  "Recently Married": { bg: "bg-green-500/10", text: "text-green-400", border: "border-green-500" },
-  "Job Promotion": { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500" },
-  "Health Flag": { bg: "bg-red-500/10", text: "text-red-400", border: "border-red-500" },
+const getEventStyles = (type: string) => {
+  const styles: Record<string, { bg: string; text: string; icon: React.ReactNode }> = {
+    "Birthday": { bg: "bg-emerald-400/10", text: "text-emerald-400", icon: <Baby size={14} /> },
+    "Inforce": { bg: "bg-emerald-400/10", text: "text-emerald-400", icon: <ShieldCheck size={14} /> },
+    "Policy Being Processed": { bg: "bg-amber-400/10", text: "text-amber-400", icon: <Clock size={14} /> },
+    "Health Claim": { bg: "bg-rose-400/10", text: "text-rose-400", icon: <Activity size={14} /> },
+    "Lapse": { bg: "bg-rose-400/10", text: "text-rose-400", icon: <CircleAlert size={14} /> },
+    "Surrender": { bg: "bg-rose-400/10", text: "text-rose-400", icon: <CircleMinus size={14} /> },
+    "Freelook": { bg: "bg-blue-400/10", text: "text-blue-400", icon: <Eye size={14} /> },
+    "Reinstate": { bg: "bg-indigo-400/10", text: "text-indigo-400", icon: <RefreshCw size={14} /> }
+  };
+  return styles[type] || { bg: "bg-white/10", text: "text-white", icon: <HeartPulse size={14} /> };
 };
 
 const getScoreColor = (score: number) => {
   if (score >= 80) return "#4ade80";
   if (score >= 60) return "#fbbf24";
   return "#f87171";
+};
+
+// Helper to weigh timestamps for sorting (Future -> Present -> Past)
+const getTimestampWeight = (ts: string) => {
+  const lower = ts.toLowerCase();
+  if (lower.includes("tomorrow") || lower.includes("in ")) return 100;
+  if (lower.includes("today") || lower.includes("min") || lower.includes("hr")) return 50;
+  // Handle "X day(s) ago"
+  const match = lower.match(/(\d+)\s+day/);
+  if (match) return -parseInt(match[1]);
+  return 0;
 };
 
 const CircularGauge = ({ score }: { score: number }) => {
@@ -68,7 +88,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
   const leads = db.getLeads();
   const events = db.getEvents();
 
-  const [sortCol, setSortCol] = useState<"name" | "event" | "product" | "score" | null>(null);
+  const [sortCol, setSortCol] = useState<"name" | "event" | "product" | "score" | null>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   const toggleSort = (col: "name" | "event" | "product" | "score") => {
@@ -90,62 +110,72 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
     });
   }, [leads, sortCol, sortDir]);
 
+  const sortedEvents = useMemo(() => {
+    return [...events].sort((a, b) => getTimestampWeight(b.timestamp) - getTimestampWeight(a.timestamp));
+  }, [events]);
+
   const renderSortIcon = (col: string) => {
     if (sortCol !== col) return <span className="opacity-30 inline-block w-3.5">↕</span>;
     return sortDir === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
   };
 
-  const renderLeadCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10 animate-fade-in">
-      {leads.slice(0, 3).map((lead) => (
-        <div key={lead.id} className="glass-panel card-hover rounded-3xl p-6 flex flex-col">
-          <div className="flex justify-between items-start mb-5">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-200 font-semibold text-sm">
-                {lead.avatar}
-              </div>
-              <div>
-                <div
-                  onClick={() => { setSelectedLead(lead); setActive("customers"); }}
-                  className="btn-hover text-[15px] font-semibold text-slate-50 cursor-pointer"
-                >
-                  {lead.name}
+  const renderLeadCards = () => {
+    const topLeads = [...leads].sort((a, b) => b.score - a.score).slice(0, 3);
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-10 animate-fade-in">
+        {topLeads.map((lead) => {
+          const eventStyle = getEventStyles(lead.event);
+          return (
+            <div key={lead.id} className="glass-panel card-hover rounded-3xl p-6 flex flex-col">
+              <div className="flex justify-between items-start mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-200 font-semibold text-sm">
+                    {lead.avatar}
+                  </div>
+                  <div>
+                    <div
+                      onClick={() => { setSelectedLead(lead); setActive("customers"); }}
+                      className="btn-hover text-[15px] font-semibold text-slate-50 cursor-pointer"
+                    >
+                      {lead.name}
+                    </div>
+                    <span
+                      className={`inline-block mt-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${eventStyle.bg} ${eventStyle.text}`}
+                    >
+                      {lead.event}
+                    </span>
+                  </div>
                 </div>
-                <span
-                  className={`inline-block mt-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${EVENT_COLORS[lead.event]?.bg || "bg-white/10"} ${EVENT_COLORS[lead.event]?.text || "text-white"}`}
-                >
-                  {lead.event}
-                </span>
+                <CircularGauge score={lead.score} />
               </div>
-            </div>
-            <CircularGauge score={lead.score} />
-          </div>
 
-          <div className="bg-black/20 rounded-xl p-4 mb-5 flex-1">
-            <div className="flex justify-between mb-3">
-              <span className="text-xs text-slate-400">Best Product</span>
-              <span className="text-xs text-slate-200 font-medium">{lead.product}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-xs text-slate-400">Est. Premium</span>
-              <span className="text-[13px] text-indigo-300 font-semibold">{lead.premium}</span>
-            </div>
-          </div>
+              <div className="bg-black/20 rounded-xl p-4 mb-5 flex-1">
+                <div className="flex justify-between mb-3">
+                  <span className="text-xs text-slate-400">Best Product</span>
+                  <span className="text-xs text-slate-200 font-medium">{lead.product}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-slate-400">Est. Premium</span>
+                  <span className="text-[13px] text-indigo-300 font-semibold">{lead.premium}</span>
+                </div>
+              </div>
 
-          <button
-            onClick={() => { 
-              setSelectedLead(lead); 
-              setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
-              setActive("chat"); 
-            }}
-            className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
-          >
-            <MessageSquare size={16} /> AI Chat Assistant
-          </button>
-        </div>
-      ))}
-    </div>
-  );
+              <button
+                onClick={() => { 
+                  setSelectedLead(lead); 
+                  setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
+                  setActive("chat"); 
+                }}
+                className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
+              >
+                <MessageSquare size={16} /> AI Chat Assistant
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
@@ -201,40 +231,43 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                 </tr>
               </thead>
               <tbody>
-                {sortedActions.slice(0, 4).map((action) => (
-                  <tr key={action.id} className="row-hover border-b border-white/[0.03]">
-                    <td className="p-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0">{action.avatar}</div>
-                        <span onClick={() => { setSelectedLead(action); setActive("customers"); }} className="btn-hover text-[13px] font-medium text-slate-200 cursor-pointer whitespace-nowrap">{action.name}</span>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <span className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${EVENT_COLORS[action.event]?.bg || "bg-white/10"} ${EVENT_COLORS[action.event]?.text || "text-white"}`}>{action.event}</span>
-                    </td>
-                    <td className="p-3 text-[13px] text-slate-200">{action.product}</td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden shrink-0">
-                          <div style={{ width: `${action.score}%`, backgroundColor: getScoreColor(action.score) }} className="h-full rounded-full transition-all duration-1000 ease-out" />
+                {sortedActions.slice(0, 6).map((action) => {
+                  const eventStyle = getEventStyles(action.event);
+                  return (
+                    <tr key={action.id} className="row-hover border-b border-white/[0.03]">
+                      <td className="p-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0">{action.avatar}</div>
+                          <span onClick={() => { setSelectedLead(action); setActive("customers"); }} className="btn-hover text-[13px] font-medium text-slate-200 cursor-pointer whitespace-nowrap">{action.name}</span>
                         </div>
-                        <span className="text-xs font-semibold text-slate-50 w-6">{action.score}</span>
-                      </div>
-                    </td>
-                    <td className="p-3">
-                      <button 
-                        onClick={() => { 
-                          setSelectedLead(action); 
-                          setInitialMessage(`Get Latest Info for ${action.name}, what is the best product i can offer to him/her?`);
-                          setActive("chat"); 
-                        }} 
-                        className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
-                      >
-                        Review
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="p-3">
+                        <span className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${eventStyle.bg} ${eventStyle.text}`}>{action.event}</span>
+                      </td>
+                      <td className="p-3 text-[13px] text-slate-200">{action.product}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden shrink-0">
+                            <div style={{ width: `${action.score}%`, backgroundColor: getScoreColor(action.score) }} className="h-full rounded-full transition-all duration-1000 ease-out" />
+                          </div>
+                          <span className="text-xs font-semibold text-slate-50 w-6">{action.score}</span>
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <button 
+                          onClick={() => { 
+                            setSelectedLead(action); 
+                            setInitialMessage(`Get Latest Info for ${action.name}, what is the best product i can offer to him/her?`);
+                            setActive("chat"); 
+                          }} 
+                          className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
+                        >
+                          Review
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -244,25 +277,28 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
           <div className="glass-panel card-hover rounded-[32px] p-5 flex-1 border border-white/10 backdrop-blur-xl bg-white/[0.02] flex flex-col overflow-hidden">
             <div className="flex justify-between items-center mb-4 shrink-0 px-1">
               <h3 className="text-[14px] font-bold text-slate-100 m-0 tracking-tight">Recent Life Events</h3>
-              <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide hover:underline transition-all">View All</button>
+              <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide transition-all">View All</button>
             </div>
             <div className="flex flex-col gap-1 overflow-y-auto pr-1 scrollbar-hide">
-              {events.map((event) => (
-                <div key={event.id} className={`flex gap-3 p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-300 group cursor-pointer border border-transparent hover:border-white/5 shrink-0`}>
-                  <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-base shrink-0 border border-white/5 group-hover:scale-105 transition-transform`}>
-                    {event.eventType === "Health Flag" ? "⚠️" : event.eventType === "New Baby" ? "🍼" : event.eventType === "Promotion" ? "💼" : "🏠"}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex justify-between items-baseline gap-2">
-                      <div className="text-[12px] font-bold text-slate-100 truncate">{event.customerName}</div>
-                      <div className="text-[9px] font-bold text-slate-500 uppercase shrink-0">{event.timestamp}</div>
+              {sortedEvents.map((event) => {
+                const eventStyle = getEventStyles(event.eventType);
+                return (
+                  <div key={event.id} className={`flex gap-3 p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-300 group cursor-pointer border border-transparent hover:border-white/5 shrink-0`}>
+                    <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-base shrink-0 border border-white/5 group-hover:scale-105 transition-transform ${eventStyle.text}`}>
+                      {eventStyle.icon}
                     </div>
-                    <div className={`text-[11px] font-medium ${EVENT_COLORS[event.eventType]?.text || "text-slate-400"} truncate`}>
-                      {event.eventType}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex justify-between items-baseline gap-2">
+                        <div className="text-[12px] font-bold text-slate-100 truncate">{event.customerName}</div>
+                        <div className="text-[9px] font-bold text-slate-500 uppercase shrink-0">{event.timestamp}</div>
+                      </div>
+                      <div className={`text-[11px] font-medium ${eventStyle.text} truncate`}>
+                        {event.eventType}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
