@@ -6,6 +6,7 @@ import { Check } from "lucide-react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Props {
+  label?: string;
   question: string;
   inputType: "single" | "multi";
   options: string[];
@@ -14,7 +15,7 @@ interface Props {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function QuestionnaireCard({ question, inputType, options, onSubmit }: Props) {
+export default function QuestionnaireCard({ label, question, inputType, options, onSubmit }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
@@ -53,9 +54,23 @@ export default function QuestionnaireCard({ question, inputType, options, onSubm
       maxWidth: 340,
     }}>
 
-      {/* ── Question ── */}
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.5 }}>
-        {question}
+      {/* ── Label & Question ── */}
+      <div>
+        {label && (
+          <div style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: "#6366f1",
+            textTransform: "uppercase",
+            letterSpacing: "0.15em",
+            marginBottom: 6
+          }}>
+            {label}
+          </div>
+        )}
+        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.5 }}>
+          {question}
+        </div>
       </div>
 
       {/* ── Options ── */}
@@ -81,7 +96,6 @@ export default function QuestionnaireCard({ question, inputType, options, onSubm
                 fontFamily: "Segoe UI, sans-serif",
               }}
             >
-              {/* Custom radio / checkbox indicator */}
               <div style={{
                 width: 17,
                 height: 17,
@@ -114,9 +128,7 @@ export default function QuestionnaireCard({ question, inputType, options, onSubm
         })}
       </div>
 
-      {/* ── Footer: submit or submitted badge ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-
         {submitted ? (
           <div style={{
             display: "inline-flex",
@@ -151,18 +163,13 @@ export default function QuestionnaireCard({ question, inputType, options, onSubm
               fontFamily: "Segoe UI, sans-serif",
               transition: "opacity 0.15s ease",
             }}
-            onMouseEnter={e => {
-              if (canSubmit) (e.currentTarget as HTMLElement).style.opacity = "0.88";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLElement).style.opacity = "1";
-            }}
+            onMouseEnter={e => { if (canSubmit) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           >
             Submit
           </button>
         )}
 
-        {/* Selection count hint for multi */}
         {inputType === "multi" && !submitted && selected.length > 0 && (
           <span style={{ fontSize: 11, color: "#475569" }}>
             {selected.length} selected

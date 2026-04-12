@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Sparkles } from "lucide-react";
 import QuestionnaireCard from "./QuestionnaireCard";
 import ResponseVariantCard from "./ResponseVariantCard";
 
@@ -21,6 +22,7 @@ export interface ChatMessage {
 
 interface QuestionnaireData {
   type: "questionnaire";
+  label?: string;
   question: string;
   inputType: "single" | "multi";
   options: string[];
@@ -140,6 +142,7 @@ function AssistantBubbleContent({
       const data = parsed as unknown as QuestionnaireData;
       return (
         <QuestionnaireCard
+          label={data.label}
           question={data.question}
           inputType={data.inputType}
           options={data.options}
@@ -204,7 +207,7 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
               fontSize: "14.5px",
               color: "#f8fafc",
               lineHeight: "1.6",
-              wordBreak: "break-word",
+              wordBreak: "word-break",
               border: "1px solid rgba(255, 255, 255, 0.05)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
             }}>
@@ -216,15 +219,25 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
     );
   }
 
-  // ASSISTANT BUBBLE - Ultra-minimalist: Just text
+  // ASSISTANT BUBBLE
   return (
     <div className="message" style={{ 
       display: "flex", 
-      gap: 16, 
+      gap: 12, 
       alignItems: "flex-start",
       padding: "4px 0",
       marginBottom: 16
     }}>
+      <div style={{
+        width: 30, height: 30, borderRadius: 10, 
+        background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
+        display: "flex", alignItems: "center", justifyContent: "center", 
+        flexShrink: 0,
+        boxShadow: "0 2px 8px rgba(155, 114, 203, 0.2)",
+        marginTop: 4
+      }}>
+        <Sparkles size={16} color="white" />
+      </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: "15.5px", color: "#e2e8f0", lineHeight: "1.75" }}>
           <AssistantBubbleContent text={message.text} onSubmitQuestionnaire={onSubmitQuestionnaire} />
@@ -232,4 +245,4 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
       </div>
     </div>
   );
-  }
+}
