@@ -210,8 +210,8 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
         ))}
       </div>
 
-      <div className="grid grid-cols-[2.5fr_1fr] gap-6 mb-8">
-        <div className="glass-panel card-hover rounded-3xl p-5 flex flex-col overflow-hidden">
+      <div className="grid grid-cols-[2.5fr_1fr] gap-6 mb-8 items-stretch">
+        <div className="glass-panel card-hover rounded-3xl p-5 md:p-6 flex flex-col overflow-hidden">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-base font-semibold text-slate-50 m-0">Priority Actions</h3>
             <button onClick={() => setActive("leads")} className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide">View All</button>
@@ -273,23 +273,23 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
           </div>
         </div>
 
-        <div className="flex flex-col gap-5">
-          <div className="glass-panel card-hover rounded-[32px] p-5 flex-1 border border-white/10 backdrop-blur-xl bg-white/[0.02] flex flex-col overflow-hidden">
+        <div className="flex flex-col gap-4">
+          <div className="glass-panel card-hover rounded-[32px] p-5 flex flex-col overflow-hidden border border-white/10 backdrop-blur-xl bg-white/[0.02]">
             <div className="flex justify-between items-center mb-4 shrink-0 px-1">
               <h3 className="text-[14px] font-bold text-slate-100 m-0 tracking-tight">Recent Life Events</h3>
               <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide transition-all">View All</button>
             </div>
-            <div className="flex flex-col gap-1 overflow-y-auto pr-1 scrollbar-hide">
-              {sortedEvents.map((event) => {
+            <div className="flex flex-col gap-1.5 overflow-hidden">
+              {sortedEvents.slice(0, 5).map((event) => {
                 const eventStyle = getEventStyles(event.eventType);
                 return (
-                  <div key={event.id} className={`flex gap-3 p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-300 group cursor-pointer border border-transparent hover:border-white/5 shrink-0`}>
+                  <div key={event.id} className={`flex gap-3.5 p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-300 group cursor-pointer border border-transparent hover:border-white/5 shrink-0`}>
                     <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-base shrink-0 border border-white/5 group-hover:scale-105 transition-transform ${eventStyle.text}`}>
-                      {eventStyle.icon}
+                      {React.cloneElement(eventStyle.icon as React.ReactElement<{ size?: number }>, { size: 14 })}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex justify-between items-baseline gap-2">
-                        <div className="text-[12px] font-bold text-slate-100 truncate">{event.customerName}</div>
+                        <div className="text-[13px] font-bold text-slate-100 truncate">{event.customerName}</div>
                         <div className="text-[9px] font-bold text-slate-500 uppercase shrink-0">{event.timestamp}</div>
                       </div>
                       <div className={`text-[11px] font-medium ${eventStyle.text} truncate`}>
@@ -302,12 +302,12 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
             </div>
           </div>
 
-          <div className="glass-panel card-hover rounded-[28px] p-4 bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-md shrink-0">
+          <div className="glass-panel card-hover rounded-[28px] p-5 bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-md shrink-0 mt-auto">
             <div className="flex gap-3 items-start">
-              <div className="text-indigo-300 mt-0.5"><Sparkles size={16} /></div>
+              <div className="text-indigo-300 mt-0.5"><Sparkles size={18} /></div>
               <div>
-                <h4 className="text-[12px] font-bold text-slate-100 mb-1 m-0 uppercase tracking-wider">AI Tip</h4>
-                <p className="text-[11px] text-slate-400 leading-snug m-0 font-medium">New Baby events have 45% higher conversion within 72h.</p>
+                <h4 className="text-[13px] font-bold text-slate-100 mb-1 m-0 uppercase tracking-wider">AI Tips of the Day</h4>
+                <p className="text-[12px] text-slate-400 leading-snug m-0 font-medium">New Baby events have 45% higher conversion within 72h.</p>
               </div>
             </div>
           </div>

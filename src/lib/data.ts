@@ -71,7 +71,7 @@ const EVENTS: LifeEvent[] = [
     id: "evt_001",
     customerName: "Rina Kusuma",
     eventType: "Policy Being Processed",
-    description: " New policy application detected in underwriting. High likelihood of conversion if followed up promptly.",
+    description: "New policy application detected in underwriting. High likelihood of conversion if followed up promptly.",
     timestamp: "2 hrs ago",
     priority: "High",
     color: "rose"
@@ -111,6 +111,69 @@ const EVENTS: LifeEvent[] = [
     timestamp: "4 days ago",
     priority: "Low",
     color: "purple"
+  },
+  {
+    id: "evt_006",
+    customerName: "Linda Wahyuni",
+    eventType: "Health Claim",
+    description: "Critical illness claim filed. AI recommends reviewing supplementary income protection plans.",
+    timestamp: "In 2 days",
+    priority: "High",
+    color: "rose"
+  },
+  {
+    id: "evt_007",
+    customerName: "Dewi Kartika",
+    eventType: "Reinstate",
+    description: "Policy reinstatement request received. Customer is re-engaging with their financial planning.",
+    timestamp: "Today",
+    priority: "Medium",
+    color: "indigo"
+  },
+  {
+    id: "evt_008",
+    customerName: "Mira Lestari",
+    eventType: "Inforce",
+    description: "Policy has officially moved to Inforce status. Perfect time for a courtesy welcome call.",
+    timestamp: "15 min ago",
+    priority: "Low",
+    color: "emerald"
+  },
+  {
+    id: "evt_009",
+    customerName: "Siska Amelia",
+    eventType: "Birthday",
+    description: "Upcoming 32nd birthday. Potential for scholarship fund top-up or family protection review.",
+    timestamp: "Tomorrow",
+    priority: "High",
+    color: "emerald"
+  },
+  {
+    id: "evt_010",
+    customerName: "Adi Nugroho",
+    eventType: "Freelook",
+    description: "Customer is within the 14-day freelook period. Proactive support needed to ensure satisfaction.",
+    timestamp: "Today",
+    priority: "Medium",
+    color: "blue"
+  },
+  {
+    id: "evt_011",
+    customerName: "Hendra Putra",
+    eventType: "Surrender",
+    description: "Partial surrender detected. High risk of total policy exit. Retention strategy required.",
+    timestamp: "2 days ago",
+    priority: "High",
+    color: "rose"
+  },
+  {
+    id: "evt_012",
+    customerName: "Taufik Hidayat",
+    eventType: "Inforce",
+    description: "Annual policy anniversary. Review performance of unit-linked investments with the customer.",
+    timestamp: "1 week ago",
+    priority: "Medium",
+    color: "emerald"
   }
 ];
 
