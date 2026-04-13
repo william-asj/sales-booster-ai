@@ -1,181 +1,328 @@
 "use client";
 
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, ArrowLeft, ArrowRight, CheckCircle2, Pencil } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface Props {
-  label?: string;
+interface Step {
+  label: string;
   question: string;
-  inputType: "single" | "multi";
   options: string[];
-  onSubmit: (answer: string) => void;
+}
+
+interface Props {
+  steps: Step[];
+  onSubmit: (answers: Record<string, string>) => void;
+  onBack?: () => void; // called when user clicks Back on step 1
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export default function QuestionnaireCard({ label, question, inputType, options, onSubmit }: Props) {
-  const [selected, setSelected] = useState<string[]>([]);
+export default function QuestionnaireCard({ steps, onSubmit, onBack }: Props) {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherText, setOtherText] = useState("");
 
-  const toggle = (opt: string) => {
+  const totalSteps = steps.length;
+  const current = steps[currentStep];
+
+  const handleSelect = (option: string) => {
     if (submitted) return;
-    if (inputType === "single") {
-      setSelected([opt]);
-    } else {
-      setSelected(prev =>
-        prev.includes(opt) ? prev.filter(o => o !== opt) : [...prev, opt]
-      );
+    setAnswers(prev => ({ ...prev, [current.label]: option }));
+    setShowOtherInput(false);
+  };
+
+  const handleOtherClick = () => {
+    if (submitted) return;
+    setShowOtherInput(true);
+    setAnswers(prev => {
+      const newAnswers = { ...prev };
+      delete newAnswers[current.label];
+      return newAnswers;
+    });
+  };
+
+  const handleOtherSubmit = () => {
+    if (otherText.trim()) {
+      setAnswers(prev => ({ ...prev, [current.label]: otherText.trim() }));
     }
   };
 
-  const handleSubmit = () => {
-    if (selected.length === 0 || submitted) return;
-    const answer =
-      inputType === "single"
-        ? selected[0]
-        : selected.map((s, i) => `${i + 1}. ${s}`).join("\n");
-    setSubmitted(true);
-    onSubmit(answer);
+  const handleNext = () => {
+    if (currentStep < totalSteps - 1) {
+      setCurrentStep(prev => prev + 1);
+      setShowOtherInput(false);
+      setOtherText("");
+    } else {
+      setSubmitted(true);
+      onSubmit(answers);
+    }
   };
 
-  const canSubmit = selected.length > 0 && !submitted;
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prev => prev - 1);
+      setShowOtherInput(false);
+      setOtherText("");
+    } else {
+      onBack?.();
+    }
+  };
+
+  const currentAnswer = answers[current.label];
+  const canNext = currentAnswer !== undefined || (showOtherInput && otherText.trim().length > 0);
+
+  // Auto-submit other text if user moves forward
+  const onNextClick = () => {
+    if (showOtherInput && otherText.trim()) {
+      handleOtherSubmit();
+    }
+    handleNext();
+  };
 
   return (
     <div style={{
-      background: "#13151f",
-      border: "1px solid #1e2235",
-      borderRadius: 14,
-      padding: "16px 18px",
+      background: "#18191f",
+      border: "1px solid rgba(255,255,255,0.08)",
+      borderRadius: 20,
       display: "flex",
       flexDirection: "column",
-      gap: 14,
-      maxWidth: 340,
+      width: "100%",
+      overflow: "hidden",
+      boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
+      fontFamily: "Segoe UI, sans-serif",
     }}>
-
-      {/* ── Label & Question ── */}
-      <div>
-        {label && (
-          <div style={{
-            fontSize: 10,
-            fontWeight: 700,
-            color: "#6366f1",
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            marginBottom: 6
-          }}>
-            {label}
+      
+      {/* ── Header ── */}
+      <div style={{
+        padding: "16px 24px",
+        borderBottom: "1px solid rgba(255,255,255,0.05)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        background: "rgba(255, 255, 255, 0.01)"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            {steps.map((_, idx) => (
+              <div
+                key={idx}
+                style={{
+                  height: 6,
+                  borderRadius: 3,
+                  width: idx === currentStep ? 24 : 8,
+                  background: idx === currentStep ? "#6366f1" : idx < currentStep ? "rgba(99, 102, 241, 0.3)" : "rgba(255, 255, 255, 0.1)",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                }}
+              />
+            ))}
           </div>
-        )}
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#e2e8f0", lineHeight: 1.5 }}>
-          {question}
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            Step {currentStep + 1} of {totalSteps}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={handleBack}
+            disabled={submitted || (currentStep === 0 && !onBack)}
+            style={{
+              width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)", color: "#94a3b8",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: (currentStep === 0 && !onBack) || submitted ? "default" : "pointer",
+              opacity: (currentStep === 0 && !onBack) || submitted ? 0.3 : 1
+            }}
+          >
+            <ArrowLeft size={16} />
+          </button>
+          <button
+            onClick={onNextClick}
+            disabled={!canNext || submitted}
+            style={{
+              width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,255,255,0.08)", color: canNext ? "#e2e8f0" : "#475569",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: !canNext || submitted ? "default" : "pointer",
+              opacity: !canNext || submitted ? 0.3 : 1
+            }}
+          >
+            <ArrowRight size={16} />
+          </button>
         </div>
       </div>
 
-      {/* ── Options ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {options.map((opt) => {
-          const isSelected = selected.includes(opt);
-          return (
+      {/* ── Content ── */}
+      <div style={{ padding: "32px 40px", display: "flex", flexDirection: "column", gap: 24 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", textTransform: "uppercase", letterSpacing: "0.15em" }}>
+            {current.label}
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "#f1f5f9", lineHeight: 1.4 }}>
+            {current.question}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {current.options.map((opt, idx) => {
+            const isSelected = !showOtherInput && currentAnswer === opt;
+            return (
+              <button
+                key={opt}
+                onClick={() => handleSelect(opt)}
+                disabled={submitted}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 16,
+                  padding: "14px 18px",
+                  borderRadius: 14,
+                  border: `1px solid ${isSelected ? "#6366f1" : "rgba(255,255,255,0.05)"}`,
+                  background: isSelected ? "rgba(99, 102, 241, 0.08)" : "rgba(255,255,255,0.02)",
+                  cursor: submitted ? "default" : "pointer",
+                  textAlign: "left",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <div style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: isSelected ? "#6366f1" : "rgba(255,255,255,0.1)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: isSelected ? "#fff" : "#94a3b8",
+                  flexShrink: 0,
+                  transition: "all 0.2s"
+                }}>
+                  {idx + 1}
+                </div>
+                <span style={{ fontSize: 15, color: isSelected ? "#f1f5f9" : "#94a3b8", fontWeight: isSelected ? 500 : 400 }}>
+                  {opt}
+                </span>
+              </button>
+            );
+          })}
+
+          {/* ── Something Else ── */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button
-              key={opt}
-              onClick={() => toggle(opt)}
+              onClick={handleOtherClick}
               disabled={submitted}
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 10,
-                padding: "9px 12px",
-                borderRadius: 9,
-                border: `1px solid ${isSelected ? "#4f52a8" : "#1e2235"}`,
-                background: isSelected ? "#6366f114" : "transparent",
+                gap: 16,
+                padding: "14px 18px",
+                borderRadius: 14,
+                border: `1px solid ${showOtherInput ? "#6366f1" : "rgba(255,255,255,0.05)"}`,
+                background: showOtherInput ? "rgba(99, 102, 241, 0.08)" : "rgba(255,255,255,0.02)",
                 cursor: submitted ? "default" : "pointer",
                 textAlign: "left",
-                transition: "all 0.15s ease",
-                fontFamily: "Segoe UI, sans-serif",
+                transition: "all 0.2s ease",
               }}
             >
               <div style={{
-                width: 17,
-                height: 17,
-                borderRadius: inputType === "single" ? "50%" : 5,
-                border: `1.5px solid ${isSelected ? "#6366f1" : "#2d3550"}`,
-                background: isSelected ? "#6366f1" : "transparent",
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                background: showOtherInput ? "#6366f1" : "rgba(255,255,255,0.1)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                flexShrink: 0,
-                transition: "all 0.15s ease",
+                color: showOtherInput ? "#fff" : "#94a3b8",
+                flexShrink: 0
               }}>
-                {isSelected && (
-                  inputType === "single"
-                    ? <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff" }} />
-                    : <Check size={10} color="#fff" strokeWidth={3} />
-                )}
+                <Pencil size={12} />
               </div>
-
-              <span style={{
-                fontSize: 13,
-                color: isSelected ? "#c7d2fe" : "#94a3b8",
-                lineHeight: 1.4,
-                transition: "color 0.15s ease",
-              }}>
-                {opt}
+              <span style={{ fontSize: 15, color: showOtherInput ? "#f1f5f9" : "#94a3b8", fontWeight: showOtherInput ? 500 : 400 }}>
+                Something else...
               </span>
             </button>
-          );
-        })}
+
+            {showOtherInput && (
+              <textarea
+                value={otherText}
+                onChange={(e) => setOtherText(e.target.value)}
+                placeholder="Tell us more about your situation..."
+                disabled={submitted}
+                style={{
+                  width: "100%",
+                  minHeight: 100,
+                  padding: "14px 18px",
+                  borderRadius: 14,
+                  background: "rgba(0,0,0,0.2)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                  color: "#f1f5f9",
+                  fontSize: 14,
+                  outline: "none",
+                  resize: "none",
+                  fontFamily: "inherit",
+                  marginTop: -4,
+                  animation: "fadeIn 0.2s ease-out"
+                }}
+              />
+            )}
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        {submitted ? (
-          <div style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 12,
-            fontWeight: 600,
-            color: "#22c55e",
-            background: "#22c55e12",
-            border: "1px solid #22c55e25",
-            borderRadius: 7,
-            padding: "5px 11px",
-          }}>
-            <Check size={13} strokeWidth={2.5} />
-            Submitted
-          </div>
-        ) : (
+      {/* ── Footer ── */}
+      <div style={{
+        padding: "20px 40px 32px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        background: "rgba(0,0,0,0.1)"
+      }}>
+        <div style={{ fontSize: 13, color: "#475569" }}>
+          {submitted ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80", fontWeight: 600 }}>
+              <CheckCircle2 size={16} /> Submitted
+            </div>
+          ) : (
+            "Select an option to continue"
+          )}
+        </div>
+
+        {!submitted && (
           <button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
+            onClick={onNextClick}
+            disabled={!canNext}
             style={{
-              padding: "7px 16px",
-              borderRadius: 8,
+              padding: "10px 24px",
+              borderRadius: 12,
               border: "none",
-              background: canSubmit
-                ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                : "#1e2235",
-              color: canSubmit ? "#fff" : "#3d4466",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: canSubmit ? "pointer" : "not-allowed",
-              fontFamily: "Segoe UI, sans-serif",
-              transition: "opacity 0.15s ease",
+              background: canNext 
+                ? "linear-gradient(135deg, #6366f1, #4f46e5)" 
+                : "rgba(255,255,255,0.05)",
+              color: canNext ? "#fff" : "#475569",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: canNext ? "pointer" : "not-allowed",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              transition: "all 0.2s"
             }}
-            onMouseEnter={e => { if (canSubmit) (e.currentTarget as HTMLElement).style.opacity = "0.88"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.opacity = "1"; }}
           >
-            Submit
+            {currentStep === totalSteps - 1 ? "Submit ✓" : "Next →"}
           </button>
         )}
-
-        {inputType === "multi" && !submitted && selected.length > 0 && (
-          <span style={{ fontSize: 11, color: "#475569" }}>
-            {selected.length} selected
-          </span>
-        )}
       </div>
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Plus, Trash2, MessageSquare, Sparkles } from "lucide-react";
 import ChatBubble from "./chatbot/ChatBubble";
 import ChatInput, { AttachedFile } from "./chatbot/ChatInput";
+import QuestionnaireCard from "./chatbot/QuestionnaireCard";
 import { useChatState, AiMessagePart, AiMessage } from "@/context/ChatContext";
 import { useChatFlow } from "@/hooks/useChatFlow";
-import { buildRecommendPrompt } from "@/lib/prompts";
+import { buildRecommendPrompt, RECOMMEND_FLOW, RecommendAnswers } from "@/lib/prompts";
 import { db } from "@/lib/data";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -50,7 +51,6 @@ function TypingIndicator() {
               animation: "gemini-bounce 1.4s infinite", animationDelay: `${i * 0.2}s`,
             }} />
           ))}
-          <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 500, color: "#94a3b8", letterSpacing: "0.01em" }}>Gemini is thinking...</span>
         </div>
       </div>
     </div>
@@ -65,8 +65,9 @@ interface ChatProps {
 
 export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
   const { sessions, activeSessionId, setActiveSessionId, createNewSession, deleteSession, appendMessage } = useChatState();
-  const { flowState, startFlow, submitAnswer, resetFlow } = useChatFlow();
+  const { startFlow, resetFlow } = useChatFlow();
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
   const [isScrolling, setIsScrolling] = useState(false);
@@ -77,10 +78,26 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
 
   const activeSession = sessions.find((s) => s.id === activeSessionId);
 
+  const activeQuestionnaire = useMemo(() => {
+    const msgs = activeSession?.messages || [];
+    const lastMessage = msgs[msgs.length - 1];
+    if (lastMessage?.role === "assistant") {
+      try {
+        const parsed = JSON.parse(lastMessage.text);
+        if (parsed.type === "questionnaire") {
+          return parsed;
+        }
+      } catch (e) {
+        // Not JSON
+      }
+    }
+    return null;
+  }, [activeSession?.messages]);
+
   // Auto-scroll to bottom of messages
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [activeSession?.messages, isTyping]);
+  }, [activeSession?.messages, isTyping, streamingText]);
 
   // Reset error when switching sessions
   useEffect(() => {
@@ -98,7 +115,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
 
   // Handle Send Logic (Uses Context)
   const sendToAI = useCallback(
-    async (userText: string, attachments?: AttachedFile[]) => {
+    async (userText: string, attachments?: AttachedFile[], silent: boolean = false) => {
       let targetSessionId = activeSessionId;
       
       if (!targetSessionId) {
@@ -108,6 +125,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
 
       setError(null);
       setIsTyping(true);
+      setStreamingText("");
 
       const userParts: AiMessagePart[] = [];
       if (attachments && attachments.length > 0) {
@@ -120,7 +138,9 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
       const currentSession = sessions.find(s => s.id === targetSessionId);
       const updatedHistory = [...(currentSession?.aiHistory || []), newAiMessage];
 
-      appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
+      if (!silent) {
+        appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
+      }
 
       try {
         const res = await fetch("/api/chat", {
@@ -130,11 +150,12 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
         });
 
         if (!res.ok) throw new Error(`API error: ${res.status}`);
-
+        
         const data = await res.json();
-        const replyText: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? data?.content?.parts?.[0]?.text ?? data?.text ?? data?.message ?? "Sorry, I couldn't generate a response.";
+        const fullText = data.text;
 
-        appendMessage(targetSessionId, { role: "assistant", text: replyText, time: nowTime() }, { role: "model", parts: [{ text: replyText }] });
+        appendMessage(targetSessionId, { role: "assistant", text: fullText, time: nowTime() }, { role: "model", parts: [{ text: fullText }] });
+        setStreamingText("");
       } catch (err) {
         setError(`Failed to reach AI: ${err instanceof Error ? err.message : "Unknown error"}`);
       } finally {
@@ -156,28 +177,33 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
     }
   }
 
-  async function handleQuestionnaireSubmit(answer: string) {
-    if (flowState) {
-      const { nextQuestion, finalAnswers } = submitAnswer(answer);
-      
+  const handleQuestionnaireSubmit = useCallback(
+    async (answers: Record<string, string>) => {
       let targetSessionId = activeSessionId;
       if (!targetSessionId) {
         targetSessionId = createNewSession();
         setActiveSessionId(targetSessionId);
       }
 
-      if (nextQuestion) {
-        appendMessage(targetSessionId, nextQuestion);
-      }
+      // Format user's answers as a Q&A bubble
+      const qaLines = RECOMMEND_FLOW.map(q => `Q: ${q.question}\nA: ${answers[q.label]}`).join("\n\n");
+      appendMessage(targetSessionId, { role: "user", text: qaLines, time: nowTime() });
 
-      if (finalAnswers) {
-        const prompt = buildRecommendPrompt(finalAnswers, db.getProducts());
-        await sendToAI(prompt);
-      }
-    } else {
-      await sendToAI(answer);
-    }
-  }
+      // Map answers to the format required by buildRecommendPrompt
+      const finalAnswers: RecommendAnswers = {
+        familySituation: answers["Family Situation"] || "",
+        currentPriority: answers["Current Priority"] || "",
+        existingCoverage: answers["Existing Coverage"] || "",
+        healthConcern: answers["Health Concern"] || "",
+        monthlyBudget: answers["Monthly Budget"] || ""
+      };
+
+      const prompt = buildRecommendPrompt(finalAnswers, db.getProducts());
+      await sendToAI(prompt, undefined, true);
+      resetFlow();
+    },
+    [activeSessionId, appendMessage, createNewSession, setActiveSessionId, sendToAI, resetFlow]
+  );
 
   useEffect(() => {
     if (initialMessage && initialMessage !== processedMessageRef.current) {
@@ -191,8 +217,18 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
 
   return (
     <div className="page-content" style={{
-      display: "flex", gap: 24, height: "calc(100vh - 48px)", padding: "24px",
-      fontFamily: "'Segoe UI', sans-serif", background: "#080a12"
+      display: "flex",
+      gap: 24,
+      height: "calc(100vh - 48px)",
+      padding: "24px",
+      fontFamily: "var(--font-main)",
+      background: "#080a12",
+      backgroundImage: `
+        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%)
+      `,
+      backgroundAttachment: "fixed",
+      color: "var(--claude-text)"
     }}>
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -202,13 +238,13 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(0, 0, 0, 0.1);
           border-radius: 10px;
           opacity: 0;
           transition: opacity 0.3s ease;
         }
         .custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(0, 0, 0, 0.2);
           opacity: 1;
         }
         .chat-container {
@@ -216,12 +252,12 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
           display: flex;
           flex-direction: column;
           position: relative;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(20, 22, 39, 0.4);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: 24px;
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
           overflow: hidden;
         }
         .centered-content {
@@ -242,12 +278,12 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
           width: 300px;
           display: flex;
           flex-direction: column;
-          background: rgba(255, 255, 255, 0.04);
-          backdrop-filter: blur(32px);
-          -webkit-backdrop-filter: blur(32px);
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(20, 22, 39, 0.4);
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          border: 1px solid rgba(255, 255, 255, 0.05);
           border-radius: 24px;
-          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
           overflow: hidden;
         }
         @keyframes gemini-gradient {
@@ -273,7 +309,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
       {/* ─── LEFT SIDEBAR (History) ─── */}
       <div className={`glass-sidebar custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
         <div style={{ padding: "24px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#94a3b8", letterSpacing: "0.05em", textTransform: "uppercase" }}>Chat History</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--claude-muted)", letterSpacing: "0.05em", textTransform: "uppercase", fontFamily: "var(--font-header)" }}>Chat History</span>
           <button
             onClick={() => {
               const newId = createNewSession();
@@ -288,8 +324,8 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
               display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
               transition: "all 0.2s ease"
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)"; }}
           >
             <Plus size={16} strokeWidth={2.5} />
           </button>
@@ -297,7 +333,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
 
         <div className={`custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} style={{ flex: 1, overflowY: "auto", padding: "8px" }} onScroll={handleScroll}>
           {sessions.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 20px", color: "#475569", fontSize: 13 }}>
+            <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--claude-muted)", fontSize: 13 }}>
               No chat history yet.
             </div>
           ) : (
@@ -315,10 +351,10 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                     cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
                     transition: "all 0.2s ease"
                   }}
-                  onMouseEnter={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "rgba(255,255,255,0.02)"; }}
+                  onMouseEnter={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; }}
                   onMouseLeave={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "transparent"; }}
                 >
-                  <MessageSquare size={16} color={activeSessionId === session.id ? "#e2e8f0" : "#64748b"} />
+                  <MessageSquare size={16} color={activeSessionId === session.id ? "#f8fafc" : "#94a3b8"} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13.5, color: activeSessionId === session.id ? "#f8fafc" : "#94a3b8", fontWeight: activeSessionId === session.id ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {session.title}
@@ -334,7 +370,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                     }}
                     ref={(el) => {
                       if (el && el.parentElement) {
-                        el.parentElement.onmouseenter = () => { el.style.opacity = "1"; if (activeSessionId !== session.id) el.parentElement!.style.background = "rgba(255,255,255,0.02)"; };
+                        el.parentElement.onmouseenter = () => { el.style.opacity = "1"; if (activeSessionId !== session.id) el.parentElement!.style.background = "rgba(255, 255, 255, 0.02)"; };
                         el.parentElement.onmouseleave = () => { el.style.opacity = "0"; if (activeSessionId !== session.id) el.parentElement!.style.background = "transparent"; };
                       }
                     }}
@@ -360,7 +396,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             background: "transparent", zIndex: 10
           }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "#f8fafc" }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "#f8fafc", fontFamily: "var(--font-header)" }}>
                 {activeSession ? activeSession.title : "SalesBooster AI"}
               </div>
               <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
@@ -380,7 +416,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                       animation: "gemini-gradient 3s linear infinite",
                       fontWeight: 600
                     }}>
-                      Gemini is thinking…
+                      {/* Gemini is thinking… */}
                     </span>
                   </>
                 ) : (
@@ -405,10 +441,10 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             }}
             onScroll={handleScroll}
           >
-            <div className="messages-max-width" style={{ padding: "40px 0 180px", display: "flex", flexDirection: "column", gap: 32 }}>
-              {(!activeSession || activeSession.messages.length === 0) && !isTyping ? (
+            <div className="messages-max-width" style={{ padding: "40px 0 200px", display: "flex", flexDirection: "column", gap: 32 }}>
+              {(!activeSession || activeSession.messages.length === 0) && !isTyping && !streamingText ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "50vh", gap: 24 }}>
-                  <div style={{ fontSize: 28, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.02em" }}>How can I help you today?</div>
+                  <div style={{ fontSize: 28, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.02em", fontFamily: "var(--font-header)" }}>How can I help you today?</div>
                   <div style={{ width: "100%", maxWidth: "600px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     {[
                       "Analyze my recent leads",
@@ -420,12 +456,13 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                         key={i}
                         onClick={() => sendToAI(suggestion)}
                         style={{
-                          padding: "16px", borderRadius: 12, background: "rgba(255,255,255,0.02)",
-                          border: "1px solid rgba(255,255,255,0.05)", color: "#94a3b8", textAlign: "left",
-                          fontSize: 14, cursor: "pointer", transition: "all 0.2s ease"
+                          padding: "16px", borderRadius: 12, background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid rgba(255, 255, 255, 0.05)", color: "#94a3b8", textAlign: "left",
+                          fontSize: 14, cursor: "pointer", transition: "all 0.2s ease",
+                          fontFamily: "var(--font-main)"
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"; }}
+                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; }}
                       >
                         {suggestion}
                       </button>
@@ -434,10 +471,30 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                 </div>
               ) : (
                 <>
-                  {activeSession?.messages.map((msg, i) => (
-                    <ChatBubble key={i} message={msg} onSubmitQuestionnaire={handleQuestionnaireSubmit} />
-                  ))}
-                  {isTyping && <TypingIndicator />}
+                  {activeSession?.messages.map((msg, i) => {
+                    // Skip questionnaire messages from rendering in the chat list
+                    if (
+                      msg.role === "assistant" &&
+                      msg.text.trimStart().startsWith('{"type":"questionnaire"')
+                    ) {
+                      return null;
+                    }
+
+                    return (
+                      <ChatBubble 
+                        key={i} 
+                        message={msg} 
+                        onSubmitQuestionnaire={handleQuestionnaireSubmit}
+                        onBackQuestionnaire={() => resetFlow()}
+                      />
+                    );
+                  })}
+                  {isTyping && !streamingText && <TypingIndicator />}
+                  {streamingText && (
+                    <ChatBubble 
+                      message={{ role: "assistant", text: streamingText, time: nowTime() }} 
+                    />
+                  )}
                 </>
               )}
 
@@ -450,6 +507,18 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             </div>
           </div>
 
+          {/* Bottom fade overlay — masks scrolling text behind the input */}
+          <div style={{
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 180,
+            background: "linear-gradient(to top, #080a12 0%, #080a12 30%, rgba(8,10,18,0.85) 60%, transparent 100%)",
+            pointerEvents: "none",
+            zIndex: 14,
+          }} />
+
           {/* Input Box Fixed at Bottom Center */}
           <div style={{ 
             position: "absolute", 
@@ -461,16 +530,28 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             pointerEvents: "none"
           }}>
             <div style={{ pointerEvents: "auto" }}>
-              <ChatInput 
-                onSend={(text, files) => sendToAI(text, files)} 
-                disabled={isTyping} 
-                value={inputText}
-                onValueChange={setInputText}
-                onSlashCommand={handleSlashCommand}
-              />
-              <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "#475569" }}>
-                AI can make mistakes. Check important info.
-              </div>
+              {activeQuestionnaire ? (
+                <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}>
+                  <QuestionnaireCard 
+                    steps={activeQuestionnaire.steps}
+                    onSubmit={handleQuestionnaireSubmit}
+                    onBack={() => resetFlow()}
+                  />
+                </div>
+              ) : (
+                <>
+                  <ChatInput 
+                    onSend={(text, files) => sendToAI(text, files)} 
+                    disabled={isTyping} 
+                    value={inputText}
+                    onValueChange={setInputText}
+                    onSlashCommand={handleSlashCommand}
+                  />
+                  <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "var(--claude-muted)" }}>
+                    AI can make mistakes. Check important info.
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
