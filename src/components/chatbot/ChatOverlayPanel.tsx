@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Sparkles } from "lucide-react";
 import ChatBubble from "./ChatBubble";
 import ChatInput, { AttachedFile } from "./ChatInput";
+import QuestionnaireCard from "./QuestionnaireCard";
 import { useChatOverlay } from "@/hooks/useChatOverlay";
 import { useChatState, AiMessage, AiMessagePart } from "@/context/ChatContext";
 import { useChatFlow } from "@/hooks/useChatFlow";
-import { buildRecommendPrompt } from "@/lib/prompts";
+import { buildRecommendPrompt, RECOMMEND_FLOW, RecommendAnswers } from "@/lib/prompts";
 import { db } from "@/lib/data";
 
 function nowTime(): string {
@@ -50,7 +51,6 @@ function TypingIndicator() {
               animation: "gemini-bounce 1.4s infinite", animationDelay: `${i * 0.2}s`,
             }} />
           ))}
-          <span style={{ marginLeft: 8, fontSize: 13, fontWeight: 500, color: "#94a3b8", letterSpacing: "0.01em" }}>Gemini is thinking...</span>
         </div>
       </div>
     </div>
@@ -63,7 +63,7 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", gap: 20, textAlign: "center", padding: "40px 10px", flex: 1,
     }}>
-      <div style={{ fontSize: 22, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.01em" }}>How can I help?</div>
+      <div style={{ fontSize: 22, fontWeight: 600, color: "var(--claude-header)", letterSpacing: "-0.01em" }}>How can I help?</div>
       <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
         {[
           "Analyze my recent leads",
@@ -74,12 +74,12 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
             key={i}
             onClick={() => onSuggestionClick(suggestion)}
             style={{
-              padding: "12px 16px", borderRadius: 12, background: "rgba(255,255,255,0.02)",
-              border: "1px solid rgba(255,255,255,0.05)", color: "#94a3b8", textAlign: "left",
+              padding: "12px 16px", borderRadius: 12, background: "rgba(255, 255, 255, 0.02)",
+              border: "1px solid rgba(255, 255, 255, 0.05)", color: "var(--claude-text)", textAlign: "left",
               fontSize: 13, cursor: "pointer", transition: "all 0.2s ease"
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.02)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)"; }}
           >
             {suggestion}
           </button>
@@ -92,9 +92,10 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
 export default function ChatOverlayPanel() {
   const { isOpen, toggle, close } = useChatOverlay();
   const { sessions, overlaySessionId, setOverlaySessionId, createNewSession, appendMessage } = useChatState();
-  const { flowState, startFlow, submitAnswer } = useChatFlow();
+  const { startFlow, resetFlow } = useChatFlow();
 
   const [isTyping, setIsTyping] = useState(false);
+  const [streamingText, setStreamingText] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,9 +106,24 @@ export default function ChatOverlayPanel() {
   const messages = activeSession?.messages || [];
   const aiHistory = activeSession?.aiHistory || [];
 
+  const activeQuestionnaire = useMemo(() => {
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage?.role === "assistant") {
+      try {
+        const parsed = JSON.parse(lastMessage.text);
+        if (parsed.type === "questionnaire") {
+          return parsed;
+        }
+      } catch (e) {
+        // Not JSON
+      }
+    }
+    return null;
+  }, [messages]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, streamingText]);
 
   const handleScroll = () => {
     setIsScrolling(true);
@@ -118,7 +134,7 @@ export default function ChatOverlayPanel() {
   };
 
   const sendToAI = useCallback(
-    async (userText: string, attachments?: AttachedFile[]) => {
+    async (userText: string, attachments?: AttachedFile[], silent: boolean = false) => {
       let targetSessionId = overlaySessionId;
       
       if (!targetSessionId) {
@@ -128,6 +144,7 @@ export default function ChatOverlayPanel() {
 
       setError(null);
       setIsTyping(true);
+      setStreamingText("");
 
       const userParts: AiMessagePart[] = [];
       if (attachments && attachments.length > 0) {
@@ -142,7 +159,9 @@ export default function ChatOverlayPanel() {
       const newAiMessage: AiMessage = { role: "user", parts: userParts };
       const updatedHistory: AiMessage[] = [...aiHistory, newAiMessage];
 
-      appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
+      if (!silent) {
+        appendMessage(targetSessionId, { role: "user", text: userText, time: nowTime(), attachments }, newAiMessage);
+      }
 
       try {
         const res = await fetch("/api/chat", {
@@ -152,14 +171,12 @@ export default function ChatOverlayPanel() {
         });
 
         if (!res.ok) throw new Error(`API error: ${res.status}`);
-
+        
         const data = await res.json();
-        const replyText: string =
-          data?.candidates?.[0]?.content?.parts?.[0]?.text ??
-          data?.content?.parts?.[0]?.text ?? data?.text ?? data?.message ??
-          "Sorry, I couldn't generate a response.";
+        const fullText = data.text;
 
-        appendMessage(targetSessionId, { role: "assistant", text: replyText, time: nowTime() }, { role: "model", parts: [{ text: replyText }] });
+        appendMessage(targetSessionId, { role: "assistant", text: fullText, time: nowTime() }, { role: "model", parts: [{ text: fullText }] });
+        setStreamingText("");
       } catch (err) {
         setError(`Failed to reach AI: ${err instanceof Error ? err.message : "Unknown error"}`);
       } finally {
@@ -190,29 +207,31 @@ export default function ChatOverlayPanel() {
   }
 
   const handleQuestionnaireSubmit = useCallback(
-    async (answer: string) => {
-      if (flowState) {
-        const { nextQuestion, finalAnswers } = submitAnswer(answer);
-
-        let targetSessionId = overlaySessionId;
-        if (!targetSessionId) {
-          targetSessionId = createNewSession("Overlay Chat");
-          setOverlaySessionId(targetSessionId);
-        }
-
-        if (nextQuestion) {
-          appendMessage(targetSessionId, nextQuestion);
-        }
-
-        if (finalAnswers) {
-          const prompt = buildRecommendPrompt(finalAnswers, db.getProducts());
-          await sendToAI(prompt);
-        }
-      } else {
-        await sendToAI(answer);
+    async (answers: Record<string, string>) => {
+      let targetSessionId = overlaySessionId;
+      if (!targetSessionId) {
+        targetSessionId = createNewSession("Overlay Chat");
+        setOverlaySessionId(targetSessionId);
       }
+
+      // Format user's answers as a Q&A bubble
+      const qaLines = RECOMMEND_FLOW.map(q => `Q: ${q.question}\nA: ${answers[q.label]}`).join("\n\n");
+      appendMessage(targetSessionId, { role: "user", text: qaLines, time: nowTime() });
+
+      // Map answers to the format required by buildRecommendPrompt
+      const finalAnswers: RecommendAnswers = {
+        familySituation: answers["Family Situation"] || "",
+        currentPriority: answers["Current Priority"] || "",
+        existingCoverage: answers["Existing Coverage"] || "",
+        healthConcern: answers["Health Concern"] || "",
+        monthlyBudget: answers["Monthly Budget"] || ""
+      };
+
+      const prompt = buildRecommendPrompt(finalAnswers, db.getProducts());
+      await sendToAI(prompt, undefined, true);
+      resetFlow();
     },
-    [flowState, submitAnswer, overlaySessionId, appendMessage, createNewSession, setOverlaySessionId, sendToAI]
+    [overlaySessionId, appendMessage, createNewSession, setOverlaySessionId, sendToAI, resetFlow]
   );
 
   return (
@@ -282,11 +301,11 @@ export default function ChatOverlayPanel() {
         boxShadow: isOpen ? "0 24px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06)" : "none",
         transform: isOpen ? "translateX(0) scale(1)" : "translateX(120%) scale(0.95)",
         opacity: isOpen ? 1 : 0, transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
-        fontFamily: "'Segoe UI', sans-serif", pointerEvents: isOpen ? "auto" : "none", overflow: "hidden",
+        fontFamily: "var(--font-main)", pointerEvents: isOpen ? "auto" : "none", overflow: "hidden",
       }}>
         {/* Header */}
         <div style={{
-          padding: "16px 20px", borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
+          padding: "16px 20px", borderBottom: "1px solid var(--claude-accent)",
           display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
           background: "rgba(13, 15, 26, 0.2)",
         }}>
@@ -298,8 +317,8 @@ export default function ChatOverlayPanel() {
             <Sparkles size={16} color="white" />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "#f8fafc" }}>SalesBooster AI</div>
-            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "var(--claude-header)", fontFamily: "var(--font-header)" }}>SalesBooster AI</div>
+            <div style={{ fontSize: 11, color: "var(--claude-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
               {isTyping ? (
                 <>
                   <div style={{ 
@@ -328,7 +347,7 @@ export default function ChatOverlayPanel() {
             </div>
           </div>
           <button onClick={close} style={{
-            width: 32, height: 32, borderRadius: 10, border: "1px solid rgba(255, 255, 255, 0.1)", background: "rgba(255,255,255,0.03)", color: "#94a3b8", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+            width: 32, height: 32, borderRadius: 10, border: "1px solid var(--claude-accent)", background: "transparent", color: "var(--claude-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
           }}>✕</button>
         </div>
 
@@ -338,20 +357,42 @@ export default function ChatOverlayPanel() {
           onScroll={handleScroll}
           style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}
         >
-          <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: 24, paddingBottom: 120 }}>
-            {messages.length === 0 && !isTyping ? (
+          <div style={{ padding: "20px 20px 140px 20px", display: "flex", flexDirection: "column", gap: 24 }}>
+            {messages.length === 0 && !isTyping && !streamingText ? (
               <EmptyState onSuggestionClick={(t) => sendToAI(t)} />
             ) : (
               <>
                 {messages.map((msg, i) => (
-                  <ChatBubble key={i} message={msg} onSubmitQuestionnaire={handleQuestionnaireSubmit} />
+                  <ChatBubble 
+                    key={i} 
+                    message={msg} 
+                    onSubmitQuestionnaire={handleQuestionnaireSubmit}
+                    onBackQuestionnaire={() => resetFlow()}
+                  />
                 ))}
-                {isTyping && <TypingIndicator />}
+                {isTyping && !streamingText && <TypingIndicator />}
+                {streamingText && (
+                  <ChatBubble 
+                    message={{ role: "assistant", text: streamingText, time: nowTime() }} 
+                  />
+                )}
               </>
             )}
             <div ref={bottomRef} />
           </div>
         </div>
+
+        {/* Bottom fade overlay */}
+        <div style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 140,
+          background: "linear-gradient(to top, rgba(13,15,26,1) 0%, rgba(13,15,26,0.9) 25%, rgba(13,15,26,0.5) 60%, transparent 100%)",
+          pointerEvents: "none",
+          zIndex: 14,
+        }} />
 
         {error && (
           <div style={{ background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)", borderRadius: 12, padding: "12px 16px", fontSize: 13, color: "#fca5a5", margin: "0 20px 10px" }}>
@@ -370,11 +411,21 @@ export default function ChatOverlayPanel() {
           pointerEvents: "none"
         }}>
           <div style={{ pointerEvents: "auto" }}>
-            <ChatInput 
-              onSend={handleSend} 
-              onSlashCommand={handleSlashCommand}
-              disabled={isTyping} 
-            />
+            {activeQuestionnaire ? (
+              <div style={{ marginBottom: 12, display: "flex", justifyContent: "center" }}>
+                <QuestionnaireCard 
+                  steps={activeQuestionnaire.steps}
+                  onSubmit={handleQuestionnaireSubmit}
+                  onBack={() => resetFlow()}
+                />
+              </div>
+            ) : (
+              <ChatInput 
+                onSend={handleSend} 
+                onSlashCommand={handleSlashCommand}
+                disabled={isTyping} 
+              />
+            )}
           </div>
         </div>
       </div>

@@ -22,10 +22,11 @@ export interface ChatMessage {
 
 interface QuestionnaireData {
   type: "questionnaire";
-  label?: string;
-  question: string;
-  inputType: "single" | "multi";
-  options: string[];
+  steps: Array<{
+    label: string;
+    question: string;
+    options: string[];
+  }>;
 }
 
 interface VariantsData {
@@ -60,27 +61,47 @@ function FileBadge({ name, mimeType }: { name: string; mimeType: string }) {
 }
 
 
-// ─── Inline renderer: **bold** + `code` ──────────────────────────────────────
+// ─── Inline renderer: **bold**, *italic*, + `code` ────────────────────────────
 
 function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+
   return parts.map((part, i) => {
-    if (part.startsWith("**") && part.endsWith("**"))
+    // Bold
+    if (part.startsWith("**") && part.endsWith("**")) {
       return (
-        <strong key={i} style={{ color: "#e2e8f0", fontWeight: 600 }}>
+        <strong key={i} style={{ 
+          color: "var(--claude-header)", 
+          fontWeight: 600,
+          fontFamily: "var(--font-header)" 
+        }}>
           {part.slice(2, -2)}
         </strong>
       );
-    if (part.startsWith("`") && part.endsWith("`"))
+    }
+    // Italic (single asterisk, not double)
+    if (part.startsWith("*") && part.endsWith("*") && !part.startsWith("**")) {
+      return (
+        <em key={i} style={{ color: "var(--claude-muted)", fontStyle: "italic" }}>
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+    // Inline code
+    if (part.startsWith("`") && part.endsWith("`")) {
       return (
         <code key={i} style={{
-          background: "#1e2235", color: "#a78bfa",
-          padding: "1px 6px", borderRadius: 4,
-          fontSize: 12, fontFamily: "monospace",
+          background: "var(--claude-code-bg)",
+          color: "var(--claude-text)",
+          padding: "1px 6px",
+          borderRadius: 4,
+          fontSize: "0.9rem",
+          fontFamily: "var(--font-mono)",
         }}>
           {part.slice(1, -1)}
         </code>
       );
+    }
     return part;
   });
 }
@@ -88,34 +109,164 @@ function renderInline(text: string): React.ReactNode {
 // ─── Markdown-style plain text renderer ──────────────────────────────────────
 
 function AITextMessage({ text }: { text: string }) {
+  const lines = text.split("\n");
+
   return (
-    <div style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.8, fontFamily: "inherit" }}>
-      {text.split("\n").map((line, i) => {
-        if (line.startsWith("## "))
-          return <div key={i} style={{ fontWeight: 700, fontSize: 14, color: "#e2e8f0", marginTop: 14, marginBottom: 5 }}>{line.slice(3)}</div>;
-        if (line.startsWith("# "))
-          return <div key={i} style={{ fontWeight: 700, fontSize: 16, color: "#e2e8f0", marginTop: 14, marginBottom: 7 }}>{line.slice(2)}</div>;
-        if (line.startsWith("- ") || line.startsWith("• "))
+    <div style={{ 
+      fontSize: "var(--base-size)", 
+      color: "var(--claude-text)", 
+      lineHeight: "var(--line-height)", 
+      fontFamily: "var(--font-main)",
+    }}>
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+
+        // Empty line → spacer
+        if (trimmed === "") {
+          return <div key={i} style={{ height: "var(--paragraph-spacing)" }} />;
+        }
+
+        // Horizontal rule
+        if (trimmed === "---") {
           return (
-            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 4, alignItems: "flex-start" }}>
-              <span style={{ color: "#6366f1", flexShrink: 0, fontSize: 16, lineHeight: 1.4 }}>·</span>
-              <span>{renderInline(line.replace(/^[-•]\s/, ""))}</span>
-            </div>
+            <hr key={i} style={{
+              border: "none",
+              borderTop: "1px solid var(--claude-accent)",
+              margin: "2rem 0"
+            }} />
           );
-        if (/^\d+\.\s/.test(line)) {
-          const num = line.match(/^(\d+)\./)?.[1];
+        }
+
+        // Emoji section header
+        if (/^\p{Emoji}/u.test(trimmed)) {
           return (
-            <div key={i} style={{ display: "flex", gap: 8, marginBottom: 4, alignItems: "flex-start" }}>
-              <span style={{ color: "#6366f1", fontWeight: 700, flexShrink: 0, minWidth: 16, fontSize: 12 }}>{num}.</span>
-              <span>{renderInline(line.replace(/^\d+\.\s/, ""))}</span>
+            <div key={i} style={{
+              fontSize: "var(--h3-size)",
+              fontWeight: 500,
+              color: "var(--claude-header)",
+              marginTop: "2rem",
+              marginBottom: "1rem",
+              fontFamily: "var(--font-header)",
+              letterSpacing: "-0.01em",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}>
+              {renderInline(trimmed)}
             </div>
           );
         }
-        if (line === "---")
-          return <hr key={i} style={{ border: "none", borderTop: "1px solid rgba(255,255,255,0.05)", margin: "10px 0" }} />;
-        if (line.trim() === "")
-          return <div key={i} style={{ height: 6 }} />;
-        return <div key={i} style={{ marginBottom: 2 }}>{renderInline(line)}</div>;
+
+        // H1
+        if (trimmed.startsWith("# ")) {
+          return (
+            <div key={i} style={{
+              fontSize: "var(--h1-size)",
+              fontWeight: 500,
+              color: "var(--claude-header)",
+              marginTop: "2rem",
+              marginBottom: "1rem",
+              fontFamily: "var(--font-header)",
+              letterSpacing: "-0.01em",
+            }}>
+              {renderInline(trimmed.slice(2))}
+            </div>
+          );
+        }
+
+        // H2
+        if (trimmed.startsWith("## ")) {
+          return (
+            <div key={i} style={{
+              fontSize: "var(--h2-size)",
+              fontWeight: 500,
+              color: "var(--claude-header)",
+              marginTop: "2rem",
+              marginBottom: "1rem",
+              borderBottom: "1px solid var(--claude-accent)",
+              paddingBottom: "0.3rem",
+              fontFamily: "var(--font-header)",
+              letterSpacing: "-0.01em",
+            }}>
+              {renderInline(trimmed.slice(3))}
+            </div>
+          );
+        }
+
+        // Blockquote
+        if (trimmed.startsWith("> ")) {
+          return (
+            <blockquote key={i} style={{
+              borderLeft: "2px solid #d1d1cc",
+              paddingLeft: "1rem",
+              fontStyle: "italic",
+              color: "#63635e",
+              margin: "1rem 0",
+              lineHeight: "var(--line-height)"
+            }}>
+              {renderInline(trimmed.slice(2))}
+            </blockquote>
+          );
+        }
+
+        // Bullet list item
+        if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
+          return (
+            <div key={i} style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+              marginBottom: "0.75rem",
+              paddingLeft: 4,
+            }}>
+              <span style={{
+                color: "#d1d1cc",
+                flexShrink: 0,
+                fontSize: "1.2rem",
+                lineHeight: "1.4",
+              }}>·</span>
+              <span style={{ color: "var(--claude-text)", lineHeight: "var(--line-height)" }}>
+                {renderInline(trimmed.replace(/^[-•]\s/, ""))}
+              </span>
+            </div>
+          );
+        }
+
+        // Numbered list item
+        const numMatch = trimmed.match(/^(\d+)\.\s(.*)/);
+        if (numMatch) {
+          return (
+            <div key={i} style={{
+              display: "flex",
+              gap: 12,
+              alignItems: "flex-start",
+              marginBottom: "0.75rem",
+              paddingLeft: 4,
+            }}>
+              <span style={{
+                color: "var(--claude-muted)",
+                fontWeight: 500,
+                flexShrink: 0,
+                minWidth: 20,
+                fontSize: "0.9rem",
+                lineHeight: "1.8",
+                fontFamily: "var(--font-header)",
+              }}>
+                {numMatch[1]}.
+              </span>
+              <span style={{ color: "var(--claude-text)", lineHeight: "var(--line-height)" }}>
+                {renderInline(numMatch[2])}
+              </span>
+            </div>
+          );
+        }
+
+        // Normal paragraph line
+        return (
+          <div key={i} style={{ marginBottom: "0.5rem", lineHeight: "var(--line-height)", color: "var(--claude-text)" }}>
+            {renderInline(trimmed)}
+          </div>
+        );
       })}
     </div>
   );
@@ -126,28 +277,30 @@ function AITextMessage({ text }: { text: string }) {
 function AssistantBubbleContent({
   text,
   onSubmitQuestionnaire,
+  onBackQuestionnaire,
 }: {
   text: string;
-  onSubmitQuestionnaire?: (answerText: string) => void;
+  onSubmitQuestionnaire?: (answers: Record<string, string>) => void;
+  onBackQuestionnaire?: () => void;
 }) {
   let parsed: Record<string, unknown> | null = null;
   try {
     parsed = JSON.parse(text);
   } catch {
-    // not JSON — render as markdown
+    // not JSON
   }
 
   if (parsed && typeof parsed === "object") {
     if (parsed.type === "questionnaire") {
       const data = parsed as unknown as QuestionnaireData;
       return (
-        <QuestionnaireCard
-          label={data.label}
-          question={data.question}
-          inputType={data.inputType}
-          options={data.options}
-          onSubmit={(answerText: string) => onSubmitQuestionnaire?.(answerText)}
-        />
+        <div style={{ marginTop: 12 }}>
+          <QuestionnaireCard 
+            steps={data.steps} 
+            onSubmit={onSubmitQuestionnaire!}
+            onBack={onBackQuestionnaire}
+          />
+        </div>
       );
     }
 
@@ -160,17 +313,68 @@ function AssistantBubbleContent({
   return <AITextMessage text={text} />;
 }
 
+// ─── User Q&A Formatted Bubble ──────────────────────────────────────────────
+
+function UserQABubble({ text }: { text: string }) {
+  const lines = text.split("\n");
+  const pairs: Array<{ q: string; a: string }> = [];
+  
+  for (let i = 0; i < lines.length; i++) {
+    if (lines[i].startsWith("Q: ")) {
+      const q = lines[i].slice(3);
+      const a = lines[i + 1]?.startsWith("A: ") ? lines[i + 1].slice(3) : "";
+      pairs.push({ q, a });
+      i++; // skip next line as it's the answer
+    }
+  }
+
+  if (pairs.length === 0) return <>{text}</>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {pairs.map((pair, idx) => (
+        <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <div style={{ 
+            color: "#94a3b8", 
+            fontSize: 11, 
+            fontWeight: 700, 
+            textTransform: "uppercase", 
+            letterSpacing: "0.1em" 
+          }}>
+            Q: {pair.q}
+          </div>
+          <div style={{ 
+            color: "#e2e8f0", 
+            fontSize: 13, 
+            fontWeight: 500 
+          }}>
+            {pair.a}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 interface ChatBubbleProps {
   message: ChatMessage;
-  onSubmitQuestionnaire?: (answerText: string) => void;
+  onSubmitQuestionnaire?: (answers: Record<string, string>) => void;
+  onBackQuestionnaire?: () => void;
 }
 
-export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbleProps) {
+export default function ChatBubble({ message, onSubmitQuestionnaire, onBackQuestionnaire }: ChatBubbleProps) {
+  let isQuestionnaire = false;
+  try {
+    const parsed = JSON.parse(message.text);
+    if (parsed.type === "questionnaire") isQuestionnaire = true;
+  } catch { /* not JSON */ }
 
   // USER BUBBLE
   if (message.role === "user") {
+    const isQA = message.text.startsWith("Q: ");
+
     return (
       <div className="message" style={{ display: "flex", justifyContent: "flex-end", marginBottom: 4 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, maxWidth: "80%" }}>
@@ -181,14 +385,14 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
               {message.attachments.map((att, idx) => (
                 <div key={idx} style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  background: "rgba(255, 255, 255, 0.03)",
+                  background: "var(--claude-accent)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
                   borderRadius: 12, padding: "6px 12px 6px 6px",
                   maxWidth: 220
                 }}>
                   <FileBadge name={att.name} mimeType={att.mimeType} />
                   <span style={{
-                    fontSize: 12, color: "#cbd5e1", fontWeight: 500,
+                    fontSize: 12, color: "var(--claude-text)", fontWeight: 500,
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                   }}>
                     {att.name}
@@ -201,17 +405,18 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
           {/* TEXT BUBBLE - Claude-like round square */}
           {message.text && (
             <div style={{
-              background: "#3d4466",
+              background: "var(--claude-accent)",
               borderRadius: "16px",
-              padding: "12px 16px",
-              fontSize: "14.5px",
-              color: "#f8fafc",
-              lineHeight: "1.6",
-              wordBreak: "word-break",
-              border: "1px solid rgba(255, 255, 255, 0.05)",
+              padding: "14px 16px",
+              fontSize: "var(--base-size)",
+              color: "var(--claude-text)",
+              lineHeight: "var(--line-height)",
+              fontFamily: "var(--font-main)",
+              wordBreak: "break-word",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
               boxShadow: "0 2px 8px rgba(0,0,0,0.15)"
             }}>
-              {message.text}
+              {isQA ? <UserQABubble text={message.text} /> : message.text}
             </div>
           )}
         </div>
@@ -226,21 +431,28 @@ export default function ChatBubble({ message, onSubmitQuestionnaire }: ChatBubbl
       gap: 12, 
       alignItems: "flex-start",
       padding: "4px 0",
-      marginBottom: 16
+      marginBottom: 16,
+      width: isQuestionnaire ? "100%" : "auto"
     }}>
-      <div style={{
-        width: 30, height: 30, borderRadius: 10, 
-        background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
-        display: "flex", alignItems: "center", justifyContent: "center", 
-        flexShrink: 0,
-        boxShadow: "0 2px 8px rgba(155, 114, 203, 0.2)",
-        marginTop: 4
-      }}>
-        <Sparkles size={16} color="white" />
-      </div>
+      {!isQuestionnaire && (
+        <div style={{
+          width: 32, height: 32, borderRadius: 10, 
+          background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
+          display: "flex", alignItems: "center", justifyContent: "center", 
+          flexShrink: 0,
+          boxShadow: "0 2px 8px rgba(155, 114, 203, 0.2)",
+          marginTop: 4
+        }}>
+          <Sparkles size={16} color="white" />
+        </div>
+      )}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: "15.5px", color: "#e2e8f0", lineHeight: "1.75" }}>
-          <AssistantBubbleContent text={message.text} onSubmitQuestionnaire={onSubmitQuestionnaire} />
+        <div style={{ fontSize: "var(--base-size)", color: "var(--claude-text)", lineHeight: "var(--line-height)" }}>
+          <AssistantBubbleContent 
+            text={message.text} 
+            onSubmitQuestionnaire={onSubmitQuestionnaire}
+            onBackQuestionnaire={onBackQuestionnaire}
+          />
         </div>
       </div>
     </div>

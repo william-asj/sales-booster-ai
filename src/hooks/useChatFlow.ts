@@ -29,19 +29,22 @@ export function useChatFlow() {
 
   const resetFlow = () => setFlowState(null);
 
-  const createQuestionMessage = (stepIndex: number): QuestionnaireMessage => {
-    const q = RECOMMEND_FLOW[stepIndex];
-    return {
-      role: "assistant",
-      text: JSON.stringify({
-        type: "questionnaire",
-        label: q.label,
-        question: q.question,
-        inputType: "single",
-        options: q.options
-      }),
-      time: nowTime()
-    };
+  const goBack = () => {
+    if (!flowState || flowState.step === 1) return;
+    
+    const prevStep = (flowState.step - 1) as FlowState["step"];
+    const prevKey = STEP_TO_KEY[flowState.step]; // Current step's key to clear? 
+    // Wait, the prompt says "removes the last answer".
+    const lastKey = STEP_TO_KEY[prevStep];
+    
+    const updatedAnswers = { ...flowState.answers };
+    delete updatedAnswers[lastKey];
+
+    setFlowState({
+      ...flowState,
+      step: prevStep,
+      answers: updatedAnswers
+    });
   };
 
   const startFlow = (): QuestionnaireMessage => {
@@ -51,7 +54,18 @@ export function useChatFlow() {
       answers: {}
     });
 
-    return createQuestionMessage(0);
+    return {
+      role: "assistant",
+      text: JSON.stringify({
+        type: "questionnaire",
+        steps: RECOMMEND_FLOW.map(q => ({
+          label: q.label,
+          question: q.question,
+          options: q.options
+        }))
+      }),
+      time: nowTime()
+    };
   };
 
   const submitAnswer = (answer: string): { 
@@ -76,12 +90,12 @@ export function useChatFlow() {
         answers: updatedAnswers
       });
 
+      // Note: This might not be used if the card handles internal steps
       return {
-        nextQuestion: createQuestionMessage(nextStep - 1),
+        nextQuestion: null,
         finalAnswers: null
       };
     } else {
-      // Step 5 completed
       resetFlow();
       return {
         nextQuestion: null,
@@ -94,6 +108,7 @@ export function useChatFlow() {
     flowState,
     startFlow,
     submitAnswer,
-    resetFlow
+    resetFlow,
+    goBack
   };
 }

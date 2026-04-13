@@ -394,7 +394,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
                 }}>
                   <FileBadge name={att.name} mimeType={att.mimeType} />
                   <span style={{
-                    fontSize: 13, color: "#cbd5e1", fontWeight: 500,
+                    fontSize: 13, color: "var(--claude-text)", fontWeight: 500,
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                   }}>
                     {att.name}
@@ -443,7 +443,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             style={{
               width: "100%", background: "transparent", border: "none",
               outline: "none", resize: "none", color: "#e2e8f0",
-              fontSize: 16, fontFamily: "Segoe UI, sans-serif",
+              fontSize: 16, fontFamily: "var(--font-main)",
               lineHeight: "24px", overflowY: "hidden",
               boxSizing: "border-box", caretColor: "#818cf8", display: "block",
             }}
@@ -466,7 +466,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             title={`Attach files (${attachments.length}/5)`}
             disabled={attachments.length >= 5}
             style={{
-              width: 38, height: 38, borderRadius: "50%", border: "1.5px solid #2d3550",
+              width: 38, height: 38, borderRadius: "50%", border: "1.5px solid var(--claude-accent)",
               background: "transparent", cursor: attachments.length >= 5 ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
               transition: "border-color 0.15s, background 0.15s", opacity: attachments.length >= 5 ? 0.5 : 1,
@@ -479,12 +479,12 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             }}
             onMouseLeave={e => {
               if (attachments.length < 5) {
-                (e.currentTarget as HTMLElement).style.borderColor = "#2d3550";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--claude-accent)";
                 (e.currentTarget as HTMLElement).style.background = "transparent";
               }
             }}
           >
-            <Plus size={20} color="#94a3b8" strokeWidth={2} />
+            <Plus size={20} color="var(--claude-muted)" strokeWidth={2} />
           </button>
 
           <div style={{ flex: 1 }} />
@@ -498,13 +498,13 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
               title={voiceSupported ? (isRecording ? "Stop recording" : "Voice input") : "Voice not supported in this browser"}
               style={{
                 width: 38, height: 38, borderRadius: "50%",
-                border: `1.5px solid ${isRecording ? "#ef4444" : "#2d3550"}`,
+                border: `1.5px solid ${isRecording ? "#ef4444" : "var(--claude-accent)"}`,
                 background: "transparent", cursor: voiceSupported ? "pointer" : "not-allowed",
                 display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
                 transition: "border-color 0.15s",
               }}
             >
-              {isRecording ? <MicOff size={18} color="#ef4444" /> : <Mic size={18} color={voiceSupported ? "#94a3b8" : "#3d4466"} />}
+              {isRecording ? <MicOff size={18} color="#ef4444" /> : <Mic size={18} color={voiceSupported ? "var(--claude-muted)" : "#e5e5e0"} />}
             </button>
           </div>
 

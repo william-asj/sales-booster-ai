@@ -22,16 +22,60 @@ ${products}
 `;
 }
 
+/**
+ * Post-processes Gemini's response to inject missing newlines
+ * that are required for the markdown renderer to work correctly.
+ */
+function formatAIResponse(text: string): string {
+  return text
+    // Ensure emoji section headers always have a blank line before them
+    .replace(/([^\n])\n?([\u{1F300}-\u{1F9FF}])/gu, "$1\n\n$2")
+    // Ensure bullet points always start on their own line
+    .replace(/([^\n])\n?(\s*[-•]\s)/g, "$1\n$2")
+    // Ensure numbered list items always start on their own line
+    .replace(/([^\n])\n?(\s*\d+\.\s)/g, "$1\n$2")
+    // Collapse 3+ consecutive newlines to max 2
+    .replace(/\n{3,}/g, "\n\n")
+    // Ensure a blank line exists before every emoji header
+    .replace(/\n([\u{1F300}-\u{1F9FF}])/gu, "\n\n$1")
+    .trim();
+}
+
 const systemInstruction = `You are SalesBooster AI, an intelligent assistant for Indonesian insurance 
 agents at Simas Jiwa. Help agents with lead analysis, product recommendations, 
-and drafting personalized pitches. 
+and drafting personalized pitches.
 
 ${getBusinessContext()}
 
+LANGUAGE RULE:
+- If the agent writes in Bahasa Indonesia → respond fully in Bahasa Indonesia
+- If the agent writes in English → respond fully in English
+- NEVER mix languages within a single sentence or paragraph
+- You may use bilingual section headers (e.g. "✅ Poin Utama / Key Benefits") but keep the body text in one language only
+
+OPENING GREETING RULE:
+When the agent says "hi", "hey", "hello", or any casual greeting:
+- Respond in 2-3 SHORT sentences only
+- Introduce yourself as SalesBooster AI
+- Mention 1-2 specific high-priority leads by name and score
+- End with ONE clear call-to-action question
+- Do NOT write a wall of text for a greeting
+
+RESPONSE FORMATTING RULES — FOLLOW STRICTLY:
+- Always use proper markdown line breaks between every section
+- Start each new topic or section on its OWN line with a blank line before it
+- Use emoji headers (e.g. 🏆 Title, 💬 Title) to label every major section
+- Use "- " bullet points for lists of features or benefits — one item per line
+- Use numbered lists (1. 2. 3.) for sequential steps — one item per line
+- NEVER run bullet points or numbered items together on the same line
+- NEVER concatenate two sentences from different sections without a blank line between them
+- Keep each paragraph to 2-3 sentences maximum before adding a blank line
+- Bold key terms using **double asterisks**
+- Italic supporting phrases using *single asterisks*
+
 When an agent asks about a specific customer by name, use the data above to provide 
 tailored advice. If they ask for a "pitch", write a persuasive short message 
-they can send to that customer. Be concise, practical, and professional. 
-Mirror the language (Bahasa Indonesia or English) used in the conversation.`;
+they can send to that customer. Be concise, practical, and professional.`;
 
 export async function POST(req: Request) {
   try {
@@ -59,7 +103,7 @@ export async function POST(req: Request) {
       userText.length > 600 || 
       messages.length > 10;
 
-    // Use gemini-3.1-flash as per user instruction
+    // Use gemini-3-flash-preview
     const modelName = isComplexTask ? "gemini-3-flash-preview" : "gemini-3-flash-preview"; 
 
     const model = genAI.getGenerativeModel({
@@ -93,7 +137,7 @@ export async function POST(req: Request) {
     const result = await chat.sendMessage(latestParts);
     const responseText = result.response.text();
 
-    return NextResponse.json({ text: responseText });
+    return NextResponse.json({ text: formatAIResponse(responseText) });
   } catch (error) {
     console.error("Gemini API Error:", error);
     return NextResponse.json(
