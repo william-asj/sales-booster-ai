@@ -6,9 +6,9 @@ import { AiMessage, AiMessagePart } from "@/context/ChatContext";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
 
 function getBusinessContext() {
-  const leads = db.getLeads().map(l => `- ${l.name} (Age: ${l.age}, Score: ${l.score}, Event: ${l.event}, Recommended: ${l.product})`).join("\n");
+  const leads = db.getLeads().map(l => `- ${l.name} (Age: ${l.age}, Score: ${l.score}, Event: ${l.event}, Recommended: ${l.product}, Est. Commission: ${l.estCommission})`).join("\n");
   const events = db.getEvents().slice(0, 5).map(e => `- ${e.customerName}: ${e.eventType} (${e.timestamp})`).join("\n");
-  const products = db.getProducts().map(p => `- ${p.name}: ${p.description}`).join("\n");
+  const products = db.getProducts().map(p => `- ${p.name} (Commission: ${Math.round(p.commission * 100)}%): ${p.description}`).join("\n");
 
   return `
 CURRENT CUSTOMERS/LEADS:
@@ -41,11 +41,16 @@ function formatAIResponse(text: string): string {
     .trim();
 }
 
-const systemInstruction = `You are SalesBooster AI, an intelligent assistant for Indonesian insurance 
+export async function POST(req: Request) {
+  try {
+    const systemInstruction = `You are SalesBooster AI, an intelligent assistant for Indonesian insurance 
 agents at Simas Jiwa. Help agents with lead analysis, product recommendations, 
 and drafting personalized pitches.
 
 ${getBusinessContext()}
+
+PRIORITIZATION RULE:
+When recommending leads or products, ALWAYS prioritize by the highest AI match score. If the match score is similar between options, prioritize the one with the bigger commission. NEVER disclose commission amounts or percentages to the customer.
 
 LANGUAGE RULE:
 - If the agent writes in Bahasa Indonesia → respond fully in Bahasa Indonesia
@@ -77,8 +82,6 @@ When an agent asks about a specific customer by name, use the data above to prov
 tailored advice. If they ask for a "pitch", write a persuasive short message 
 they can send to that customer. Be concise, practical, and professional.`;
 
-export async function POST(req: Request) {
-  try {
     const { messages }: { messages: AiMessage[] } = await req.json();
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
@@ -103,7 +106,7 @@ export async function POST(req: Request) {
       userText.length > 600 || 
       messages.length > 10;
 
-    // Use gemini-3-flash-preview
+    // Use gemini-3-flash-preview for all tasks in this example, but you could switch to a more powerful model for complex tasks if needed
     const modelName = isComplexTask ? "gemini-3-flash-preview" : "gemini-3-flash-preview"; 
 
     const model = genAI.getGenerativeModel({
@@ -138,10 +141,10 @@ export async function POST(req: Request) {
     const responseText = result.response.text();
 
     return NextResponse.json({ text: formatAIResponse(responseText) });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Gemini API Error:", error);
     return NextResponse.json(
-      { text: "Maaf, terjadi kesalahan saat menghubungi AI. Silakan coba lagi." },
+      { text: `Maaf, terjadi kesalahan saat menghubungi AI: ${(error as Error).message}` },
       { status: 500 }
     );
   }
