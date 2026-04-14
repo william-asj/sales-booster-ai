@@ -168,9 +168,13 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                   <span className="text-xs text-slate-400">Best Product</span>
                   <span className="text-xs text-slate-200 font-medium">{lead.product}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between mb-3">
                   <span className="text-xs text-slate-400">Est. Premium</span>
                   <span className="text-[13px] text-indigo-300 font-semibold">{lead.premium}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-xs text-slate-400">Est. Commission</span>
+                  <span className="text-[13px] text-emerald-400 font-semibold">{lead.estCommission}</span>
                 </div>
               </div>
 

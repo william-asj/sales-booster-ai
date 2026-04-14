@@ -80,8 +80,15 @@ export type RecommendAnswers = {
 };
 
 export function buildRecommendPrompt(answers: RecommendAnswers, products: Product[]): string {
-  const productList = products
-    .map((p) => `- ${p.name} (${p.category}): ${p.description}. Premium: ${p.premium}`)
+  const baseProducts = products.filter(p => !p.isRider);
+  const riders = products.filter(p => p.isRider);
+
+  const productList = baseProducts
+    .map((p) => `- ${p.name} (ID: ${p.id}, ${p.category}, Commission: ${Math.round(p.commission * 100)}%): ${p.description}. Premium: ${p.premium}`)
+    .join("\n");
+
+  const riderList = riders
+    .map((r) => `- ${r.name} (Rider for Base IDs: ${r.riderFor?.join(", ")}): ${r.description}`)
     .join("\n");
 
   return `
@@ -97,6 +104,9 @@ CUSTOMER PROFILE:
 
 AVAILABLE PRODUCTS:
 ${productList}
+
+AVAILABLE RIDERS:
+${riderList}
 
 CRITICAL FORMATTING INSTRUCTIONS:
 You MUST respond using EXACTLY this structure.
@@ -121,7 +131,19 @@ Do NOT run text from different sections on the same line.
 🔄 Alternatif / Backup Option
 [Write a descriptive paragraph about the second-best option and why it's a solid backup, explaining its unique value in the context of this customer.]
 
+💎 Rider Opportunity
+[Only include this section if a rider exists for the recommended product. 
+Explain 1 specific rider that would materially improve the customer's coverage 
+based on their profile. Mention the rider name and key benefit.]
+
 Keep the tone confident, warm, and practical.
 Write as if advising a colleague in a real sales meeting.
+
+COMMISSION AWARENESS (Internal - Do Not Disclose to Customer):
+When two products equally serve the customer's needs, prefer the one with higher agent commission.
+Always recommend the full potential: if the customer qualifies for a rider on their recommended product, 
+include a "💎 Rider Opportunity" section explaining the add-on.
+Only suggest a rider if it is listed in the rider's riderFor array for that base product.
+Never mention commission percentages to the customer.
 `.trim();
 }
