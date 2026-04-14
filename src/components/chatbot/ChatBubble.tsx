@@ -73,7 +73,8 @@ function renderInline(text: string): React.ReactNode {
         <strong key={i} style={{ 
           color: "var(--claude-header)", 
           fontWeight: 600,
-          fontFamily: "var(--font-header)" 
+          fontFamily: "var(--font-header)",
+          display: "inline",
         }}>
           {part.slice(2, -2)}
         </strong>
@@ -139,13 +140,15 @@ function AITextMessage({ text }: { text: string }) {
 
         // Emoji section header
         if (/^\p{Emoji}/u.test(trimmed)) {
+          // Find actual first non-empty line index
+          const isFirstLine = lines.slice(0, i).every(l => l.trim() === "");
           return (
             <div key={i} style={{
               fontSize: "var(--h3-size)",
               fontWeight: 500,
               color: "var(--claude-header)",
-              marginTop: "2rem",
-              marginBottom: "1rem",
+              marginTop: isFirstLine ? "0" : "2rem",
+              marginBottom: "0.5rem",
               fontFamily: "var(--font-header)",
               letterSpacing: "-0.01em",
               display: "flex",
@@ -263,9 +266,16 @@ function AITextMessage({ text }: { text: string }) {
 
         // Normal paragraph line
         return (
-          <div key={i} style={{ marginBottom: "0.5rem", lineHeight: "var(--line-height)", color: "var(--claude-text)" }}>
+          <p key={i} style={{ 
+            marginBottom: "0.5rem", 
+            lineHeight: "var(--line-height)", 
+            color: "var(--claude-text)",
+            display: "block",
+            wordBreak: "break-word",
+            margin: "0 0 0.5rem 0",
+          }}>
             {renderInline(trimmed)}
-          </div>
+          </p>
         );
       })}
     </div>
@@ -446,7 +456,7 @@ export default function ChatBubble({ message, onSubmitQuestionnaire, onBackQuest
           <Sparkles size={16} color="white" />
         </div>
       )}
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
         <div style={{ fontSize: "var(--base-size)", color: "var(--claude-text)", lineHeight: "var(--line-height)" }}>
           <AssistantBubbleContent 
             text={message.text} 

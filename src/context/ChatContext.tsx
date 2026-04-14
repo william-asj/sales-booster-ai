@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { AttachedFile } from "@/components/chatbot/ChatInput";
 import { ChatMessage } from "@/components/chatbot/ChatBubble";
 
 // ─── AI Payload Types ─────────────────────────────────────────────────────────

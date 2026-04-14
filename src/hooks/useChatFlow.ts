@@ -33,7 +33,6 @@ export function useChatFlow() {
     if (!flowState || flowState.step === 1) return;
     
     const prevStep = (flowState.step - 1) as FlowState["step"];
-    const prevKey = STEP_TO_KEY[flowState.step]; // Current step's key to clear? 
     // Wait, the prompt says "removes the last answer".
     const lastKey = STEP_TO_KEY[prevStep];
     

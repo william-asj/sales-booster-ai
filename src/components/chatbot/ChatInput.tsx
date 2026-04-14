@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Mic, MicOff, Plus, X, ArrowUp } from "lucide-react";
+import { Mic, Plus, X, ArrowUp } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -118,7 +118,6 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
   const [fileError, setFileError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [voiceSupported, setVoiceSupported] = useState(false);
-  const [showVoiceTooltip, setShowVoiceTooltip] = useState(false);
   const [focused, setFocused] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
 
@@ -305,6 +304,16 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .command-row:hover { background: rgba(99, 102, 241, 0.08); }
+        @keyframes mic-pulse {
+          0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5); }
+          70%  { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+        }
+        @keyframes mic-active-pulse {
+          0%   { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+          70%  { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
       `}</style>
 
       {fileError && (
@@ -314,12 +323,14 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
       )}
 
       <div style={{
-        background: "rgba(13, 15, 26, 0.92)",
-        backdropFilter: "blur(32px)",
-        WebkitBackdropFilter: "blur(32px)",
-        borderRadius: 24,
-        border: `1px solid ${focused ? "rgba(99, 102, 241, 0.5)" : "rgba(255, 255, 255, 0.12)"}`,
-        boxShadow: "0 12px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+        background: "rgba(8, 10, 18, 0.75)",
+        backdropFilter: "blur(40px)",
+        WebkitBackdropFilter: "blur(40px)",
+        borderRadius: 20,
+        border: `1px solid ${focused ? "rgba(99, 102, 241, 0.4)" : "rgba(255, 255, 255, 0.07)"}`,
+        boxShadow: focused
+          ? "0 0 0 1px rgba(99, 102, 241, 0.15), 0 8px 32px rgba(0, 0, 0, 0.4)"
+          : "0 8px 32px rgba(0, 0, 0, 0.3)",
         transition: "all 0.2s ease",
         display: "flex",
         flexDirection: "column",
@@ -489,40 +500,72 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
 
           <div style={{ flex: 1 }} />
 
-          <div style={{ position: "relative" }}>
+          {text.trim() === "" && attachments.length === 0 ? (
+            /* ── Voice Button ── */
             <button
               disabled={!voiceSupported}
               onClick={voiceSupported ? toggleRecording : undefined}
-              onMouseEnter={() => { if (!voiceSupported) setShowVoiceTooltip(true); }}
-              onMouseLeave={() => setShowVoiceTooltip(false)}
-              title={voiceSupported ? (isRecording ? "Stop recording" : "Voice input") : "Voice not supported in this browser"}
+              title={
+                !voiceSupported
+                  ? "Voice not supported in this browser"
+                  : isRecording
+                  ? "Stop recording"
+                  : "Voice input"
+              }
               style={{
-                width: 38, height: 38, borderRadius: "50%",
-                border: `1.5px solid ${isRecording ? "#ef4444" : "var(--claude-accent)"}`,
-                background: "transparent", cursor: voiceSupported ? "pointer" : "not-allowed",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
-                transition: "border-color 0.15s",
+                width: 38,
+                height: 38,
+                borderRadius: "50%",
+                border: `1.5px solid ${isRecording ? "#ef4444" : "rgba(99, 102, 241, 0.6)"}`,
+                background: isRecording ? "rgba(239, 68, 68, 0.12)" : "rgba(99, 102, 241, 0.08)",
+                cursor: voiceSupported ? "pointer" : "not-allowed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                padding: 0,
+                transition: "all 0.2s ease",
+                /* Pulse when idle, breathe-red when recording */
+                animation: isRecording ? "mic-active-pulse 1s infinite" : "mic-pulse 2s infinite",
+                opacity: voiceSupported ? 1 : 0.4,
               }}
             >
-              {isRecording ? <MicOff size={18} color="#ef4444" /> : <Mic size={18} color={voiceSupported ? "var(--claude-muted)" : "#e5e5e0"} />}
+              <Mic
+                size={18}
+                color={isRecording ? "#ef4444" : voiceSupported ? "#818cf8" : "#475569"}
+              />
             </button>
-          </div>
-
-          <button
-            onClick={handleSend}
-            disabled={!canSend}
-            title="Send (Enter)"
-            style={{
-              width: 38, height: 38, borderRadius: "50%", border: "none",
-              background: canSend ? "#e2e8f0" : "#1a1d2e", cursor: canSend ? "pointer" : "not-allowed",
-              display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
-              transition: "background 0.2s ease, transform 0.1s ease", transform: "scale(1)",
-            }}
-            onMouseEnter={e => { if (canSend) (e.currentTarget as HTMLElement).style.transform = "scale(1.06)"; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = "scale(1)"; }}
-          >
-            <ArrowUp size={20} color={canSend ? "#080a12" : "#2d3550"} strokeWidth={2.5} />
-          </button>
+          ) : (
+            /* ── Send Button ── */
+            <button
+              onClick={handleSend}
+              disabled={!canSend}
+              title="Send (Enter)"
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: "50%",
+                border: "none",
+                background: canSend ? "#e2e8f0" : "#1a1d2e",
+                cursor: canSend ? "pointer" : "not-allowed",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+                padding: 0,
+                transition: "background 0.2s ease, transform 0.1s ease",
+                transform: "scale(1)",
+              }}
+              onMouseEnter={(e) => {
+                if (canSend) (e.currentTarget as HTMLElement).style.transform = "scale(1.06)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.transform = "scale(1)";
+              }}
+            >
+              <ArrowUp size={20} color={canSend ? "#080a12" : "#2d3550"} strokeWidth={2.5} />
+            </button>
+          )}
         </div>
       </div>
       

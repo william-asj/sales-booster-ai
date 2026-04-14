@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TrendingUp, PieChart, Activity, ArrowUpRight } from "lucide-react";
+import { TrendingUp, PieChart, Activity } from "lucide-react";
 import { db } from "@/lib/data";
 
 export default function Analytics() {
