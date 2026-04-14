@@ -57,13 +57,27 @@ const getScoreColor = (score: number) => {
 };
 
 // Helper to weigh timestamps for sorting (Future -> Present -> Past)
-const getTimestampWeight = (ts: string) => {
+const getTimestampWeight = (ts: string): number => {
   const lower = ts.toLowerCase();
-  if (lower.includes("tomorrow") || lower.includes("in ")) return 100;
-  if (lower.includes("today") || lower.includes("min") || lower.includes("hr")) return 50;
-  // Handle "X day(s) ago"
-  const match = lower.match(/(\d+)\s+day/);
-  if (match) return -parseInt(match[1]);
+
+  // FUTURE — show first
+  if (lower.includes("tomorrow")) return 200;
+  const inDaysMatch = lower.match(/in\s+(\d+)\s+day/);
+  if (inDaysMatch) return 200 - parseInt(inDaysMatch[1]); // "in 2 days" = 198
+
+  // TODAY — recent activity
+  const minsMatch = lower.match(/(\d+)\s+min.*ago/);
+  if (minsMatch) return 100 - parseInt(minsMatch[1]); // fewer minutes ago = higher
+  const hrsMatch = lower.match(/(\d+)\s+hr.*ago/);
+  if (hrsMatch) return 80 - parseInt(hrsMatch[1]);
+  if (lower === "today") return 75;
+
+  // PAST — show last, more recent past ranks higher
+  const daysAgoMatch = lower.match(/(\d+)\s+day.*ago/);
+  if (daysAgoMatch) return -parseInt(daysAgoMatch[1]);
+  const weeksAgoMatch = lower.match(/(\d+)\s+week.*ago/);
+  if (weeksAgoMatch) return -parseInt(weeksAgoMatch[1]) * 7;
+
   return 0;
 };
 

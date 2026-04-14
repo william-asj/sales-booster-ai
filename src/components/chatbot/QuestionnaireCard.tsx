@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ArrowLeft, ArrowRight, CheckCircle2, Pencil } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Pencil } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -45,6 +45,32 @@ interface LeadsProps {
 type SortField = "score" | "name" | "event";
 type SortOrder = "asc" | "desc";
 
+interface SortButtonProps {
+  field: SortField;
+  label: string;
+  sortBy: SortField;
+  sortOrder: SortOrder;
+  handleSort: (field: SortField) => void;
+}
+
+const SortButton = ({ field, label, sortBy, sortOrder, handleSort }: SortButtonProps) => (
+  <button
+    onClick={() => handleSort(field)}
+    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+      sortBy === field
+        ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
+        : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
+    }`}
+  >
+    {label}
+    {sortBy === field ? (
+      sortOrder === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
+    ) : (
+      <ArrowUpDown size={14} className="opacity-30" />
+    )}
+  </button>
+);
+
 export default function Leads({ setActive, setSelectedLead, setInitialMessage }: LeadsProps) {
   const leads = db.getLeads();
   const [sortBy, setSortBy] = useState<SortField>("score");
@@ -73,24 +99,6 @@ export default function Leads({ setActive, setSelectedLead, setInitialMessage }:
     }
   };
 
-  const SortButton = ({ field, label }: { field: SortField, label: string }) => (
-    <button
-      onClick={() => handleSort(field)}
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-        sortBy === field
-          ? "bg-indigo-500/20 border-indigo-500/40 text-indigo-300"
-          : "bg-white/5 border-white/10 text-slate-400 hover:bg-white/10"
-      }`}
-    >
-      {label}
-      {sortBy === field ? (
-        sortOrder === "asc" ? <ChevronUp size={14} /> : <ChevronDown size={14} />
-      ) : (
-        <ArrowUpDown size={14} className="opacity-30" />
-      )}
-    </button>
-  );
-
   return (
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
@@ -101,9 +109,9 @@ export default function Leads({ setActive, setSelectedLead, setInitialMessage }:
 
         <div className="flex flex-wrap items-center gap-3 bg-white/[0.02] p-2 rounded-2xl border border-white/5">
           <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Sort By</span>
-          <SortButton field="score" label="Match Score" />
-          <SortButton field="name" label="Customer Name" />
-          <SortButton field="event" label="Life Event" />
+          <SortButton field="score" label="Match Score" sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
+          <SortButton field="name" label="Customer Name" sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
+          <SortButton field="event" label="Life Event" sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
         </div>
       </header>
 

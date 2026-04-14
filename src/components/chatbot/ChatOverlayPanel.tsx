@@ -103,8 +103,8 @@ export default function ChatOverlayPanel() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const activeSession = sessions.find(s => s.id === overlaySessionId);
-  const messages = activeSession?.messages || [];
-  const aiHistory = activeSession?.aiHistory || [];
+  const messages = useMemo(() => activeSession?.messages || [], [activeSession]);
+  const aiHistory = useMemo(() => activeSession?.aiHistory || [], [activeSession]);
 
   const activeQuestionnaire = useMemo(() => {
     const lastMessage = messages[messages.length - 1];
@@ -114,7 +114,7 @@ export default function ChatOverlayPanel() {
         if (parsed.type === "questionnaire") {
           return parsed;
         }
-      } catch (e) {
+      } catch {
         // Not JSON
       }
     }
@@ -384,8 +384,10 @@ export default function ChatOverlayPanel() {
                     onBackQuestionnaire={() => resetFlow()}
                   />
                 ))}
-                {isTyping && !streamingText && <TypingIndicator />}
-                {streamingText && (
+                {((isTyping && !streamingText) || (streamingText && streamingText.trim().length < 3)) && (
+                  <TypingIndicator />
+                )}
+                {streamingText && streamingText.trim().length >= 3 && (
                   <ChatBubble 
                     message={{ role: "assistant", text: streamingText, time: nowTime() }} 
                   />
@@ -402,8 +404,8 @@ export default function ChatOverlayPanel() {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 140,
-          background: "linear-gradient(to top, rgba(13,15,26,1) 0%, rgba(13,15,26,0.9) 25%, rgba(13,15,26,0.5) 60%, transparent 100%)",
+          height: 200,
+          background: "linear-gradient(to top, #080a12 0%, #080a12 20%, rgba(8,10,18,0.95) 40%, rgba(8,10,18,0.6) 65%, rgba(8,10,18,0.2) 85%, transparent 100%)",
           pointerEvents: "none",
           zIndex: 14,
         }} />

@@ -87,7 +87,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
         if (parsed.type === "questionnaire") {
           return parsed;
         }
-      } catch (e) {
+      } catch {
         // Not JSON
       }
     }
@@ -503,13 +503,14 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                       />
                     );
                   })}
-                  {isTyping && !streamingText && <TypingIndicator />}
-                  {streamingText && (
+                  {((isTyping && !streamingText) || (streamingText && streamingText.trim().length < 3)) && (
+                    <TypingIndicator />
+                  )}
+                  {streamingText && streamingText.trim().length >= 3 && (
                     <ChatBubble 
                       message={{ role: "assistant", text: streamingText, time: nowTime() }} 
                     />
-                  )}
-                </>
+                  )}                </>
               )}
 
               {error && (
@@ -527,8 +528,8 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             bottom: 0,
             left: 0,
             right: 0,
-            height: 180,
-            background: "linear-gradient(to top, #080a12 0%, #080a12 30%, rgba(8,10,18,0.85) 60%, transparent 100%)",
+            height: 260,
+            background: "linear-gradient(to top, #080a12 0%, #080a12 20%, rgba(8,10,18,0.95) 40%, rgba(8,10,18,0.6) 65%, rgba(8,10,18,0.2) 85%, transparent 100%)",
             pointerEvents: "none",
             zIndex: 14,
           }} />
