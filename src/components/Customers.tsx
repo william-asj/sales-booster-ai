@@ -15,7 +15,10 @@ import {
   Activity,
   Mail,
   SortAsc,
-  SortDesc
+  SortDesc,
+  Briefcase,
+  Wallet,
+  Users
 } from "lucide-react";
 import { db, Lead } from "@/lib/data";
 
@@ -247,12 +250,14 @@ export default function Customers({ setActive, setSelectedLead, setInitialMessag
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-3 lg:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
               {[
                 { icon: <Calendar size={18} />, label: "Age & DOB", value: `${selected.age} Yrs`, subValue: selected.dob, color: "text-blue-400" },
-                { icon: <ShieldCheck size={18} />, label: "Policies", value: `${selected.policies} Active`, color: "text-emerald-400" },
+                { icon: <Briefcase size={18} />, label: "Occupation", value: selected.occupation, color: "text-amber-400" },
+                { icon: <Wallet size={18} />, label: "Salary", value: selected.salaryBucket, color: "text-emerald-400" },
+                { icon: <Users size={18} />, label: "Segment", value: selected.segment, color: "text-purple-400" },
                 { icon: <TrendingUp size={18} />, label: "Premium", value: selected.premium, color: "text-indigo-400" },
-                { icon: <ShieldCheck size={18} />, label: "Risk", value: "Balanced", color: "text-purple-400" },
+                { icon: <ShieldCheck size={18} />, label: "Policies", value: `${selected.policies} Active`, color: "text-rose-400" },
               ].map((stat, i) => (
                 <div key={i} className="glass-panel card-hover rounded-2xl p-4 lg:p-5 flex items-center gap-3 lg:gap-4">
                   <div className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-white/5 flex items-center justify-center shrink-0 ${stat.color}`}>
