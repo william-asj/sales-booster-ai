@@ -175,11 +175,25 @@ export default function ChatOverlayPanel() {
         const data = await res.json();
         const fullText = data.text;
 
-        appendMessage(targetSessionId, { role: "assistant", text: fullText, time: nowTime() }, { role: "model", parts: [{ text: fullText }] });
-        setStreamingText("");
+        // Claude-like word-by-word animation
+        const tokens = fullText.split(/(\s+)/);
+        let currentText = "";
+        let i = 0;
+
+        const interval = setInterval(() => {
+          if (i < tokens.length) {
+            currentText += tokens[i];
+            setStreamingText(currentText);
+            i++;
+          } else {
+            clearInterval(interval);
+            appendMessage(targetSessionId, { role: "assistant", text: fullText, time: nowTime() }, { role: "model", parts: [{ text: fullText }] });
+            setStreamingText("");
+            setIsTyping(false);
+          }
+        }, 25);
       } catch (err) {
         setError(`Failed to reach AI: ${err instanceof Error ? err.message : "Unknown error"}`);
-      } finally {
         setIsTyping(false);
       }
     },

@@ -105,7 +105,7 @@ Do NOT merge sections together.
 Do NOT run text from different sections on the same line.
 
 🏆 Rekomendasi Produk / Product Recommendation
-[Product name] — [one sentence explaining why it fits this specific customer's profile]
+[Write a descriptive paragraph explaining the recommended product and how it specifically addresses the customer's needs and profile mentioned above. Avoid short bullet-point style here; use a warm, advisory paragraph.]
 
 💬 Kalimat Pembuka / Opening Line
 [A single natural sentence the agent says out loud to the customer in Bahasa Indonesia]
@@ -116,10 +116,10 @@ Do NOT run text from different sections on the same line.
 - [Benefit 3 — tailored to the customer's answers above]
 
 ⚠️ Celah Perlindungan / Coverage Gap
-[Maximum 2 sentences: what protection gap exists based on their existing coverage and health answers]
+[Write this as a short, cohesive paragraph explaining the protection gap.]
 
 🔄 Alternatif / Backup Option
-[Second-best product name] — [one sentence why, if the customer hesitates on the main recommendation]
+[Write a descriptive paragraph about the second-best option and why it's a solid backup, explaining its unique value in the context of this customer.]
 
 Keep the tone confident, warm, and practical.
 Write as if advising a colleague in a real sales meeting.
