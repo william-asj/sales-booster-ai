@@ -30,6 +30,7 @@ export interface Lead {
   purchaseIntent: string;
   channel: string;
   estCommission: string;
+  lifeStage: LifeStage;
 }
 
 export interface LifeEvent {
@@ -92,6 +93,34 @@ export interface Customer {
   totalPremi: number;   // in IDR
   channel: 'Agency' | 'Bancassurance' | 'Syariah' | 'Digital';
   transactionDate: string;
+}
+
+export type PolicyStatus = 'INFORCE' | 'LAPSE' | 'SURRENDER' | 'FREELOOK' | 'REINSTATE' | 'CLAIM';
+export type PaymentMode = 'SEKALIGUS' | 'TAHUNAN' | 'SEMESTERAN' | 'TRIWULANAN' | 'BULANAN';
+
+export interface PolicyRecord {
+  id: string;              // unique: `pol_${customerId}_${index}`
+  customerId: number;      // references Customer.id
+  policyNo: string;        // NO_POLIS from inforce xlsx
+  status: PolicyStatus;    // STATUS
+  productName: string;     // PRODUCT_NAME
+  subProductName: string;  // SUB_PRODUCT_NAME (variant detail)
+  sumAssured: number;      // UP — Uang Pertanggungan in IDR
+  startDate: string;       // TANGGAL_PRODUKSI (YYYY-MM-DD)
+  maturityDate: string;    // MATURITY_DATE (YYYY-MM-DD)
+  paymentMode: PaymentMode;// CARA_BAYAR
+  policyAgeMonths: number; // USIA_POLIS_BULAN
+}
+
+export interface LifeStage {
+  label: string;           // English label
+  labelId: string;         // Bahasa Indonesia label
+  ageRange: string;        // "25-34"
+  icon: string;            // emoji
+  color: string;           // hex color for badge
+  bgColor: string;         // tailwind-compatible rgba for card bg
+  description: string;     // what this customer's priorities likely are
+  recommendedFocus: string[];// product categories most relevant
 }
 
 export interface Stat {
@@ -948,6 +977,177 @@ const PRODUCTS: Product[] = [
       medicalRequired: false
     }
   }
+];
+
+export const LIFE_STAGES: LifeStage[] = [
+  {
+    label: "Toddler",
+    labelId: "Balita",
+    ageRange: "0-5",
+    icon: "🍼",
+    color: "#a78bfa",
+    bgColor: "rgba(167,139,250,0.08)",
+    description: "Early childhood — parents are the decision makers.",
+    recommendedFocus: ["Education", "Critical Illness Rider"],
+  },
+  {
+    label: "Child",
+    labelId: "Anak-Anak",
+    ageRange: "6-12",
+    icon: "🎒",
+    color: "#60a5fa",
+    bgColor: "rgba(96,165,250,0.08)",
+    description: "School age — parents focus on education savings.",
+    recommendedFocus: ["Education", "Term Life"],
+  },
+  {
+    label: "Teenager",
+    labelId: "Remaja",
+    ageRange: "13-17",
+    icon: "📚",
+    color: "#34d399",
+    bgColor: "rgba(52,211,153,0.08)",
+    description: "Secondary school — university funding becomes urgent.",
+    recommendedFocus: ["Education", "Term Life"],
+  },
+  {
+    label: "Young Adult",
+    labelId: "Mahasiswa",
+    ageRange: "18-24",
+    icon: "🎓",
+    color: "#f59e0b",
+    bgColor: "rgba(245,158,11,0.08)",
+    description: "College & first job — starting financial independence.",
+    recommendedFocus: ["Term Life", "Critical Illness", "PAYDI"],
+  },
+  {
+    label: "Young Professional",
+    labelId: "Dewasa Muda",
+    ageRange: "25-34",
+    icon: "💼",
+    color: "#6366f1",
+    bgColor: "rgba(99,102,241,0.08)",
+    description: "Career growth, marriage, first home — high protection needs.",
+    recommendedFocus: ["Whole Life", "Term Life", "Education", "PAYDI"],
+  },
+  {
+    label: "Established Adult",
+    labelId: "Dewasa",
+    ageRange: "35-44",
+    icon: "🏠",
+    color: "#10b981",
+    bgColor: "rgba(16,185,129,0.08)",
+    description: "Peak earning years — protecting family and building wealth.",
+    recommendedFocus: ["Whole Life", "Critical Illness", "PAYDI", "Education"],
+  },
+  {
+    label: "Middle-Aged",
+    labelId: "Paruh Baya",
+    ageRange: "45-54",
+    icon: "⚖️",
+    color: "#f97316",
+    bgColor: "rgba(249,115,22,0.08)",
+    description: "Children growing up, retirement on horizon — wealth preservation.",
+    recommendedFocus: ["Whole Life", "Critical Illness", "Traditional Life"],
+  },
+  {
+    label: "Pre-Senior",
+    labelId: "Pra-Lansia",
+    ageRange: "55-64",
+    icon: "🌅",
+    color: "#ef4444",
+    bgColor: "rgba(239,68,68,0.08)",
+    description: "Retirement planning — legacy and healthcare become priorities.",
+    recommendedFocus: ["Whole Life", "Traditional Life", "Critical Illness"],
+  },
+  {
+    label: "Senior",
+    labelId: "Lansia",
+    ageRange: "65+",
+    icon: "🌿",
+    color: "#94a3b8",
+    bgColor: "rgba(148,163,184,0.08)",
+    description: "Retirement — legacy protection and healthcare focus.",
+    recommendedFocus: ["Whole Life", "Critical Illness", "Syariah"],
+  },
+];
+
+export function getLifeStage(age: number): LifeStage {
+  if (age <= 5)  return LIFE_STAGES[0];
+  if (age <= 12) return LIFE_STAGES[1];
+  if (age <= 17) return LIFE_STAGES[2];
+  if (age <= 24) return LIFE_STAGES[3];
+  if (age <= 34) return LIFE_STAGES[4];
+  if (age <= 44) return LIFE_STAGES[5];
+  if (age <= 54) return LIFE_STAGES[6];
+  if (age <= 64) return LIFE_STAGES[7];
+  return LIFE_STAGES[8];
+}
+
+export const POLICY_RECORDS: PolicyRecord[] = [
+  { id: "pol_1_1", customerId: 1, policyNo: "241990004111", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_2_1", customerId: 2, policyNo: "231990000946", status: "INFORCE", productName: "SIPASTI", subProductName: "SIMAS DANA PASTI - PLAN REGULER(V2)", sumAssured: 156250000, startDate: "2023-04-07", maturityDate: "2033-04-04", paymentMode: "TAHUNAN", policyAgeMonths: 37 },
+  { id: "pol_2_2", customerId: 2, policyNo: "241990004103", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_3_1", customerId: 3, policyNo: "251510003188", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 300000000, startDate: "2025-07-31", maturityDate: "2030-07-29", paymentMode: "SEKALIGUS", policyAgeMonths: 9 },
+  { id: "pol_4_1", customerId: 4, policyNo: "241990004095", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_5_1", customerId: 5, policyNo: "251510007684", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 300000000, startDate: "2025-09-16", maturityDate: "2027-09-14", paymentMode: "SEKALIGUS", policyAgeMonths: 7 },
+  { id: "pol_5_2", customerId: 5, policyNo: "261510000316", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 100000000, startDate: "2026-03-13", maturityDate: "2031-03-12", paymentMode: "SEKALIGUS", policyAgeMonths: 2 },
+  { id: "pol_6_1", customerId: 6, policyNo: "251510011058", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 3000000000, startDate: "2025-10-14", maturityDate: "2030-10-09", paymentMode: "SEKALIGUS", policyAgeMonths: 7 },
+  { id: "pol_7_1", customerId: 7, policyNo: "251510005662", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 100000000, startDate: "2025-08-28", maturityDate: "2030-08-26", paymentMode: "SEKALIGUS", policyAgeMonths: 8 },
+  { id: "pol_7_2", customerId: 7, policyNo: "241990000416", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-02-05", maturityDate: "2029-02-01", paymentMode: "SEKALIGUS", policyAgeMonths: 27 },
+  { id: "pol_8_1", customerId: 8, policyNo: "251510000200", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 2000000000, startDate: "2025-06-30", maturityDate: "2026-06-23", paymentMode: "SEKALIGUS", policyAgeMonths: 10 },
+  { id: "pol_9_1", customerId: 9, policyNo: "231990001027", status: "INFORCE", productName: "SIPASTI", subProductName: "SIMAS DANA PASTI - PLAN REGULER(V2)", sumAssured: 93750000, startDate: "2023-04-13", maturityDate: "2033-04-11", paymentMode: "TAHUNAN", policyAgeMonths: 37 },
+  { id: "pol_10_1", customerId: 10, policyNo: "241990004087", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_10_2", customerId: 10, policyNo: "241990004079", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_11_1", customerId: 11, policyNo: "241740000104", status: "INFORCE", productName: "SIJI SMART KID", subProductName: "PLAN B AGENCY", sumAssured: 250000000, startDate: "2025-06-05", maturityDate: "2044-06-03", paymentMode: "TAHUNAN", policyAgeMonths: 23 },
+  { id: "pol_12_1", customerId: 12, policyNo: "251510006215", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 250000000, startDate: "2025-09-04", maturityDate: "2027-09-02", paymentMode: "SEKALIGUS", policyAgeMonths: 8 },
+  { id: "pol_13_1", customerId: 13, policyNo: "000007002587", status: "INFORCE", productName: "KADO JENIUS - MKJ2", subProductName: "KADO JENIUS 10", sumAssured: 20000000, startDate: "2016-04-25", maturityDate: "2039-05-08", paymentMode: "TAHUNAN", policyAgeMonths: 228 },
+  { id: "pol_14_1", customerId: 14, policyNo: "152050000024", status: "INFORCE", productName: "ASURANSI MAXI PRO", subProductName: "ASURANSI MAXI PRO", sumAssured: 500000000, startDate: "2015-11-06", maturityDate: "2068-08-31", paymentMode: "BULANAN", policyAgeMonths: 133 },
+  { id: "pol_15_1", customerId: 15, policyNo: "152050001048", status: "INFORCE", productName: "ASURANSI MAXI PRO", subProductName: "ASURANSI MAXI PRO", sumAssured: 100000000, startDate: "2015-11-27", maturityDate: "2091-11-27", paymentMode: "BULANAN", policyAgeMonths: 130 },
+  { id: "pol_16_1", customerId: 16, policyNo: "152050000966", status: "INFORCE", productName: "ASURANSI MAXI PRO", subProductName: "MEGA MAXI PRO SBI", sumAssured: 100000000, startDate: "2016-09-02", maturityDate: "2106-03-26", paymentMode: "TAHUNAN", policyAgeMonths: 130 },
+  { id: "pol_17_1", customerId: 17, policyNo: "211820000266", status: "INFORCE", productName: "DECREASING TERM LIFE", subProductName: "DECREASING TERM LIFE", sumAssured: 35000000, startDate: "2021-12-30", maturityDate: "2026-12-29", paymentMode: "SEKALIGUS", policyAgeMonths: 52 },
+  { id: "pol_18_1", customerId: 18, policyNo: "162050000379", status: "INFORCE", productName: "ASURANSI MAXI PRO", subProductName: "MEGA MAXI PRO SBI", sumAssured: 100000000, startDate: "2016-02-17", maturityDate: "2076-08-06", paymentMode: "TAHUNAN", policyAgeMonths: 122 },
+  { id: "pol_19_1", customerId: 19, policyNo: "241990004111", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_20_1", customerId: 20, policyNo: "231860000208", status: "INFORCE", productName: "SIJATI", subProductName: "SIMAS JAMINAN PASTI", sumAssured: 14500000, startDate: "2023-04-02", maturityDate: "2033-11-07", paymentMode: "BULANAN", policyAgeMonths: 30 },
+  { id: "pol_21_1", customerId: 21, policyNo: "231860000190", status: "INFORCE", productName: "SIJATI", subProductName: "SIMAS JAMINAN PASTI", sumAssured: 25000000, startDate: "2023-03-30", maturityDate: "2033-11-08", paymentMode: "BULANAN", policyAgeMonths: 30 },
+  { id: "pol_22_1", customerId: 22, policyNo: "152050001048", status: "INFORCE", productName: "ASURANSI MAXI PRO", subProductName: "ASURANSI MAXI PRO", sumAssured: 100000000, startDate: "2015-11-27", maturityDate: "2091-11-27", paymentMode: "BULANAN", policyAgeMonths: 130 },
+  { id: "pol_23_1", customerId: 23, policyNo: "162050000379", status: "INFORCE", productName: "ASURANSI MAXI PRO", subProductName: "MEGA MAXI PRO SBI", sumAssured: 100000000, startDate: "2016-02-17", maturityDate: "2076-08-06", paymentMode: "TAHUNAN", policyAgeMonths: 122 },
+  { id: "pol_24_1", customerId: 24, policyNo: "211820000308", status: "INFORCE", productName: "DECREASING TERM LIFE", subProductName: "DECREASING TERM LIFE", sumAssured: 100000000, startDate: "2021-12-31", maturityDate: "2026-12-23", paymentMode: "SEKALIGUS", policyAgeMonths: 52 },
+  { id: "pol_25_1", customerId: 25, policyNo: "000008002394", status: "INFORCE", productName: "OPTIMA - MKOM01", subProductName: "OPTIMA", sumAssured: 50000000, startDate: "2008-01-07", maturityDate: "2066-11-22", paymentMode: "SEMESTERAN", policyAgeMonths: 214 },
+  { id: "pol_26_1", customerId: 26, policyNo: "191900000297", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - PLAN SEKALIGUS", sumAssured: 1000000000, startDate: "2019-03-29", maturityDate: "2056-03-28", paymentMode: "SEKALIGUS", policyAgeMonths: 85 },
+  { id: "pol_27_1", customerId: 27, policyNo: "251810000330", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 15", sumAssured: 400000000, startDate: "2025-10-17", maturityDate: "2085-10-15", paymentMode: "TAHUNAN", policyAgeMonths: 6 },
+  { id: "pol_28_1", customerId: 28, policyNo: "201810002646", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 10", sumAssured: 2000000000, startDate: "2020-06-23", maturityDate: "2084-06-22", paymentMode: "TAHUNAN", policyAgeMonths: 70 },
+  { id: "pol_28_2", customerId: 28, policyNo: "211810000037", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 5", sumAssured: 500000000, startDate: "2021-03-16", maturityDate: "2090-04-27", paymentMode: "BULANAN", policyAgeMonths: 60 },
+  { id: "pol_29_1", customerId: 29, policyNo: "241810000117", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 15", sumAssured: 200000000, startDate: "2024-03-25", maturityDate: "2101-01-28", paymentMode: "BULANAN", policyAgeMonths: 27 },
+  { id: "pol_30_1", customerId: 30, policyNo: "241740000112", status: "INFORCE", productName: "SIJI SMART KID", subProductName: "PLAN B AGENCY", sumAssured: 100000000, startDate: "2024-06-03", maturityDate: "2040-06-05", paymentMode: "TAHUNAN", policyAgeMonths: 23 },
+  { id: "pol_31_1", customerId: 31, policyNo: "241990000416", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-02-05", maturityDate: "2029-02-01", paymentMode: "SEKALIGUS", policyAgeMonths: 27 },
+  { id: "pol_32_1", customerId: 32, policyNo: "152050000024", status: "INFORCE", productName: "ASURANSI MAXI PRO", subProductName: "ASURANSI MAXI PRO", sumAssured: 500000000, startDate: "2015-11-06", maturityDate: "2068-08-31", paymentMode: "BULANAN", policyAgeMonths: 133 },
+  { id: "pol_33_1", customerId: 33, policyNo: "201810015218", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 15", sumAssured: 500000000, startDate: "2020-03-26", maturityDate: "2074-11-15", paymentMode: "BULANAN", policyAgeMonths: 65 },
+  { id: "pol_33_2", customerId: 33, policyNo: "211820000258", status: "INFORCE", productName: "DECREASING TERM LIFE", subProductName: "DECREASING TERM LIFE", sumAssured: 25000000, startDate: "2021-12-30", maturityDate: "2026-12-29", paymentMode: "SEKALIGUS", policyAgeMonths: 52 },
+  { id: "pol_34_1", customerId: 34, policyNo: "221810000036", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 15", sumAssured: 200000000, startDate: "2022-03-25", maturityDate: "2073-04-20", paymentMode: "BULANAN", policyAgeMonths: 48 },
+  { id: "pol_35_1", customerId: 35, policyNo: "241810000273", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 10", sumAssured: 200000000, startDate: "2024-03-25", maturityDate: "2101-05-16", paymentMode: "BULANAN", policyAgeMonths: 23 },
+  { id: "pol_36_1", customerId: 36, policyNo: "201810005730", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 15", sumAssured: 530000000, startDate: "2020-03-26", maturityDate: "2066-07-26", paymentMode: "BULANAN", policyAgeMonths: 69 },
+  { id: "pol_36_2", customerId: 36, policyNo: "211820000282", status: "INFORCE", productName: "DECREASING TERM LIFE", subProductName: "DECREASING TERM LIFE", sumAssured: 50000000, startDate: "2021-12-30", maturityDate: "2026-12-29", paymentMode: "SEKALIGUS", policyAgeMonths: 52 },
+  { id: "pol_37_1", customerId: 37, policyNo: "231860000208", status: "INFORCE", productName: "SIJATI", subProductName: "SIMAS JAMINAN PASTI", sumAssured: 14500000, startDate: "2023-04-02", maturityDate: "2033-11-07", paymentMode: "BULANAN", policyAgeMonths: 30 },
+  { id: "pol_38_1", customerId: 38, policyNo: "251510002669", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 200000000, startDate: "2025-07-25", maturityDate: "2026-07-23", paymentMode: "SEKALIGUS", policyAgeMonths: 9 },
+  { id: "pol_38_2", customerId: 38, policyNo: "000008003524", status: "INFORCE", productName: "OPTIMA - MKOM01", subProductName: "OPTIMA", sumAssured: 600000000, startDate: "2016-07-19", maturityDate: "2084-09-30", paymentMode: "BULANAN", policyAgeMonths: 211 },
+  { id: "pol_39_1", customerId: 39, policyNo: "251810000017", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 10", sumAssured: 600000000, startDate: "2026-02-05", maturityDate: "2067-01-15", paymentMode: "TAHUNAN", policyAgeMonths: 15 },
+  { id: "pol_40_1", customerId: 40, policyNo: "241990004079", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_40_2", customerId: 40, policyNo: "241990004095", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_41_1", customerId: 41, policyNo: "251510011058", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 3000000000, startDate: "2025-10-14", maturityDate: "2030-10-09", paymentMode: "SEKALIGUS", policyAgeMonths: 7 },
+  { id: "pol_42_1", customerId: 42, policyNo: "261510000316", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 100000000, startDate: "2026-03-13", maturityDate: "2031-03-12", paymentMode: "SEKALIGUS", policyAgeMonths: 2 },
+  { id: "pol_42_2", customerId: 42, policyNo: "251510003188", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 300000000, startDate: "2025-07-31", maturityDate: "2030-07-29", paymentMode: "SEKALIGUS", policyAgeMonths: 9 },
+  { id: "pol_43_1", customerId: 43, policyNo: "251510006215", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 250000000, startDate: "2025-09-04", maturityDate: "2027-09-02", paymentMode: "SEKALIGUS", policyAgeMonths: 8 },
+  { id: "pol_44_1", customerId: 44, policyNo: "251510005662", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 100000000, startDate: "2025-08-28", maturityDate: "2030-08-26", paymentMode: "SEKALIGUS", policyAgeMonths: 8 },
+  { id: "pol_44_2", customerId: 44, policyNo: "251510000200", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 2000000000, startDate: "2025-06-30", maturityDate: "2026-06-23", paymentMode: "SEKALIGUS", policyAgeMonths: 10 },
+  { id: "pol_45_1", customerId: 45, policyNo: "251510007684", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 300000000, startDate: "2025-09-16", maturityDate: "2027-09-14", paymentMode: "SEKALIGUS", policyAgeMonths: 7 },
+  { id: "pol_46_1", customerId: 46, policyNo: "251510002669", status: "INFORCE", productName: "SIMAS SCHOLARSHIP PROTECTION", subProductName: "SIMAS SCHOLARSHIP PROTECTION RUPIAH - AGENCY", sumAssured: 200000000, startDate: "2025-07-25", maturityDate: "2026-07-23", paymentMode: "SEKALIGUS", policyAgeMonths: 9 },
+  { id: "pol_46_2", customerId: 46, policyNo: "241990004111", status: "INFORCE", productName: "SIPASTI", subProductName: "SIJI PROTEKSI PASTI", sumAssured: 25000000, startDate: "2024-11-12", maturityDate: "2029-11-05", paymentMode: "SEKALIGUS", policyAgeMonths: 18 },
+  { id: "pol_47_1", customerId: 47, policyNo: "241810000299", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 20", sumAssured: 1000000000, startDate: "2024-04-07", maturityDate: "2085-07-03", paymentMode: "BULANAN", policyAgeMonths: 22 },
+  { id: "pol_47_2", customerId: 47, policyNo: "211820000282", status: "INFORCE", productName: "DECREASING TERM LIFE", subProductName: "DECREASING TERM LIFE", sumAssured: 50000000, startDate: "2021-12-30", maturityDate: "2026-12-29", paymentMode: "SEKALIGUS", policyAgeMonths: 52 },
+  { id: "pol_48_1", customerId: 48, policyNo: "201810008080", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - MPP 15", sumAssured: 690000000, startDate: "2020-08-27", maturityDate: "2072-09-10", paymentMode: "TAHUNAN", policyAgeMonths: 68 },
+  { id: "pol_49_1", customerId: 49, policyNo: "191900000297", status: "INFORCE", productName: "SIMAS JIWA LEGACY", subProductName: "SIMAS JIWA LEGACY - PLAN SEKALIGUS", sumAssured: 1000000000, startDate: "2019-03-29", maturityDate: "2056-03-28", paymentMode: "SEKALIGUS", policyAgeMonths: 85 },
+  { id: "pol_49_2", customerId: 49, policyNo: "000007001575", status: "INFORCE", productName: "KADO JENIUS - MKJ2", subProductName: "KADO JENIUS 10", sumAssured: 20000000, startDate: "2016-03-07", maturityDate: "2041-03-25", paymentMode: "TAHUNAN", policyAgeMonths: 229 },
 ];
 
 export const CUSTOMERS: Customer[] = [
@@ -2109,14 +2309,15 @@ const LEADS: Lead[] = CUSTOMERS.map((c, index) => {
     estCommission: formatCurrency(commissionValue),
     avatar: c.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase(),
     phone: `+62 812-XXXX-${c.id.toString().padStart(4, '0')}`,
-    policies: 1,
+    policies: POLICY_RECORDS.filter(p => p.customerId === c.id).length || 1,
     city: c.city || 'Jakarta',
     province: c.province || 'DKI Jakarta',
     occupation: c.occupation || 'Professional',
     salaryBucket: c.salaryBucket || 'Not specified',
     segment: c.segment,
     purchaseIntent: c.purchaseIntent,
-    channel: c.channel
+    channel: c.channel,
+    lifeStage: getLifeStage(c.age)
   };
 });
 
@@ -2151,4 +2352,7 @@ export const db = {
   getCustomerById: (id: number) => LEADS.find(l => l.id === id) || null,
   getLeadByName: (name: string) => LEADS.find(l => l.name === name) || null,
   getCustomers: () => CUSTOMERS,
+  getPoliciesByCustomerId: (customerId: number) => POLICY_RECORDS.filter(p => p.customerId === customerId),
+  getLifeStage: (age: number) => getLifeStage(age),
+  getPolicyCount: (customerId: number) => POLICY_RECORDS.filter(p => p.customerId === customerId).length,
 };
