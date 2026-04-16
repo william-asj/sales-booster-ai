@@ -3,16 +3,18 @@
 import React from "react";
 import { TrendingUp, PieChart, Activity } from "lucide-react";
 import { db } from "@/lib/data";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function Analytics() {
+  const { t } = useLanguage();
   const analytics = db.getAnalytics();
   const max = Math.max(...analytics.conversionChart.map(b => b.value));
 
   return (
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto min-h-screen">
       <header className="mb-10">
-        <h1 className="text-3xl font-bold text-slate-50 tracking-tight m-0">Analytics</h1>
-        <p className="mt-1 text-sm text-slate-400 font-medium">Conversion performance and product distribution overview.</p>
+        <h1 className="text-3xl font-bold text-slate-50 tracking-tight m-0">{t("Analytics")}</h1>
+        <p className="mt-1 text-sm text-slate-400 font-medium">{t("Conversion performance and product distribution overview.")}</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -22,7 +24,7 @@ export default function Analytics() {
             <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
               <Activity size={20} />
             </div>
-            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-widest">Leads Converted / Month</h3>
+            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-widest">{t("Leads Converted / Month")}</h3>
           </div>
           
           <div className="flex-1 flex items-end gap-4 md:gap-6 px-2">
@@ -38,7 +40,7 @@ export default function Analytics() {
                     </div>
                   </div>
                 </div>
-                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">{b.label}</div>
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">{t(b.label)}</div>
               </div>
             ))}
           </div>
@@ -50,14 +52,14 @@ export default function Analytics() {
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
               <PieChart size={20} />
             </div>
-            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-widest">Top Products Distribution</h3>
+            <h3 className="text-sm font-bold text-slate-100 uppercase tracking-widest">{t("Top Products Distribution")}</h3>
           </div>
           
           <div className="flex-1 flex flex-col justify-center gap-6">
             {analytics.topProducts.map((p, i) => (
               <div key={i} className="space-y-3">
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-xs font-bold text-slate-300">{p.name}</span>
+                  <span className="text-xs font-bold text-slate-300">{t(p.name)}</span>
                   <span className="text-xs font-black text-slate-100">{p.pct}%</span>
                 </div>
                 <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
@@ -80,7 +82,7 @@ export default function Analytics() {
         {analytics.kpis.map(kpi => (
           <div key={kpi.label} className="glass-panel card-hover rounded-[32px] p-8 border border-white/5 flex items-center justify-between">
             <div className="space-y-1">
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{kpi.label}</div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t(kpi.label)}</div>
               <div className="text-4xl font-black text-slate-50 tracking-tighter">{kpi.value}</div>
             </div>
             <div 

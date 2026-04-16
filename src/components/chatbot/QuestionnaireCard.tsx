@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, CheckCircle2, Pencil } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ interface Props {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function QuestionnaireCard({ steps, onSubmit, onBack }: Props) {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -121,7 +123,7 @@ export default function QuestionnaireCard({ steps, onSubmit, onBack }: Props) {
             ))}
           </div>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Step {currentStep + 1} of {totalSteps}
+            {t("Step")} {currentStep + 1} {t("of")} {totalSteps}
           </div>
         </div>
 
@@ -242,7 +244,7 @@ export default function QuestionnaireCard({ steps, onSubmit, onBack }: Props) {
                 <Pencil size={12} />
               </div>
               <span style={{ fontSize: 15, color: showOtherInput ? "#f1f5f9" : "#94a3b8", fontWeight: showOtherInput ? 500 : 400 }}>
-                Something else...
+                {t("Something else...")}
               </span>
             </button>
 
@@ -250,7 +252,7 @@ export default function QuestionnaireCard({ steps, onSubmit, onBack }: Props) {
               <textarea
                 value={otherText}
                 onChange={(e) => setOtherText(e.target.value)}
-                placeholder="Tell us more about your situation..."
+                placeholder={t("Tell us more about your situation...")}
                 disabled={submitted}
                 style={{
                   width: "100%",
@@ -284,10 +286,10 @@ export default function QuestionnaireCard({ steps, onSubmit, onBack }: Props) {
         <div style={{ fontSize: 13, color: "#475569" }}>
           {submitted ? (
             <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#4ade80", fontWeight: 600 }}>
-              <CheckCircle2 size={16} /> Submitted
+              <CheckCircle2 size={16} /> {t("Submitted")}
             </div>
           ) : (
-            "Select an option to continue"
+            t("Select an option to continue")
           )}
         </div>
 
@@ -312,7 +314,7 @@ export default function QuestionnaireCard({ steps, onSubmit, onBack }: Props) {
               transition: "all 0.2s"
             }}
           >
-            {currentStep === totalSteps - 1 ? "Submit ✓" : "Next →"}
+            {currentStep === totalSteps - 1 ? t("Submit ✓") : t("Next →")}
           </button>
         )}
       </div>

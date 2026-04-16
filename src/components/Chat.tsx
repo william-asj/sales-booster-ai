@@ -6,6 +6,7 @@ import ChatBubble from "./chatbot/ChatBubble";
 import ChatInput, { AttachedFile } from "./chatbot/ChatInput";
 import QuestionnaireCard from "./chatbot/QuestionnaireCard";
 import { useChatState, AiMessagePart, AiMessage } from "@/context/ChatContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { useChatFlow } from "@/hooks/useChatFlow";
 import { buildRecommendPrompt, RECOMMEND_FLOW, RecommendAnswers } from "@/lib/prompts";
 import { db } from "@/lib/data";
@@ -64,6 +65,7 @@ interface ChatProps {
 }
 
 export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
+  const { t } = useLanguage();
   const { sessions, activeSessionId, setActiveSessionId, createNewSession, deleteSession, appendMessage } = useChatState();
   const { startFlow, resetFlow } = useChatFlow();
   const [isTyping, setIsTyping] = useState(false);
@@ -323,14 +325,14 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
       {/* ─── LEFT SIDEBAR (History) ─── */}
       <div className={`glass-sidebar custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} onScroll={handleScroll}>
         <div style={{ padding: "24px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--claude-muted)", letterSpacing: "0.05em", textTransform: "uppercase", fontFamily: "var(--font-header)" }}>Chat History</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "var(--claude-muted)", letterSpacing: "0.05em", textTransform: "uppercase", fontFamily: "var(--font-header)" }}>{t("Chat History")}</span>
           <button
             onClick={() => {
               const newId = createNewSession();
               setActiveSessionId(newId);
               resetFlow();
             }}
-            title="New Chat"
+            title={t("New Chat")}
             style={{
               width: 32, height: 32, borderRadius: 8,
               background: "rgba(255, 255, 255, 0.03)",
@@ -348,7 +350,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
         <div className={`custom-scrollbar ${isScrolling ? 'is-scrolling' : ''}`} style={{ flex: 1, overflowY: "auto", padding: "8px" }} onScroll={handleScroll}>
           {sessions.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 20px", color: "var(--claude-muted)", fontSize: 13 }}>
-              No chat history yet.
+              {t("No chat history yet.")}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -436,7 +438,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                 ) : (
                   <>
                     <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ade80", boxShadow: "0 0 8px rgba(74, 222, 128, 0.4)" }} className="animate-pulse" />
-                    Online
+                    {t("Online")}
                   </>
                 )}
               </div>
@@ -458,7 +460,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             <div className="messages-max-width" style={{ padding: "40px 0 200px", display: "flex", flexDirection: "column", gap: 32 }}>
               {(!activeSession || activeSession.messages.length === 0) && !isTyping && !streamingText ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "50vh", gap: 24 }}>
-                  <div style={{ fontSize: 28, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.02em", fontFamily: "var(--font-header)" }}>How can I help you today?</div>
+                  <div style={{ fontSize: 28, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.02em", fontFamily: "var(--font-header)" }}>{t("How can I help you today?")}</div>
                   <div style={{ width: "100%", maxWidth: "600px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     {[
                       "Analyze my recent leads",
@@ -468,7 +470,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                     ].map((suggestion, i) => (
                       <button
                         key={i}
-                        onClick={() => sendToAI(suggestion)}
+                        onClick={() => sendToAI(t(suggestion))}
                         style={{
                           padding: "16px", borderRadius: 12, background: "rgba(255, 255, 255, 0.02)",
                           border: "1px solid rgba(255, 255, 255, 0.05)", color: "#94a3b8", textAlign: "left",
@@ -478,7 +480,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                         onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; }}
                         onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; }}
                       >
-                        {suggestion}
+                        {t(suggestion)}
                       </button>
                     ))}
                   </div>
@@ -563,7 +565,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                     onSlashCommand={handleSlashCommand}
                   />
                   <div style={{ textAlign: "center", marginTop: 12, fontSize: 11, color: "var(--claude-muted)" }}>
-                    AI can make mistakes. Check important info.
+                    {t("AI can make mistakes. Check important info.")}
                   </div>
                 </>
               )}

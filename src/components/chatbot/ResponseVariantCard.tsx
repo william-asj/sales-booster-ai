@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Copy, Check } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -20,6 +21,7 @@ const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function ResponseVariantCard({ variants }: Props) {
+  const { t } = useLanguage();
   const [activeIdx, setActiveIdx] = useState(0);
   const [copied, setCopied] = useState(false);
 
@@ -134,7 +136,7 @@ export default function ResponseVariantCard({ variants }: Props) {
       }}>
         <button
           onClick={handleCopy}
-          title={copied ? "Copied!" : "Copy to clipboard"}
+          title={copied ? t("Copied!") : t("Copy to clipboard")}
           style={{
             display: "flex",
             alignItems: "center",
@@ -163,12 +165,12 @@ export default function ResponseVariantCard({ variants }: Props) {
           {copied ? (
             <>
               <Check size={13} color="#22c55e" strokeWidth={2.5} />
-              <span style={{ fontSize: 11, color: "#22c55e", fontWeight: 500 }}>Copied</span>
+              <span style={{ fontSize: 11, color: "#22c55e", fontWeight: 500 }}>{t("Copied")}</span>
             </>
           ) : (
             <>
               <Copy size={13} color="#475569" />
-              <span style={{ fontSize: 11, color: "#475569" }}>Copy</span>
+              <span style={{ fontSize: 11, color: "#475569" }}>{t("Copy")}</span>
             </>
           )}
         </button>

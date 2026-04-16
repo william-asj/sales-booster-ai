@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Users,
   TrendingUp,
@@ -22,6 +22,7 @@ import {
   Activity
 } from "lucide-react";
 import { db, Lead, Page } from "@/lib/data";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface Props {
   setActive: (page: Page) => void;
@@ -98,9 +99,35 @@ const CircularGauge = ({ score }: { score: number }) => {
 };
 
 export default function Dashboard({ setActive, setSelectedLead, setInitialMessage }: Props) {
+  const { t } = useLanguage();
   const stats = db.getStats();
   const leads = db.getLeads();
   const events = db.getEvents();
+
+  const [dailyTip, setDailyTip] = useState(t("Loading today's tip..."));
+  const [tipLoading, setTipLoading] = useState(false);
+
+  const fetchTip = useCallback(async () => {
+    setTipLoading(true);
+    try {
+      const res = await fetch('/api/daily-tip', { method: 'POST' });
+      const data = await res.json();
+      if (data.tip) setDailyTip(data.tip);
+    } catch (err) {
+      console.error("Failed to fetch daily tip:", err);
+      setDailyTip(t("Check back later for today's tip."));
+    } finally {
+      setTipLoading(false);
+    }
+  }, [t]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (mounted) {
+      fetchTip();
+    }
+    return () => { mounted = false; };
+  }, [fetchTip]);
 
   const [sortCol, setSortCol] = useState<"name" | "event" | "product" | "score" | null>("score");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -156,7 +183,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                     <span
                       className={`inline-block mt-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${eventStyle.bg} ${eventStyle.text}`}
                     >
-                      {lead.event}
+                      {t(lead.event)}
                     </span>
                   </div>
                 </div>
@@ -165,15 +192,15 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
 
               <div className="bg-black/20 rounded-xl p-4 mb-5 flex-1">
                 <div className="flex justify-between mb-3">
-                  <span className="text-xs text-slate-400">Best Product</span>
-                  <span className="text-xs text-slate-200 font-medium">{lead.product}</span>
+                  <span className="text-xs text-slate-400">{t("Best Product")}</span>
+                  <span className="text-xs text-slate-200 font-medium">{t(lead.product)}</span>
                 </div>
                 <div className="flex justify-between mb-3">
-                  <span className="text-xs text-slate-400">Est. Premium</span>
+                  <span className="text-xs text-slate-400">{t("Est. Premium")}</span>
                   <span className="text-[13px] text-indigo-300 font-semibold">{lead.premium}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-xs text-slate-400">Est. Commission</span>
+                  <span className="text-xs text-slate-400">{t("Est. Commission")}</span>
                   <span className="text-[13px] text-emerald-400 font-semibold">{lead.estCommission}</span>
                 </div>
               </div>
@@ -186,7 +213,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                 }}
                 className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
               >
-                <MessageSquare size={16} /> AI Chat Assistant
+                <MessageSquare size={16} /> {t("AI Chat Assistant")}
               </button>
             </div>
           );
@@ -199,8 +226,8 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50 m-0">Welcome back, Agent ✨</h1>
-          <p className="mt-1 text-sm text-slate-400">Here&apos;s your AI-curated summary for today.</p>
+          <h1 className="text-2xl font-semibold text-slate-50 m-0">{t("Welcome back, Agent ✨")}</h1>
+          <p className="mt-1 text-sm text-slate-400">{t("Here's your AI-curated summary for today.")}</p>
         </div>
         <div className="flex gap-4">
           <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200">
@@ -223,7 +250,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
               <div className="bg-green-500/15 text-green-400 px-2 py-1 rounded-full text-xs font-semibold">{stat.delta}</div>
             </div>
             <div className="text-3xl font-bold text-slate-50 mb-1">{stat.value}</div>
-            <div className="text-[13px] text-slate-400 font-medium">{stat.label}</div>
+            <div className="text-[13px] text-slate-400 font-medium">{t(stat.label)}</div>
           </div>
         ))}
       </div>
@@ -231,8 +258,8 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
       <div className="grid grid-cols-[2.5fr_1fr] gap-6 mb-8 items-stretch">
         <div className="glass-panel card-hover rounded-3xl p-5 md:p-6 flex flex-col overflow-hidden">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-semibold text-slate-50 m-0">Priority Actions</h3>
-            <button onClick={() => setActive("leads")} className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide">View All</button>
+            <h3 className="text-base font-semibold text-slate-50 m-0">{t("Priority Actions")}</h3>
+            <button onClick={() => setActive("leads")} className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide">{t("View All")}</button>
           </div>
           <div className="flex-1 overflow-x-auto">
             <table className="w-full border-collapse">
@@ -241,11 +268,11 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                   {["name", "event", "product", "score"].map((col) => (
                     <th key={col} onClick={() => toggleSort(col as "name" | "event" | "product" | "score")} className="text-left p-2.5 text-[11px] font-semibold tracking-wide cursor-pointer hover:text-slate-50 transition-colors select-none">
                       <div className={`inline-flex items-center gap-1 whitespace-nowrap ${sortCol === col ? "text-indigo-300" : "text-slate-500"}`}>
-                        {col === "name" ? "CUSTOMER" : col === "event" ? "LIFE EVENT" : col === "product" ? "RECOMMENDATION" : "MATCH SCORE"} {renderSortIcon(col)}
+                        {col === "name" ? t("CUSTOMER") : col === "event" ? t("LIFE EVENT") : col === "product" ? t("RECOMMENDATION") : t("MATCH SCORE")} {renderSortIcon(col)}
                       </div>
                     </th>
                   ))}
-                  <th className="text-left p-2.5 text-[11px] font-semibold text-slate-500 tracking-wide">ACTION</th>
+                  <th className="text-left p-2.5 text-[11px] font-semibold text-slate-500 tracking-wide">{t("ACTION")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -260,9 +287,9 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                         </div>
                       </td>
                       <td className="p-3">
-                        <span className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${eventStyle.bg} ${eventStyle.text}`}>{action.event}</span>
+                        <span className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${eventStyle.bg} ${eventStyle.text}`}>{t(action.event)}</span>
                       </td>
-                      <td className="p-3 text-[13px] text-slate-200">{action.product}</td>
+                      <td className="p-3 text-[13px] text-slate-200">{t(action.product)}</td>
                       <td className="p-3">
                         <div className="flex items-center gap-2.5">
                           <div className="w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden shrink-0">
@@ -280,7 +307,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                           }} 
                           className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
                         >
-                          Review
+                          {t("Review")}
                         </button>
                       </td>
                     </tr>
@@ -294,8 +321,8 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
         <div className="flex flex-col gap-4">
           <div className="glass-panel card-hover rounded-[32px] p-5 flex flex-col overflow-hidden border border-white/10 backdrop-blur-xl bg-white/[0.02]">
             <div className="flex justify-between items-center mb-4 shrink-0 px-1">
-              <h3 className="text-[14px] font-bold text-slate-100 m-0 tracking-tight">Recent Life Events</h3>
-              <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide transition-all">View All</button>
+              <h3 className="text-[14px] font-bold text-slate-100 m-0 tracking-tight">{t("Recent Life Events")}</h3>
+              <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide transition-all">{t("View All")}</button>
             </div>
             <div className="flex flex-col gap-1.5 overflow-hidden">
               {sortedEvents.slice(0, 5).map((event) => {
@@ -311,7 +338,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                         <div className="text-[9px] font-bold text-slate-500 uppercase shrink-0">{event.timestamp}</div>
                       </div>
                       <div className={`text-[11px] font-medium ${eventStyle.text} truncate`}>
-                        {event.eventType}
+                        {t(event.eventType)}
                       </div>
                     </div>
                   </div>
@@ -323,16 +350,28 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
           <div className="glass-panel card-hover rounded-[28px] p-5 bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-md shrink-0 mt-auto">
             <div className="flex gap-3 items-start">
               <div className="text-indigo-300 mt-0.5"><Sparkles size={18} /></div>
-              <div>
-                <h4 className="text-[13px] font-bold text-slate-100 mb-1 m-0 uppercase tracking-wider">AI Tips of the Day</h4>
-                <p className="text-[12px] text-slate-400 leading-snug m-0 font-medium">New Baby events have 45% higher conversion within 72h.</p>
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-1">
+                  <h4 className="text-[13px] font-bold text-slate-100 m-0 uppercase tracking-wider">{t("AI Tips of the Day")}</h4>
+                  <button 
+                    onClick={fetchTip} 
+                    disabled={tipLoading}
+                    className="text-indigo-300 hover:text-indigo-100 transition-colors disabled:opacity-50"
+                    title={t("Refresh Tip")}
+                  >
+                    <RefreshCw size={14} className={tipLoading ? "animate-spin" : ""} />
+                  </button>
+                </div>
+                <p className={`text-[12px] text-slate-400 leading-snug m-0 font-medium transition-opacity duration-300 ${tipLoading ? "opacity-50" : "opacity-100"}`}>
+                  {dailyTip}
+                </p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-slate-50 mb-5 m-0">Recommended Leads</h3>
+      <h3 className="text-lg font-semibold text-slate-50 mb-5 m-0">{t("Recommended Leads")}</h3>
       {renderLeadCards()}
     </div>
   );
