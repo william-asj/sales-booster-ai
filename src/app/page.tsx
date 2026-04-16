@@ -9,6 +9,7 @@ import Analytics from "../components/Analytics";
 import Leads from "../components/Leads";
 import Events from "../components/Events";
 import Catalog from "../components/Catalog";
+import Settings from "../components/Settings";
 import { Lead, Page } from "@/lib/data";
 
 export default function Home() {
@@ -67,9 +68,7 @@ export default function Home() {
           
           {active === "products" && <Catalog />}
           
-          {active === "settings" && (
-            <div className="p-8 text-slate-400">Settings coming soon...</div>
-          )}
+          {active === "settings" && <Settings />}
         </div>
       </main>
     </div>

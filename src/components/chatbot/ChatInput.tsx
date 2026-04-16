@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Mic, Plus, X, ArrowUp } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,16 +104,18 @@ function FileBadge({ name, mimeType }: { name: string; mimeType: string }) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-const SLASH_COMMANDS = [
-  { 
-    command: "recommend" as const, 
-    icon: "⚡", 
-    label: "/recommend", 
-    description: "Panduan rekomendasi produk / Product recommendation guide" 
-  }
-];
-
 export default function ChatInput({ onSend, onSlashCommand, disabled = false, value = "", onValueChange }: Props) {
+  const { t } = useLanguage();
+
+  const SLASH_COMMANDS = [
+    { 
+      command: "recommend" as const, 
+      icon: "⚡", 
+      label: "/recommend", 
+      description: t("Product recommendation guide") 
+    }
+  ];
+
   const [text, setText] = useState(value);
   const [attachments, setAttachments] = useState<AttachedFile[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
@@ -449,7 +452,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             disabled={disabled}
-            placeholder="Reply..."
+            placeholder={t("Reply...")}
             rows={1}
             style={{
               width: "100%", background: "transparent", border: "none",
@@ -474,7 +477,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
 
           <button
             onClick={() => fileInputRef.current?.click()}
-            title={`Attach files (${attachments.length}/5)`}
+            title={`${t("Attach files")} (${attachments.length}/5)`}
             disabled={attachments.length >= 5}
             style={{
               width: 38, height: 38, borderRadius: "50%", border: "1.5px solid var(--claude-accent)",
@@ -507,10 +510,10 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
               onClick={voiceSupported ? toggleRecording : undefined}
               title={
                 !voiceSupported
-                  ? "Voice not supported in this browser"
+                  ? t("Voice not supported in this browser")
                   : isRecording
-                  ? "Stop recording"
-                  : "Voice input"
+                  ? t("Stop recording")
+                  : t("Voice input")
               }
               style={{
                 width: 38,
@@ -540,7 +543,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             <button
               onClick={handleSend}
               disabled={!canSend}
-              title="Send (Enter)"
+              title={t("Send (Enter)")}
               style={{
                 width: 38,
                 height: 38,
@@ -571,7 +574,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
       
       {!showCommandPalette && text.toLowerCase().includes("recommend") && (
         <div style={{ fontSize: 11, color: "#6366f1", marginTop: 6, paddingLeft: 4 }}>
-          💡 Coba /recommend untuk panduan rekomendasi produk
+          {t("💡 Try /recommend for product recommendation guide")}
         </div>
       )}
     </div>

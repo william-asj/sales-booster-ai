@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { MessageSquare, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
 import { db, Lead } from "@/lib/data";
+import { useLanguage } from "@/context/LanguageContext";
 
 const EVENT_COLORS: Record<string, { bg: string; text: string }> = {
   "Birthday": { bg: "bg-amber-400/10", text: "text-amber-400" },
@@ -72,6 +73,7 @@ const SortButton = ({ field, label, sortBy, sortOrder, handleSort }: SortButtonP
 );
 
 export default function Leads({ setActive, setSelectedLead, setInitialMessage }: LeadsProps) {
+  const { t } = useLanguage();
   const leads = db.getLeads();
   const [sortBy, setSortBy] = useState<SortField>("score");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
@@ -103,15 +105,15 @@ export default function Leads({ setActive, setSelectedLead, setInitialMessage }:
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50 m-0 text-3xl font-bold tracking-tight">Leads Recommendation</h1>
-          <p className="mt-1 text-sm text-slate-400 font-medium">Full list of AI-curated opportunities sorted by your priority.</p>
+          <h1 className="text-2xl font-semibold text-slate-50 m-0 text-3xl font-bold tracking-tight">{t("Leads Recommendation")}</h1>
+          <p className="mt-1 text-sm text-slate-400 font-medium">{t("Full list of AI-curated opportunities sorted by your priority.")}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 bg-white/[0.02] p-2 rounded-2xl border border-white/5">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">Sort By</span>
-          <SortButton field="score" label="Match Score" sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
-          <SortButton field="name" label="Customer Name" sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
-          <SortButton field="event" label="Life Event" sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-2">{t("Sort By")}</span>
+          <SortButton field="score" label={t("Match Score")} sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
+          <SortButton field="name" label={t("Customer Name")} sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
+          <SortButton field="event" label={t("Life Event")} sortBy={sortBy} sortOrder={sortOrder} handleSort={handleSort} />
         </div>
       </header>
 
@@ -131,7 +133,7 @@ export default function Leads({ setActive, setSelectedLead, setInitialMessage }:
                     {lead.name}
                   </div>
                   <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-lg text-[11px] font-semibold ${EVENT_COLORS[lead.event]?.bg || "bg-white/10"} ${EVENT_COLORS[lead.event]?.text || "text-white"}`}>
-                    {lead.event}
+                    {t(lead.event)}
                   </span>
                 </div>
               </div>
@@ -140,15 +142,15 @@ export default function Leads({ setActive, setSelectedLead, setInitialMessage }:
 
             <div className="bg-black/20 rounded-xl p-4 mb-5 flex-1">
               <div className="flex justify-between mb-3">
-                <span className="text-xs text-slate-400">Best Product</span>
-                <span className="text-xs text-slate-200 font-medium">{lead.product}</span>
+                <span className="text-xs text-slate-400">{t("Best Product")}</span>
+                <span className="text-xs text-slate-200 font-medium">{t(lead.product)}</span>
               </div>
               <div className="flex justify-between mb-3">
-                <span className="text-xs text-slate-400">Est. Premium</span>
+                <span className="text-xs text-slate-400">{t("Est. Premium")}</span>
                 <span className="text-[13px] text-indigo-300 font-semibold">{lead.premium}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-xs text-slate-400">Est. Commission</span>
+                <span className="text-xs text-slate-400">{t("Est. Commission")}</span>
                 <span className="text-[13px] text-emerald-400 font-semibold">{lead.estCommission}</span>
               </div>
             </div>
@@ -161,7 +163,7 @@ export default function Leads({ setActive, setSelectedLead, setInitialMessage }:
               }}
               className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
             >
-              <MessageSquare size={16} /> Ask AI
+              <MessageSquare size={16} /> {t("Ask AI")}
             </button>
           </div>
         ))}

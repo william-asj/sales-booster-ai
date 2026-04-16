@@ -10,12 +10,14 @@ import { useChatState, AiMessage, AiMessagePart } from "@/context/ChatContext";
 import { useChatFlow } from "@/hooks/useChatFlow";
 import { buildRecommendPrompt, RECOMMEND_FLOW, RecommendAnswers } from "@/lib/prompts";
 import { db } from "@/lib/data";
+import { useLanguage } from "@/context/LanguageContext";
 
 function nowTime(): string {
   return new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
 
 function TypingIndicator() {
+  const { t } = useLanguage();
   return (
     <div className="message" style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 24, animation: "fadeIn 0.3s ease-out" }}>
       <div style={{
@@ -58,12 +60,13 @@ function TypingIndicator() {
 }
 
 function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) => void }) {
+  const { t } = useLanguage();
   return (
     <div style={{
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", gap: 20, textAlign: "center", padding: "40px 10px", flex: 1,
     }}>
-      <div style={{ fontSize: 22, fontWeight: 600, color: "var(--claude-header)", letterSpacing: "-0.01em" }}>How can I help?</div>
+      <div style={{ fontSize: 22, fontWeight: 600, color: "var(--claude-header)", letterSpacing: "-0.01em" }}>{t("How can I help?")}</div>
       <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
         {[
           "Analyze my recent leads",
@@ -72,7 +75,7 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
         ].map((suggestion, i) => (
           <button
             key={i}
-            onClick={() => onSuggestionClick(suggestion)}
+            onClick={() => onSuggestionClick(t(suggestion))}
             style={{
               padding: "12px 16px", borderRadius: 12, background: "rgba(255, 255, 255, 0.02)",
               border: "1px solid rgba(255, 255, 255, 0.05)", color: "var(--claude-text)", textAlign: "left",
@@ -81,7 +84,7 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
             onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)"; }}
           >
-            {suggestion}
+            {t(suggestion)}
           </button>
         ))}
       </div>
@@ -90,6 +93,7 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
 }
 
 export default function ChatOverlayPanel() {
+  const { t } = useLanguage();
   const { isOpen, toggle, close } = useChatOverlay();
   const { sessions, overlaySessionId, setOverlaySessionId, createNewSession, appendMessage } = useChatState();
   const { startFlow, resetFlow } = useChatFlow();

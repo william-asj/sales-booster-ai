@@ -23,21 +23,13 @@ ${products}
 }
 
 /**
- * Post-processes Gemini's response to inject missing newlines
- * that are required for the markdown renderer to work correctly.
+ * Post-processes Gemini's response to only collapse excessive newlines.
+ * Formatting is now handled by react-markdown on the frontend.
  */
 function formatAIResponse(text: string): string {
   return text
-    // Ensure emoji section headers always have a blank line before them
-    .replace(/([^\n])\n?([\u{1F300}-\u{1F9FF}])/gu, "$1\n\n$2")
-    // Ensure bullet points always start on their own line
-    .replace(/([^\n])\n?(\s*[-•]\s)/g, "$1\n$2")
-    // Ensure numbered list items always start on their own line
-    .replace(/([^\n])\n?(\s*\d+\.\s)/g, "$1\n$2")
     // Collapse 3+ consecutive newlines to max 2
     .replace(/\n{3,}/g, "\n\n")
-    // Ensure a blank line exists before every emoji header
-    .replace(/\n([\u{1F300}-\u{1F9FF}])/gu, "\n\n$1")
     .trim();
 }
 
@@ -67,16 +59,14 @@ When the agent says "hi", "hey", "hello", or any casual greeting:
 - Do NOT write a wall of text for a greeting
 
 RESPONSE FORMATTING RULES — FOLLOW STRICTLY:
-- Always use proper markdown line breaks between every section
-- Start each new topic or section on its OWN line with a blank line before it
-- Use emoji headers (e.g. 🏆 Title, 💬 Title) to label every major section
-- Use "- " bullet points for lists of features or benefits — one item per line
-- Use numbered lists (1. 2. 3.) for sequential steps — one item per line
-- NEVER run bullet points or numbered items together on the same line
-- NEVER concatenate two sentences from different sections without a blank line between them
-- Keep each paragraph to 2-3 sentences maximum before adding a blank line
-- Bold key terms using **double asterisks**
-- Italic supporting phrases using *single asterisks*
+- Always format your response using clean markdown. Use **bold** for emphasis. 
+- Use bullet lists or numbered lists for multiple items. 
+- Never split a name, product title, or score across multiple lines. Keep each list item on a single line.
+- Use markdown headers for labeling sections:
+  - "## 🏆 Section Title" for major sections
+  - "### ✅ Sub-section Title" for sub-sections
+- NEVER run bullet points or numbered items together on the same line.
+- Keep each paragraph to 2-3 sentences maximum before adding a blank line.
 
 When an agent asks about a specific customer by name, use the data above to provide 
 tailored advice. If they ask for a "pitch", write a persuasive short message 

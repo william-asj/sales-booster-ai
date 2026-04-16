@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   ShieldCheck, TrendingUp, HeartPulse, GraduationCap, Home, Briefcase, Lock, Moon, 
   Activity, Heart, BarChart3, ArrowDownToLine, Stethoscope, BookOpen, Gift, Shield, 
@@ -8,6 +9,7 @@ import {
   ArrowLeft, LucideIcon 
 } from "lucide-react";
 import { db, Product } from "@/lib/data";
+import { useLanguage } from "@/context/LanguageContext";
 
 const ICON_MAP: Record<string, LucideIcon> = {
   ShieldCheck,
@@ -49,141 +51,169 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function ProductDetailPage({ product, onBack }: { product: Product; onBack: () => void }) {
+  const { t } = useLanguage();
   const riders = db.getProducts().filter(p => p.isRider && p.riderFor?.includes(product.id));
   const Icon = ICON_MAP[product.iconName] || ShieldCheck;
   const color = CATEGORY_COLORS[product.category] || "#6366f1";
 
-  return (
-    <div className="animate-fade-in fixed inset-0 z-50 bg-[#080a12] overflow-y-auto">
-      {/* Ambient Glow */}
+  useEffect(() => {
+    // Lock both body and main container scroll
+    const main = document.querySelector('main');
+    const originalBodyOverflow = document.body.style.overflow;
+    const originalMainOverflow = main?.style.overflow || "auto";
+
+    document.body.style.overflow = "hidden";
+    if (main) main.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow;
+      if (main) main.style.overflow = originalMainOverflow;
+    };
+  }, []);
+
+  return createPortal(
+    <div className="animate-fade-in fixed inset-0 z-[9999] flex items-center justify-center p-2 md:p-4">
+      {/* Deep Glass Backdrop */}
       <div 
-        className="fixed inset-0 pointer-events-none opacity-20"
+        className="absolute inset-0 bg-black/60 backdrop-blur-3xl"
+        onClick={onBack}
+      />
+      
+      {/* Ambient Soft Glow */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-30"
         style={{
-          background: `radial-gradient(circle at 50% -20%, ${color}, transparent 70%)`
+          background: `radial-gradient(circle at 50% 50%, ${color}33, transparent 70%)`
         }}
       />
       
-      <div className="relative px-10 py-12 max-w-[1000px] mx-auto flex flex-col gap-10">
-        {/* Top Bar */}
-        <div className="flex justify-between items-center">
-          <button 
-            onClick={onBack}
-            className="flex items-center gap-2 text-slate-400 hover:text-slate-50 transition-colors font-bold text-sm"
-          >
-            <ArrowLeft size={18} /> Back to Catalog
-          </button>
-          <div 
-            className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border"
-            style={{
-              borderColor: `${color}40`,
-              backgroundColor: `${color}15`,
-              color: color
-            }}
-          >
-            {product.category}
-          </div>
-        </div>
-
-        {/* Hero */}
-        <div className="flex items-center gap-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <div 
-            className="w-20 h-20 rounded-3xl flex items-center justify-center text-white shrink-0 shadow-2xl"
-            style={{
-              background: `linear-gradient(135deg, ${color}, ${color}dd)`
-            }}
-          >
-            <Icon size={40} strokeWidth={1.5} />
-          </div>
-          <div>
-            <h1 className="text-4xl font-black text-slate-50 tracking-tight mb-2 uppercase">{product.name}</h1>
-            <p className="text-xl text-slate-400 font-medium italic">{product.details.tagline}</p>
-          </div>
-        </div>
-
-        {/* Two-column panel row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-          {/* Coverage Panel */}
-          <div className="glass-panel rounded-[32px] p-8 flex flex-col gap-6">
-            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Product Scope</h3>
-            <div className="flex flex-col gap-4">
-              <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                <span className="text-sm text-slate-400">Entry Age</span>
-                <span className="text-sm text-slate-50 font-bold">{product.details.minEntry} - {product.details.maxEntry} Years</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                <span className="text-sm text-slate-400">Policy Term</span>
-                <span className="text-sm text-slate-50 font-bold">{product.details.policyTerm}</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-white/5 pb-3">
-                <span className="text-sm text-slate-400">Premium Term</span>
-                <span className="text-sm text-slate-50 font-bold">{product.details.premiumTerm}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-400">Max Coverage</span>
-                <span className="text-sm text-indigo-300 font-bold">{product.details.maxCoverage}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Key Benefits Panel */}
-          <div className="glass-panel rounded-[32px] p-8 flex flex-col gap-6">
-            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Key Benefits</h3>
-            <ul className="flex flex-col gap-4">
-              {product.details.keyBenefits.map((benefit, i) => (
-                <li key={i} className="flex gap-3 text-sm text-slate-300 leading-relaxed">
-                  <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Coverage Highlights strip */}
-        <div className="glass-panel rounded-[32px] p-8 animate-fade-in" style={{ animationDelay: '0.3s' }}>
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Coverage Highlights</h3>
-          <div className="flex flex-wrap gap-x-12 gap-y-4">
-            {product.details.coverageHighlights.map((highlight, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <ShieldCheck size={18} className="text-emerald-400" />
-                <span className="text-sm text-slate-200 font-bold">{highlight}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Compatible Riders */}
-        {riders.length > 0 && (
-          <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <h3 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em] mb-4 px-1">Compatible Riders</h3>
-            <div className="flex flex-wrap gap-2">
-              {riders.map((rider) => (
-                <div key={rider.id} className="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-xs text-slate-300 font-bold">
-                  {rider.name}
+      {/* Floating Workspace Panel */}
+      <div className="relative w-full max-w-7xl max-h-[98vh] bg-[#0d1117] rounded-[40px] border border-white/10 shadow-[0_32px_64px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col will-change-transform">
+        <div className="overflow-y-auto flex-1 scrollbar-hide">
+          <div className="px-6 md:px-12 py-5 flex flex-col gap-5">
+            {/* Header Row (Back + Hero) */}
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 pb-5 border-b border-white/5">
+              <div className="flex items-center gap-5">
+                <button 
+                  onClick={onBack}
+                  className="group w-9 h-9 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors shrink-0"
+                >
+                  <ArrowLeft size={18} className="text-slate-400 group-hover:text-slate-50" />
+                </button>
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg"
+                    style={{ background: `linear-gradient(135deg, ${color}, ${color}dd)` }}
+                  >
+                    <Icon size={32} strokeWidth={1.2} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-3 mb-0.5">
+                      <h1 className="text-xl md:text-3xl font-black text-slate-50 tracking-tighter uppercase leading-none">{product.name}</h1>
+                      <div 
+                        className="px-2.5 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-widest border"
+                        style={{ borderColor: `${color}40`, backgroundColor: `${color}15`, color: color }}
+                      >
+                        {t(product.category)}
+                      </div>
+                    </div>
+                    <p className="text-sm md:text-base text-slate-400 font-medium italic tracking-tight opacity-70 leading-tight">{t(product.details.tagline)}</p>
+                  </div>
                 </div>
-              ))}
+              </div>
+              
+              <button className="hidden md:block px-6 py-2.5 bg-slate-50 text-slate-900 font-black rounded-xl hover:bg-white transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg text-xs uppercase tracking-tight">
+                {t("GENERATE AI PITCH")}
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* CTA Button */}
-        <button className="w-full py-5 bg-white text-slate-900 font-black rounded-2xl hover:bg-slate-100 transition-all transform hover:scale-[1.01] active:scale-[0.99] shadow-xl mt-4">
-          GENERATE AI PITCH FOR THIS PRODUCT
-        </button>
+            {/* Stats & Benefits Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Product Scope Card */}
+              <div 
+                className="bg-white/[0.05] rounded-[28px] p-6 border border-white/5 flex flex-col gap-5 transition-all duration-500 hover:bg-white/[0.08] hover:border-white/10 group/island"
+                style={{ '--hover-glow': `${color}10`, '--hover-border': `${color}30` } as React.CSSProperties}
+              >
+                <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">{t("Product Scope")}</h3>
+                <div className="flex flex-col gap-3.5">
+                  {[
+                    { label: "Entry Age", value: `${product.details.minEntry} - ${product.details.maxEntry} ${t("Years")}` },
+                    { label: "Policy Term", value: t(product.details.policyTerm) },
+                    { label: "Premium Term", value: t(product.details.premiumTerm) },
+                    { label: "Max Coverage", value: product.details.maxCoverage, highlight: true }
+                  ].map((item, i) => (
+                    <div key={i} className="flex justify-between items-end border-b border-white/5 pb-2.5">
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">{t(item.label)}</span>
+                      <span className={`text-xs md:text-sm font-black ${item.highlight ? 'text-indigo-400' : 'text-slate-100'}`}>{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Key Benefits Card */}
+              <div 
+                className="bg-white/[0.05] rounded-[28px] p-6 border border-white/5 flex flex-col gap-5 transition-all duration-500 hover:bg-white/[0.08] hover:border-white/10 group/island"
+                style={{ '--hover-glow': `${color}10`, '--hover-border': `${color}30` } as React.CSSProperties}
+              >
+                <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">{t("Key Benefits")}</h3>
+                <ul className="flex flex-col gap-3.5">
+                  {product.details.keyBenefits.map((benefit, i) => (
+                    <li key={i} className="flex gap-3 text-[12px] md:text-[13px] text-slate-300 font-medium leading-snug group/item">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0 shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
+                      {t(benefit)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* Highlights Strip */}
+            <div className="bg-white/[0.05] rounded-[28px] p-6 border border-white/5">
+              <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-5">{t("Coverage Highlights")}</h3>
+              <div className="flex flex-wrap gap-x-10 gap-y-5">
+                {product.details.coverageHighlights.map((highlight, i) => (
+                  <div key={i} className="flex items-center gap-2.5 group/h">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 group-hover/h:scale-110 transition-transform">
+                      <ShieldCheck size={16} />
+                    </div>
+                    <span className="text-[12px] font-black text-slate-200 uppercase tracking-tight">{t(highlight)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Compatible Riders */}
+            {riders.length > 0 && (
+              <div className="px-1">
+                <h3 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3">{t("Compatible Riders")}</h3>
+                <div className="flex flex-wrap gap-2">
+                  {riders.map((rider) => (
+                    <div key={rider.id} className="px-4 py-2 rounded-lg border border-white/5 bg-white/5 text-[11px] text-slate-300 font-black uppercase tracking-wider hover:bg-white/10 hover:border-white/20 transition-all">
+                      {rider.name}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Mobile Action */}
+            <button className="md:hidden w-full py-4 bg-slate-50 text-slate-900 font-black rounded-xl hover:bg-white transition-all transform active:scale-[0.98] shadow-lg text-sm uppercase tracking-tight mb-4">
+              {t("Generate AI Pitch")}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
 export default function Catalog() {
+  const { t } = useLanguage();
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const allProducts = db.getProducts();
   const mainProducts = allProducts.filter(p => !p.isRider);
   const riderProducts = allProducts.filter(p => p.isRider);
-
-  if (selectedProduct) {
-    return <ProductDetailPage product={selectedProduct} onBack={() => setSelectedProduct(null)} />;
-  }
 
   const renderProductCard = (product: Product) => {
     const Icon = ICON_MAP[product.iconName] || ShieldCheck;
@@ -198,10 +228,10 @@ export default function Catalog() {
         </div>
         <div>
           <div className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: color }}>
-            {product.category}
+            {t(product.category)}
           </div>
           <h3 className="text-lg font-bold text-slate-50">{product.name}</h3>
-          <p className="text-xs text-slate-400 mt-2 leading-relaxed line-clamp-2">{product.description}</p>
+          <p className="text-xs text-slate-400 mt-2 leading-relaxed line-clamp-2">{t(product.description)}</p>
         </div>
         <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
           <span className="text-[13px] font-semibold text-slate-200">{product.premium}</span>
@@ -210,7 +240,7 @@ export default function Catalog() {
             className="text-xs font-bold transition-colors hover:brightness-125"
             style={{ color: color }}
           >
-            Details →
+            {t("Details →")}
           </button>
         </div>
       </div>
@@ -220,23 +250,30 @@ export default function Catalog() {
   return (
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
       <header className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-50 m-0 text-3xl font-bold tracking-tight">Product Catalog</h1>
-        <p className="mt-1 text-sm text-slate-400 font-medium">Browse and manage available insurance products.</p>
+        <h1 className="text-2xl font-semibold text-slate-50 m-0 text-3xl font-bold tracking-tight">{t("Product Catalog")}</h1>
+        <p className="mt-1 text-sm text-slate-400 font-medium">{t("Browse and manage available insurance products.")}</p>
       </header>
 
       <div className="mb-12">
-        <h2 className="text-xl font-bold text-slate-50 mb-6">Main Products</h2>
+        <h2 className="text-xl font-bold text-slate-50 mb-6">{t("Main Products")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {mainProducts.map(renderProductCard)}
         </div>
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-slate-50 mb-6">Riders (Add-ons)</h2>
+        <h2 className="text-xl font-bold text-slate-50 mb-6">{t("Riders (Add-ons)")}</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {riderProducts.map(renderProductCard)}
         </div>
       </div>
+
+      {selectedProduct && (
+        <ProductDetailPage 
+          product={selectedProduct} 
+          onBack={() => setSelectedProduct(null)} 
+        />
+      )}
     </div>
   );
 }

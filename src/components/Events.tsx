@@ -20,6 +20,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { db, Lead } from "@/lib/data";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface EventsProps {
   setActive: (page: string) => void;
@@ -39,6 +40,27 @@ interface ColorStyle {
 const BIRTHDAY_TYPES = ["Birthday"];
 const POLICY_STATUS_TYPES = ["Inforce", "Policy Being Processed", "Lapse", "Surrender", "Reinstate"];
 const CLAIM_WAIVER_TYPES = ["Health Claim", "Freelook"];
+
+const INSIGHT_STYLES: Record<string, { activeBg: string; dot: string; textActive: string; textValue: string; }> = {
+  emerald: {
+    activeBg: "bg-emerald-500/20 border-emerald-500/30 shadow-lg shadow-emerald-500/10",
+    dot: "bg-emerald-400",
+    textActive: "text-emerald-300",
+    textValue: "text-emerald-400",
+  },
+  amber: {
+    activeBg: "bg-amber-500/20 border-amber-500/30 shadow-lg shadow-amber-500/10",
+    dot: "bg-amber-400",
+    textActive: "text-amber-300",
+    textValue: "text-amber-400",
+  },
+  rose: {
+    activeBg: "bg-rose-500/20 border-rose-500/30 shadow-lg shadow-rose-500/10",
+    dot: "bg-rose-400",
+    textActive: "text-rose-300",
+    textValue: "text-rose-400",
+  }
+};
 
 /**
  * Calculates a weight for sorting. 
@@ -123,6 +145,7 @@ const getPriorityStyles = (priority: string) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function EventsTimeline({ setActive, setSelectedLead, setInitialMessage }: EventsProps) {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const events = db.getEvents();
@@ -132,17 +155,17 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
       const matchesSearch = event.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            event.eventType.toLowerCase().includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
-      if (activeFilter === "Birthday Greetings") return BIRTHDAY_TYPES.includes(event.eventType);
-      if (activeFilter === "Policy Milestones") return POLICY_STATUS_TYPES.includes(event.eventType);
-      if (activeFilter === "Claims & Requests") return CLAIM_WAIVER_TYPES.includes(event.eventType);
+      if (activeFilter === t("Birthday Greetings")) return BIRTHDAY_TYPES.includes(event.eventType);
+      if (activeFilter === t("Policy Milestones")) return POLICY_STATUS_TYPES.includes(event.eventType);
+      if (activeFilter === t("Claims & Requests")) return CLAIM_WAIVER_TYPES.includes(event.eventType);
       return true;
     });
-  }, [events, searchQuery, activeFilter]);
+  }, [events, searchQuery, activeFilter, t]);
 
   const categories = [
-    { id: "Future", label: "Upcoming Milestones", icon: <TrendingUp size={14} className="text-indigo-400" />, bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
-    { id: "Today", label: "Happening Today", icon: <Activity size={14} className="text-emerald-400" />, bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-    { id: "Past", label: "Previous Events", icon: <Clock size={14} className="text-slate-400" />, bg: "bg-white/5", border: "border-white/10" }
+    { id: "Future", label: t("Upcoming Milestones"), icon: <TrendingUp size={14} className="text-indigo-400" />, bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
+    { id: "Today", label: t("Happening Today"), icon: <Activity size={14} className="text-emerald-400" />, bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
+    { id: "Past", label: t("Previous Events"), icon: <Clock size={14} className="text-slate-400" />, bg: "bg-white/5", border: "border-white/10" }
   ];
 
   const birthdayCount = events.filter(e => BIRTHDAY_TYPES.includes(e.eventType)).length;
@@ -157,16 +180,16 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
             <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
               <HeartPulse size={20} />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-100 tracking-tight m-0">Recent Life Events</h1>
+            <h1 className="text-3xl md:text-4xl font-bold text-slate-100 tracking-tight m-0">{t("Recent Life Events")}</h1>
           </div>
-          <p className="text-sm md:text-base text-slate-400 max-w-xl font-medium">AI-detected milestones and behavior triggers.</p>
+          <p className="text-sm md:text-base text-slate-400 max-w-xl font-medium">{t("AI-detected milestones and behavior triggers.")}</p>
         </div>
 
         <div className="flex items-center gap-3 w-full lg:w-auto">
           <div className="relative flex-1 lg:w-80 group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
             <input 
-              type="text" placeholder="Search events or customers..."
+              type="text" placeholder={t("Search events or customers...")}
               className="w-full bg-white/[0.03] backdrop-blur-md border border-white/10 rounded-[20px] py-3 pl-12 pr-4 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -225,13 +248,13 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
                                   <h3 className="text-lg font-bold text-slate-100 tracking-tight">{event.customerName}</h3>
-                                  <span className={`px-2 py-0.5 rounded-[8px] text-[9px] font-bold uppercase tracking-wider border ${getPriorityStyles(event.priority)}`}>{event.priority}</span>
+                                  <span className={`px-2 py-0.5 rounded-[8px] text-[9px] font-bold uppercase tracking-wider border ${getPriorityStyles(event.priority)}`}>{t(event.priority)}</span>
                                 </div>
-                                <div className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${styles.text}`}>{event.eventType}</div>
+                                <div className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${styles.text}`}>{t(event.eventType)}</div>
                               </div>
                               <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-4 text-slate-500 text-[10px] font-bold uppercase tracking-tighter">
-                                  <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full border border-white/5"><Clock size={10} />{event.timestamp}</span>
+                                  <span className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-full border border-white/5"><Clock size={10} />{t(event.timestamp)}</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <button onClick={() => { const lead = db.getLeadByName(event.customerName); if (lead) { setSelectedLead(lead); setActive("customers"); } }} className="h-9 w-9 bg-indigo-500 hover:bg-indigo-400 text-white rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center active:scale-[0.95]"><ArrowUpRight size={16} /></button>
@@ -240,7 +263,7 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
                                 </div>
                               </div>
                             </div>
-                            <p className="text-slate-400 text-xs md:text-sm leading-relaxed max-w-4xl mt-3 font-medium line-clamp-2 group-hover/card:line-clamp-none transition-all">{event.description}</p>
+                            <p className="text-slate-400 text-xs md:text-sm leading-relaxed max-w-4xl mt-3 font-medium line-clamp-2 group-hover/card:line-clamp-none transition-all">{t(event.description)}</p>
                           </div>
                         </div>
                       </div>
@@ -254,23 +277,24 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
 
         <div className="space-y-6 lg:sticky lg:top-8">
           <div className="glass-panel rounded-[32px] p-6 border border-white/10 backdrop-blur-xl bg-white/[0.02]">
-            <h3 className="text-sm font-bold text-slate-100 mb-6 uppercase tracking-widest px-2">Insights Summary</h3>
+            <h3 className="text-sm font-bold text-slate-100 mb-6 uppercase tracking-widest px-2">{t("Insights Summary")}</h3>
             <div className="space-y-4">
               {[
-                { label: "Birthday Greetings", value: birthdayCount.toString().padStart(2, "0"), color: "emerald" },
-                { label: "Policy Milestones", value: policyStatusCount.toString().padStart(2, "0"), color: "amber" },
-                { label: "Claims & Requests", value: claimWaiverCount.toString().padStart(2, "0"), color: "rose" },
+                { label: t("Birthday Greetings"), value: birthdayCount.toString().padStart(2, "0"), color: "emerald" },
+                { label: t("Policy Milestones"), value: policyStatusCount.toString().padStart(2, "0"), color: "amber" },
+                { label: t("Claims & Requests"), value: claimWaiverCount.toString().padStart(2, "0"), color: "rose" },
               ].map((item, i) => {
                 const isActive = activeFilter === item.label;
+                const styles = INSIGHT_STYLES[item.color];
                 return (
-                  <button key={i} onClick={() => setActiveFilter(isActive ? null : item.label)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border duration-300 group ${isActive ? `bg-${item.color}-500/20 border-${item.color}-500/30 shadow-lg shadow-${item.color}-500/10` : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.05] hover:border-white/10'}`}>
+                  <button key={i} onClick={() => setActiveFilter(isActive ? null : item.label)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border duration-300 group ${isActive ? `${styles.activeBg}` : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.05] hover:border-white/10'}`}>
                     <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full transition-transform duration-300 ${isActive ? 'scale-125' : 'scale-100'} bg-${item.color}-400`} />
-                      <span className={`text-xs font-bold uppercase tracking-wider transition-colors ${isActive ? `text-${item.color}-300` : 'text-slate-400 group-hover:text-slate-200'}`}>{item.label}</span>
+                      <div className={`w-2 h-2 rounded-full transition-transform duration-300 ${isActive ? 'scale-125' : 'scale-100'} ${styles.dot}`} />
+                      <span className={`text-xs font-bold uppercase tracking-wider transition-colors ${isActive ? styles.textActive : 'text-slate-400 group-hover:text-slate-200'}`}>{item.label}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-lg font-bold transition-colors text-${item.color}-400`}>{item.value}</span>
-                      {isActive && <CheckCircle2 size={16} className={`text-${item.color}-400 animate-in zoom-in-50 duration-300`} />}
+                      <span className={`text-lg font-bold transition-colors ${styles.textValue}`}>{item.value}</span>
+                      {isActive && <CheckCircle2 size={16} className={`${styles.textValue} animate-in zoom-in-50 duration-300`} />}
                     </div>
                   </button>
                 );
@@ -279,8 +303,8 @@ export default function EventsTimeline({ setActive, setSelectedLead, setInitialM
           </div>
           <div className="glass-panel rounded-[32px] p-6 border border-indigo-500/20 backdrop-blur-xl bg-indigo-500/[0.03]">
             <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4 border border-indigo-500/20"><TrendingUp size={20} /></div>
-            <h4 className="text-sm font-bold text-slate-100 mb-2 uppercase tracking-wider leading-tight">Conversion Tip</h4>
-            <p className="text-[13px] text-slate-400 leading-relaxed font-medium">Customers undergoing a <span className="text-indigo-300">Life Event</span> are 4.5x more likely to increase their coverage within the first 72 hours.</p>
+            <h4 className="text-sm font-bold text-slate-100 mb-2 uppercase tracking-wider leading-tight">{t("Conversion Tip")}</h4>
+            <p className="text-[13px] text-slate-400 leading-relaxed font-medium">{t("Customers undergoing a")} <span className="text-indigo-300">{t("Life Event")}</span> {t("are 4.5x more likely to increase their coverage within the first 72 hours.")}</p>
           </div>
         </div>
       </div>

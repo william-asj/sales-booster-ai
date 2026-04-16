@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { useLanguage } from "@/context/LanguageContext";
 import {
   LayoutDashboard,
   HeartPulse,
@@ -32,6 +33,7 @@ interface SidebarProps {
   setActive: (page: Page) => void;
 }
 export default function Sidebar({ active, setActive }: SidebarProps) {
+  const { t } = useLanguage();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -103,53 +105,53 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
         <div className="w-full">
           {!isCollapsed && (
             <div className="px-3 text-[10px] font-bold text-slate-500 mb-3 tracking-[0.2em] animate-fade-in uppercase">
-              Main Menu
+              {t("Main Menu")}
             </div>
           )}
 
           <button
             className={getNavBtnClass("dashboard")}
             onClick={() => setActive("dashboard")}
-            title={isCollapsed ? "Dashboard" : ""}
+            title={isCollapsed ? t("Dashboard") : ""}
           >
             <LayoutDashboard size={20} className="shrink-0" />
-            {!isCollapsed && <span className="flex-1 animate-fade-in">Dashboard</span>}
+            {!isCollapsed && <span className="flex-1 animate-fade-in">{t("Dashboard")}</span>}
           </button>
 
           <button
             className={getNavBtnClass("leads")}
             onClick={() => setActive("leads")}
-            title={isCollapsed ? "Lead Recommendations" : ""}
+            title={isCollapsed ? t("Leads") : ""}
           >
             <Sparkles size={20} className="shrink-0" />
-            {!isCollapsed && <span className="flex-1 animate-fade-in">Leads</span>}
+            {!isCollapsed && <span className="flex-1 animate-fade-in">{t("Leads")}</span>}
           </button>
 
           <button
             className={getNavBtnClass("events")}
             onClick={() => setActive("events")}
-            title={isCollapsed ? "Life Events" : ""}
+            title={isCollapsed ? t("Events") : ""}
           >
             <HeartPulse size={20} className="shrink-0" />
-            {!isCollapsed && <span className="flex-1 animate-fade-in">Events</span>}
+            {!isCollapsed && <span className="flex-1 animate-fade-in">{t("Events")}</span>}
           </button>
 
           <button
             className={getNavBtnClass("products")}
             onClick={() => setActive("products")}
-            title={isCollapsed ? "Product Catalog" : ""}
+            title={isCollapsed ? t("Catalog") : ""}
           >
             <Briefcase size={20} className="shrink-0" />
-            {!isCollapsed && <span className="flex-1 animate-fade-in">Catalog</span>}
+            {!isCollapsed && <span className="flex-1 animate-fade-in">{t("Catalog")}</span>}
           </button>
 
           <button
             className={getNavBtnClass("chat")}
             onClick={() => setActive("chat")}
-            title={isCollapsed ? "Chat History" : ""}
+            title={isCollapsed ? t("Chats") : ""}
           >
             <MessageSquare size={20} className="shrink-0" />
-            {!isCollapsed && <span className="flex-1 animate-fade-in">Chats</span>}
+            {!isCollapsed && <span className="flex-1 animate-fade-in">{t("Chats")}</span>}
           </button>
         </div>
 
@@ -157,24 +159,24 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
         <div className="w-full">
           {!isCollapsed && (
             <div className="px-3 text-[10px] font-bold text-slate-500 mb-3 tracking-[0.2em] animate-fade-in uppercase">
-              Management
+              {t("Management")}
             </div>
           )}
           <button
             className={getNavBtnClass("customers")}
             onClick={() => setActive("customers")}
-            title={isCollapsed ? "Customers" : ""}
+            title={isCollapsed ? t("Customers") : ""}
           >
             <Users size={20} className="shrink-0" /> 
-            {!isCollapsed && <span className="flex-1 animate-fade-in">Customers</span>}
+            {!isCollapsed && <span className="flex-1 animate-fade-in">{t("Customers")}</span>}
           </button>
           <button
             className={getNavBtnClass("analytics")}
             onClick={() => setActive("analytics")}
-            title={isCollapsed ? "Analytics" : ""}
+            title={isCollapsed ? t("Analytics") : ""}
           >
             <PieChart size={20} className="shrink-0" /> 
-            {!isCollapsed && <span className="flex-1 animate-fade-in">Analytics</span>}
+            {!isCollapsed && <span className="flex-1 animate-fade-in">{t("Analytics")}</span>}
           </button>
         </div>
       </div>
@@ -196,10 +198,10 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
             {!isCollapsed && (
               <div className="min-w-0 animate-fade-in">
                 <div className="text-[12px] font-bold text-slate-100 truncate leading-tight mb-0.5">
-                  Agent Login
+                  {t("Agent Login")}
                 </div>
                 <div className="text-[10px] text-slate-500 truncate leading-none flex items-center gap-1">
-                  Online
+                  {t("Online")}
                 </div>
               </div>
             )}
@@ -213,7 +215,7 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
                   ? "bg-indigo-500/20 text-indigo-300"
                   : "text-slate-400 hover:bg-white/10 hover:text-slate-100"
               }`}
-              title="User Settings"
+              title={t("Settings")}
             >
               <Settings size={18} />
             </button>
@@ -236,13 +238,13 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
                   AG
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-slate-100 truncate">Agent Login</div>
+                  <div className="text-sm font-bold text-slate-100 truncate">{t("Agent Login")}</div>
                   <div className="text-xs text-slate-400 truncate">agent@salesbooster.id</div>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-[10px] text-green-400 bg-green-400/10 px-2 py-1 rounded-lg w-fit">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                ONLINE
+                {t("Online").toUpperCase()}
               </div>
             </div>
             
@@ -255,7 +257,7 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <User size={16} className="text-slate-500" />
-                Profile Details
+                {t("Profile Details")}
               </button>
               <button 
                 onClick={() => {
@@ -265,12 +267,12 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
                 className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
               >
                 <Settings size={16} className="text-slate-500" />
-                Settings
+                {t("Settings")}
               </button>
               <div className="h-px bg-white/5 my-1 mx-2" />
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors">
                 <LogOut size={16} />
-                Log Out
+                {t("Log Out")}
               </button>
             </div>
           </div>

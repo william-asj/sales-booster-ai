@@ -61,57 +61,11 @@ function FileBadge({ name, mimeType }: { name: string; mimeType: string }) {
 }
 
 
-// ─── Inline renderer: **bold**, *italic*, + `code` ────────────────────────────
+import ReactMarkdown from "react-markdown";
 
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
-
-  return parts.map((part, i) => {
-    // Bold
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong key={i} style={{ 
-          color: "var(--claude-header)", 
-          fontWeight: 600,
-          fontFamily: "var(--font-header)",
-          display: "inline",
-        }}>
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    // Italic (single asterisk, not double)
-    if (part.startsWith("*") && part.endsWith("*") && !part.startsWith("**")) {
-      return (
-        <em key={i} style={{ color: "var(--claude-muted)", fontStyle: "italic" }}>
-          {part.slice(1, -1)}
-        </em>
-      );
-    }
-    // Inline code
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return (
-        <code key={i} style={{
-          background: "var(--claude-code-bg)",
-          color: "var(--claude-text)",
-          padding: "1px 6px",
-          borderRadius: 4,
-          fontSize: "0.9rem",
-          fontFamily: "var(--font-mono)",
-        }}>
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    return part;
-  });
-}
-
-// ─── Markdown-style plain text renderer ──────────────────────────────────────
+// ... (renderInline and AITextMessage functions will be replaced)
 
 function AITextMessage({ text }: { text: string }) {
-  const lines = text.split("\n");
-
   return (
     <div style={{ 
       fontSize: "var(--base-size)", 
@@ -119,165 +73,50 @@ function AITextMessage({ text }: { text: string }) {
       lineHeight: "var(--line-height)", 
       fontFamily: "var(--font-main)",
     }}>
-      {lines.map((line, i) => {
-        const trimmed = line.trim();
-
-        // Empty line → spacer
-        if (trimmed === "") {
-          return <div key={i} style={{ height: "var(--paragraph-spacing)" }} />;
-        }
-
-        // Horizontal rule
-        if (trimmed === "---") {
-          return (
-            <hr key={i} style={{
-              border: "none",
-              borderTop: "1px solid var(--claude-accent)",
-              margin: "2rem 0"
-            }} />
-          );
-        }
-
-        // Emoji section header
-        if (/^\p{Emoji}/u.test(trimmed)) {
-          // Find actual first non-empty line index
-          const isFirstLine = lines.slice(0, i).every(l => l.trim() === "");
-          return (
-            <div key={i} style={{
-              fontSize: "var(--h3-size)",
-              fontWeight: 500,
-              color: "var(--claude-header)",
-              marginTop: isFirstLine ? "0" : "2rem",
-              marginBottom: "0.5rem",
-              fontFamily: "var(--font-header)",
-              letterSpacing: "-0.01em",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-            }}>
-              {renderInline(trimmed)}
-            </div>
-          );
-        }
-
-        // H1
-        if (trimmed.startsWith("# ")) {
-          return (
-            <div key={i} style={{
-              fontSize: "var(--h1-size)",
-              fontWeight: 500,
-              color: "var(--claude-header)",
-              marginTop: "2rem",
-              marginBottom: "1rem",
-              fontFamily: "var(--font-header)",
-              letterSpacing: "-0.01em",
-            }}>
-              {renderInline(trimmed.slice(2))}
-            </div>
-          );
-        }
-
-        // H2
-        if (trimmed.startsWith("## ")) {
-          return (
-            <div key={i} style={{
-              fontSize: "var(--h2-size)",
-              fontWeight: 500,
-              color: "var(--claude-header)",
-              marginTop: "2rem",
-              marginBottom: "1rem",
-              borderBottom: "1px solid var(--claude-accent)",
-              paddingBottom: "0.3rem",
-              fontFamily: "var(--font-header)",
-              letterSpacing: "-0.01em",
-            }}>
-              {renderInline(trimmed.slice(3))}
-            </div>
-          );
-        }
-
-        // Blockquote
-        if (trimmed.startsWith("> ")) {
-          return (
-            <blockquote key={i} style={{
-              borderLeft: "2px solid #d1d1cc",
-              paddingLeft: "1rem",
-              fontStyle: "italic",
-              color: "#63635e",
-              margin: "1rem 0",
-              lineHeight: "var(--line-height)"
-            }}>
-              {renderInline(trimmed.slice(2))}
-            </blockquote>
-          );
-        }
-
-        // Bullet list item
-        if (trimmed.startsWith("- ") || trimmed.startsWith("• ")) {
-          return (
-            <div key={i} style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "flex-start",
-              marginBottom: "0.75rem",
-              paddingLeft: 4,
-            }}>
-              <span style={{
-                color: "#d1d1cc",
-                flexShrink: 0,
-                fontSize: "1.2rem",
-                lineHeight: "1.4",
-              }}>·</span>
-              <span style={{ color: "var(--claude-text)", lineHeight: "var(--line-height)" }}>
-                {renderInline(trimmed.replace(/^[-•]\s/, ""))}
-              </span>
-            </div>
-          );
-        }
-
-        // Numbered list item
-        const numMatch = trimmed.match(/^(\d+)\.\s(.*)/);
-        if (numMatch) {
-          return (
-            <div key={i} style={{
-              display: "flex",
-              gap: 12,
-              alignItems: "flex-start",
-              marginBottom: "0.75rem",
-              paddingLeft: 4,
-            }}>
-              <span style={{
-                color: "var(--claude-muted)",
-                fontWeight: 500,
-                flexShrink: 0,
-                minWidth: 20,
-                fontSize: "0.9rem",
-                lineHeight: "1.8",
-                fontFamily: "var(--font-header)",
-              }}>
-                {numMatch[1]}.
-              </span>
-              <span style={{ color: "var(--claude-text)", lineHeight: "var(--line-height)" }}>
-                {renderInline(numMatch[2])}
-              </span>
-            </div>
-          );
-        }
-
-        // Normal paragraph line
-        return (
-          <p key={i} style={{ 
-            marginBottom: "0.5rem", 
-            lineHeight: "var(--line-height)", 
-            color: "var(--claude-text)",
-            display: "block",
-            wordBreak: "break-word",
-            margin: "0 0 0.5rem 0",
-          }}>
-            {renderInline(trimmed)}
-          </p>
-        );
-      })}
+      <ReactMarkdown
+        components={{
+          h1: ({ children }) => (
+            <h1 style={{ fontSize: "1.2rem", fontWeight: "700", margin: "1rem 0 0.5rem 0", lineHeight: "1.4" }}>
+              {children}
+            </h1>
+          ),
+          h2: ({ children }) => (
+            <h2 style={{ fontSize: "1.1rem", fontWeight: "700", margin: "1rem 0 0.4rem 0", lineHeight: "1.4" }}>
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 style={{ fontSize: "1rem", fontWeight: "700", margin: "0.875rem 0 0.35rem 0", lineHeight: "1.4" }}>
+              {children}
+            </h3>
+          ),
+          p: ({ children }) => (
+            <p style={{ margin: "0 0 0.75rem 0", lineHeight: "1.6", fontSize: "0.9rem" }}>
+              {children}
+            </p>
+          ),
+          ul: ({ children }) => (
+            <ul style={{ margin: "0 0 0.75rem 0", paddingLeft: "1.25rem" }}>
+              {children}
+            </ul>
+          ),
+          ol: ({ children }) => (
+            <ol style={{ margin: "0 0 0.75rem 0", paddingLeft: "1.25rem" }}>
+              {children}
+            </ol>
+          ),
+          li: ({ children }) => (
+            <li style={{ marginBottom: "0.35rem", lineHeight: "1.6", fontSize: "0.9rem" }}>
+              {children}
+            </li>
+          ),
+          strong: ({ children }) => (
+            <strong style={{ fontWeight: "700" }}>{children}</strong>
+          ),
+        }}
+      >
+        {text}
+      </ReactMarkdown>
     </div>
   );
 }
