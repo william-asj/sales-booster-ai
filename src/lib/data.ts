@@ -1,3 +1,5 @@
+import { computeScore, CustomerFeatures } from './scoring';
+
 export type Page =
   | "dashboard"
   | "leads"
@@ -22,6 +24,8 @@ export interface Lead {
   avatar: string;
   phone: string;
   policies: number;
+  gender: 'male' | 'female';
+  maritalStatus: 'married' | 'single' | 'widow' | 'widower';
   city: string;
   province: string;
   occupation: string;
@@ -31,6 +35,7 @@ export interface Lead {
   channel: string;
   estCommission: string;
   lifeStage: LifeStage;
+  scoringResult?: import('./scoring').ScoringResult;
 }
 
 export interface LifeEvent {
@@ -2264,34 +2269,37 @@ const ANALYTICS: AnalyticsData = {
 // Mock Retrieval Functions (Simulating DB calls)
 
 const LEADS: Lead[] = CUSTOMERS.map((c, index) => {
-  const getScore = (seg: string, id: number) => {
-    let base = 20;
-    if (seg === 'Top Customers') base = 90;
-    else if (seg === 'High value Customer') base = 80;
-    else if (seg === 'Medium Value Customer') base = 65;
-    else if (seg === 'Low Value Customers') base = 40;
-    const variance = (id * 17) % 10;
-    return base + variance;
+  const policyCount = POLICY_RECORDS.filter(p => p.customerId === c.id).length;
+
+  const features: CustomerFeatures = {
+    age: c.age,
+    segment: c.segment,
+    salaryBucket: c.salaryBucket,
+    policyCount: policyCount,
+    eventType: (['Birthday','Inforce','Policy Being Processed','Lapse',
+                 'Surrender','Freelook','Reinstate','Health Claim'] as const)[index % 8],
+    channel: c.channel,
+    city: c.city || '',
+    province: c.province || '',
+    purchaseIntent: c.purchaseIntent,
+    maritalStatus: c.maritalStatus,
   };
-  const getScoreLabel = (score: number) => {
-    if (score >= 80) return 'High';
-    if (score >= 60) return 'Med';
-    return 'Low';
-  };
+
+  const scoringResult = computeScore(features);
+  const score = scoringResult.finalScore;
+
   const formatCurrency = (amount: number) => {
     if (amount >= 1000000000) return `Rp ${parseFloat((amount / 1000000000).toFixed(1))}B/yr`;
     if (amount >= 1000000) return `Rp ${parseFloat((amount / 1000000).toFixed(1))}M/yr`;
     return `Rp ${Math.round(amount / 1000)}K/yr`;
   };
 
-  const score = getScore(c.segment, c.id);
-
   const matchedProduct = PRODUCTS.find(p => p.name === c.productName || p.id === c.productId);
-  const commissionRate = matchedProduct ? matchedProduct.commission : 0.05; // Fallback to 5%
+  const commissionRate = matchedProduct ? matchedProduct.commission : 0.05;
   const commissionValue = c.totalPremi * commissionRate;
 
   const eventTypes = [
-    'Birthday', 'Inforce', 'Policy Being Processed', 'Lapse', 
+    'Birthday', 'Inforce', 'Policy Being Processed', 'Lapse',
     'Surrender', 'Freelook', 'Reinstate', 'Health Claim'
   ] as const;
   const eventType = eventTypes[index % eventTypes.length];
@@ -2302,14 +2310,16 @@ const LEADS: Lead[] = CUSTOMERS.map((c, index) => {
     age: c.age,
     dob: `01 Jan ${new Date().getFullYear() - c.age}`,
     score: score,
-    scoreLabel: getScoreLabel(score),
+    scoreLabel: scoringResult.scoreLabel,
     event: eventType,
     product: c.productName,
     premium: formatCurrency(c.totalPremi),
     estCommission: formatCurrency(commissionValue),
     avatar: c.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase(),
     phone: `+62 812-XXXX-${c.id.toString().padStart(4, '0')}`,
-    policies: POLICY_RECORDS.filter(p => p.customerId === c.id).length || 1,
+    policies: policyCount || 1,
+    gender: c.gender,
+    maritalStatus: c.maritalStatus,
     city: c.city || 'Jakarta',
     province: c.province || 'DKI Jakarta',
     occupation: c.occupation || 'Professional',
@@ -2317,7 +2327,9 @@ const LEADS: Lead[] = CUSTOMERS.map((c, index) => {
     segment: c.segment,
     purchaseIntent: c.purchaseIntent,
     channel: c.channel,
-    lifeStage: getLifeStage(c.age)
+    lifeStage: getLifeStage(c.age),
+    // Attach scoring metadata for use in chat/AI context
+    scoringResult: scoringResult,
   };
 });
 
