@@ -41,7 +41,7 @@ export interface Lead {
 export interface LifeEvent {
   id: string;
   customerName: string;
-  eventType: "Birthday" | "Inforce" | "Policy Being Processed" | "Lapse" | "Surrender" | "Freelook" | "Reinstate" | "Health Claim";
+  eventType: string;
   description: string;
   timestamp: string;
   priority: "High" | "Medium" | "Low";
@@ -2333,7 +2333,7 @@ const LEADS: Lead[] = CUSTOMERS.map((c, index) => {
   };
 });
 
-const EVENTS: LifeEvent[] = CUSTOMERS.slice(0, 15).map((c, index) => {
+let EVENTS: LifeEvent[] = CUSTOMERS.slice(0, 15).map((c, index) => {
   const eventTypes = [
     'Birthday', 'Inforce', 'Policy Being Processed', 'Lapse', 
     'Surrender', 'Freelook', 'Reinstate', 'Health Claim'
@@ -2367,4 +2367,8 @@ export const db = {
   getPoliciesByCustomerId: (customerId: number) => POLICY_RECORDS.filter(p => p.customerId === customerId),
   getLifeStage: (age: number) => getLifeStage(age),
   getPolicyCount: (customerId: number) => POLICY_RECORDS.filter(p => p.customerId === customerId).length,
+  addEvent: (event: Omit<LifeEvent, 'id'>) => {
+    const newEvent = { ...event, id: `evt_nlp_${Date.now()}_${Math.floor(Math.random() * 1000)}` };
+    EVENTS = [newEvent as LifeEvent, ...EVENTS];
+  },
 };
