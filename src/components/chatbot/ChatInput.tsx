@@ -326,14 +326,14 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
       )}
 
       <div style={{
-        background: "rgba(8, 10, 18, 0.75)",
+        background: "var(--sidebar-menu-bg)",
         backdropFilter: "blur(40px)",
         WebkitBackdropFilter: "blur(40px)",
         borderRadius: 20,
-        border: `1px solid ${focused ? "rgba(99, 102, 241, 0.4)" : "rgba(255, 255, 255, 0.07)"}`,
+        border: `1px solid ${focused ? "rgba(99, 102, 241, 0.4)" : "var(--sidebar-item-border)"}`,
         boxShadow: focused
-          ? "0 0 0 1px rgba(99, 102, 241, 0.15), 0 8px 32px rgba(0, 0, 0, 0.4)"
-          : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          ? "0 0 0 1px rgba(99, 102, 241, 0.15), var(--glass-shadow)"
+          : "var(--glass-shadow)",
         transition: "all 0.2s ease",
         display: "flex",
         flexDirection: "column",
@@ -346,11 +346,12 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
           <div style={{
             position: "absolute", bottom: "100%", left: 0, right: 0,
             marginBottom: 8, zIndex: 20,
-            background: "rgba(13, 15, 26, 0.97)",
+            background: "var(--sidebar-menu-bg)",
             backdropFilter: "blur(24px)",
-            border: "1px solid rgba(255,255,255,0.1)",
+            border: "1px solid var(--sidebar-item-border)",
             borderRadius: 16,
-            overflow: "hidden"
+            overflow: "hidden",
+            boxShadow: "var(--glass-shadow)"
           }}>
             {SLASH_COMMANDS.map((cmd) => (
               <div
@@ -375,8 +376,8 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
                   {cmd.icon}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column" }}>
-                  <span style={{ color: "#818cf8", fontSize: 13, fontWeight: 600 }}>{cmd.label}</span>
-                  <span style={{ color: "#475569", fontSize: 11 }}>{cmd.description}</span>
+                  <span style={{ color: "var(--app-accent)", fontSize: 13, fontWeight: 600 }}>{cmd.label}</span>
+                  <span style={{ color: "var(--app-text-muted)", fontSize: 11 }}>{cmd.description}</span>
                 </div>
               </div>
             ))}
@@ -400,15 +401,15 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
               return (
                 <div key={idx} style={{
                   display: "flex", alignItems: "center", gap: 10,
-                  background: "rgba(0, 0, 0, 0.25)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: "var(--sidebar-item-bg)",
+                  border: "1px solid var(--sidebar-item-border)",
                   borderRadius: 12, padding: "8px 12px 8px 8px",
                   flexShrink: 0, maxWidth: 220, position: "relative",
                   marginTop: 6
                 }}>
                   <FileBadge name={att.name} mimeType={att.mimeType} />
                   <span style={{
-                    fontSize: 13, color: "var(--claude-text)", fontWeight: 500,
+                    fontSize: 13, color: "var(--app-text)", fontWeight: 500,
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                   }}>
                     {att.name}
@@ -417,21 +418,11 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
                     onClick={() => removeAttachment(idx)}
                     style={{
                       position: "absolute", top: -8, right: -8,
-                      background: "#3d4466", border: "1px solid #1e2235",
+                      background: "var(--app-accent)", border: "1px solid var(--sidebar-item-border)",
                       cursor: "pointer", width: 22, height: 22, borderRadius: "50%",
                       display: "flex", alignItems: "center", justifyContent: "center",
-                      color: "#cbd5e1", padding: 0, boxShadow: "0 2px 6px rgba(0,0,0,0.4)",
+                      color: "#ffffff", padding: 0, boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
                       transition: "all 0.15s ease", zIndex: 10
-                    }}
-                    onMouseEnter={e => {
-                      e.currentTarget.style.background = "#ef4444";
-                      e.currentTarget.style.color = "#fff";
-                      e.currentTarget.style.borderColor = "#ef4444";
-                    }}
-                    onMouseLeave={e => {
-                      e.currentTarget.style.background = "#3d4466";
-                      e.currentTarget.style.color = "#cbd5e1";
-                      e.currentTarget.style.borderColor = "#1e2235";
                     }}
                   >
                     <X size={12} strokeWidth={3} />
@@ -456,10 +447,10 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             rows={1}
             style={{
               width: "100%", background: "transparent", border: "none",
-              outline: "none", resize: "none", color: "#e2e8f0",
+              outline: "none", resize: "none", color: "var(--app-text)",
               fontSize: 16, fontFamily: "var(--font-main)",
               lineHeight: "24px", overflowY: "hidden",
-              boxSizing: "border-box", caretColor: "#818cf8", display: "block",
+              boxSizing: "border-box", caretColor: "var(--app-accent)", display: "block",
             }}
           />
         </div>
@@ -480,25 +471,25 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             title={`${t("Attach files")} (${attachments.length}/5)`}
             disabled={attachments.length >= 5}
             style={{
-              width: 38, height: 38, borderRadius: "50%", border: "1.5px solid var(--claude-accent)",
+              width: 38, height: 38, borderRadius: "50%", border: `1.5px solid var(--sidebar-item-border)`,
               background: "transparent", cursor: attachments.length >= 5 ? "not-allowed" : "pointer",
               display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, padding: 0,
               transition: "border-color 0.15s, background 0.15s", opacity: attachments.length >= 5 ? 0.5 : 1,
             }}
             onMouseEnter={e => {
               if (attachments.length < 5) {
-                (e.currentTarget as HTMLElement).style.borderColor = "#6366f1";
-                (e.currentTarget as HTMLElement).style.background = "#6366f110";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--app-accent)";
+                (e.currentTarget as HTMLElement).style.background = "var(--sidebar-item-bg)";
               }
             }}
             onMouseLeave={e => {
               if (attachments.length < 5) {
-                (e.currentTarget as HTMLElement).style.borderColor = "var(--claude-accent)";
+                (e.currentTarget as HTMLElement).style.borderColor = "var(--sidebar-item-border)";
                 (e.currentTarget as HTMLElement).style.background = "transparent";
               }
             }}
           >
-            <Plus size={20} color="var(--claude-muted)" strokeWidth={2} />
+            <Plus size={20} color="var(--app-text-muted)" strokeWidth={2} />
           </button>
 
           <div style={{ flex: 1 }} />
@@ -519,7 +510,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
                 width: 38,
                 height: 38,
                 borderRadius: "50%",
-                border: `1.5px solid ${isRecording ? "#ef4444" : "rgba(99, 102, 241, 0.6)"}`,
+                border: `1.5px solid ${isRecording ? "#ef4444" : "rgba(99, 102, 241, 0.4)"}`,
                 background: isRecording ? "rgba(239, 68, 68, 0.12)" : "rgba(99, 102, 241, 0.08)",
                 cursor: voiceSupported ? "pointer" : "not-allowed",
                 display: "flex",
@@ -535,7 +526,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
             >
               <Mic
                 size={18}
-                color={isRecording ? "#ef4444" : voiceSupported ? "#818cf8" : "#475569"}
+                color={isRecording ? "#ef4444" : voiceSupported ? "var(--app-accent)" : "var(--app-text-muted)"}
               />
             </button>
           ) : (
@@ -549,7 +540,7 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
                 height: 38,
                 borderRadius: "50%",
                 border: "none",
-                background: canSend ? "#e2e8f0" : "#1a1d2e",
+                background: canSend ? "var(--app-header)" : "var(--sidebar-item-bg)",
                 cursor: canSend ? "pointer" : "not-allowed",
                 display: "flex",
                 alignItems: "center",
@@ -559,21 +550,15 @@ export default function ChatInput({ onSend, onSlashCommand, disabled = false, va
                 transition: "background 0.2s ease, transform 0.1s ease",
                 transform: "scale(1)",
               }}
-              onMouseEnter={(e) => {
-                if (canSend) (e.currentTarget as HTMLElement).style.transform = "scale(1.06)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.transform = "scale(1)";
-              }}
             >
-              <ArrowUp size={20} color={canSend ? "#080a12" : "#2d3550"} strokeWidth={2.5} />
+              <ArrowUp size={20} color={canSend ? "var(--sidebar-menu-bg)" : "var(--app-text-muted)"} strokeWidth={2.5} />
             </button>
           )}
         </div>
       </div>
       
       {!showCommandPalette && text.toLowerCase().includes("recommend") && (
-        <div style={{ fontSize: 11, color: "#6366f1", marginTop: 6, paddingLeft: 4 }}>
+        <div style={{ fontSize: 11, color: "var(--app-accent)", marginTop: 6, paddingLeft: 4 }}>
           {t("💡 Try /recommend for product recommendation guide")}
         </div>
       )}

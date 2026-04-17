@@ -93,7 +93,7 @@ const CircularGauge = ({ score }: { score: number }) => {
         <circle cx="30" cy="30" r={radius} fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth="2.5" />
         <circle cx="30" cy="30" r={radius} fill="transparent" stroke={getScoreColor(score)} strokeWidth="2.5" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
       </svg>
-      <span className="absolute text-[13px] font-bold text-slate-50">{score}</span>
+      <span className="absolute text-[13px] font-bold text-[var(--app-header)]">{score}</span>
     </div>
   );
 };
@@ -170,13 +170,13 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
             <div key={lead.id} className="glass-panel card-hover rounded-3xl p-6 flex flex-col">
               <div className="flex justify-between items-start mb-5">
                 <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-200 font-semibold text-sm">
+                  <div className="w-11 h-11 rounded-full bg-[var(--sidebar-item-bg)] border border-[var(--sidebar-item-border)] flex items-center justify-center text-[var(--app-text)] font-semibold text-sm">
                     {lead.avatar}
                   </div>
                   <div>
                     <div
                       onClick={() => { setSelectedLead(lead); setActive("customers"); }}
-                      className="btn-hover text-[15px] font-semibold text-slate-50 cursor-pointer"
+                      className="btn-hover text-[15px] font-semibold text-[var(--app-header)] cursor-pointer"
                     >
                       {lead.name}
                     </div>
@@ -190,18 +190,18 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                 <CircularGauge score={lead.score} />
               </div>
 
-              <div className="bg-black/20 rounded-xl p-4 mb-5 flex-1">
+              <div className="bg-black/5 dark:bg-black/20 rounded-xl p-4 mb-5 flex-1 border border-[var(--sidebar-item-border)]">
                 <div className="flex justify-between mb-3">
-                  <span className="text-xs text-slate-400">{t("Best Product")}</span>
-                  <span className="text-xs text-slate-200 font-medium">{t(lead.product)}</span>
+                  <span className="text-xs text-[var(--app-text-muted)]">{t("Best Product")}</span>
+                  <span className="text-xs text-[var(--app-text)] font-medium">{t(lead.product)}</span>
                 </div>
                 <div className="flex justify-between mb-3">
-                  <span className="text-xs text-slate-400">{t("Est. Premium")}</span>
-                  <span className="text-[13px] text-indigo-300 font-semibold">{lead.premium}</span>
+                  <span className="text-xs text-[var(--app-text-muted)]">{t("Est. Premium")}</span>
+                  <span className="text-[13px] text-indigo-500 dark:text-indigo-300 font-semibold">{lead.premium}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-xs text-slate-400">{t("Est. Commission")}</span>
-                  <span className="text-[13px] text-emerald-400 font-semibold">{lead.estCommission}</span>
+                  <span className="text-xs text-[var(--app-text-muted)]">{t("Est. Commission")}</span>
+                  <span className="text-[13px] text-emerald-600 dark:text-emerald-400 font-semibold">{lead.estCommission}</span>
                 </div>
               </div>
 
@@ -211,9 +211,9 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                   setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`);
                   setActive("chat"); 
                 }}
-                className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 rounded-xl text-slate-200 text-[13px] font-semibold flex items-center justify-center gap-2"
+                className="btn-hover w-full py-3 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 dark:from-indigo-500/20 dark:to-purple-500/20 border border-indigo-500/20 dark:border-indigo-500/30 rounded-xl text-[var(--app-text)] text-[13px] font-semibold flex items-center justify-center gap-2"
               >
-                <MessageSquare size={16} /> {t("AI Chat Assistant")}
+                <MessageSquare size={16} className="text-indigo-500 dark:text-indigo-300" /> {t("AI Chat Assistant")}
               </button>
             </div>
           );
@@ -226,14 +226,14 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
     <div className="animate-fade-in px-10 py-8 max-w-[1400px] w-full mx-auto">
       <header className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-50 m-0">{t("Welcome back, Agent ✨")}</h1>
-          <p className="mt-1 text-sm text-slate-400">{t("Here's your AI-curated summary for today.")}</p>
+          <h1 className="text-2xl font-semibold text-[var(--app-header)] m-0">{t("Welcome back, Agent ✨")}</h1>
+          <p className="mt-1 text-sm text-[var(--app-text-muted)]">{t("Here's your AI-curated summary for today.")}</p>
         </div>
         <div className="flex gap-4">
-          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200">
+          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-[var(--app-text)]">
             <Search size={18} />
           </button>
-          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-slate-200 relative">
+          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-[var(--app-text)] relative">
             <Bell size={18} />
             <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
           </button>
@@ -247,10 +247,10 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
               <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
                 {ICON_MAP[stat.iconName]}
               </div>
-              <div className="bg-green-500/15 text-green-400 px-2 py-1 rounded-full text-xs font-semibold">{stat.delta}</div>
+              <div className="bg-green-500/15 text-green-600 dark:text-green-400 px-2 py-1 rounded-full text-xs font-semibold">{stat.delta}</div>
             </div>
-            <div className="text-3xl font-bold text-slate-50 mb-1">{stat.value}</div>
-            <div className="text-[13px] text-slate-400 font-medium">{t(stat.label)}</div>
+            <div className="text-3xl font-bold text-[var(--app-header)] mb-1">{stat.value}</div>
+            <div className="text-[13px] text-[var(--app-text-muted)] font-medium">{t(stat.label)}</div>
           </div>
         ))}
       </div>
@@ -258,44 +258,44 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
       <div className="grid grid-cols-[2.5fr_1fr] gap-6 mb-8 items-stretch">
         <div className="glass-panel card-hover rounded-3xl p-5 md:p-6 flex flex-col overflow-hidden">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-base font-semibold text-slate-50 m-0">{t("Priority Actions")}</h3>
-            <button onClick={() => setActive("leads")} className="btn-hover text-indigo-300 text-[13px] font-medium tracking-wide">{t("View All")}</button>
+            <h3 className="text-base font-semibold text-[var(--app-header)] m-0">{t("Priority Actions")}</h3>
+            <button onClick={() => setActive("leads")} className="btn-hover text-indigo-500 dark:text-indigo-300 text-[13px] font-medium tracking-wide">{t("View All")}</button>
           </div>
           <div className="flex-1 overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="border-b border-white/5">
+                <tr className="border-b border-[var(--sidebar-item-border)]">
                   {["name", "event", "product", "score"].map((col) => (
-                    <th key={col} onClick={() => toggleSort(col as "name" | "event" | "product" | "score")} className="text-left p-2.5 text-[11px] font-semibold tracking-wide cursor-pointer hover:text-slate-50 transition-colors select-none">
-                      <div className={`inline-flex items-center gap-1 whitespace-nowrap ${sortCol === col ? "text-indigo-300" : "text-slate-500"}`}>
+                    <th key={col} onClick={() => toggleSort(col as "name" | "event" | "product" | "score")} className="text-left p-2.5 text-[11px] font-semibold tracking-wide cursor-pointer hover:text-[var(--app-header)] transition-colors select-none">
+                      <div className={`inline-flex items-center gap-1 whitespace-nowrap ${sortCol === col ? "text-indigo-500 dark:text-indigo-300" : "text-[var(--app-text-muted)]"}`}>
                         {col === "name" ? t("CUSTOMER") : col === "event" ? t("LIFE EVENT") : col === "product" ? t("RECOMMENDATION") : t("MATCH SCORE")} {renderSortIcon(col)}
                       </div>
                     </th>
                   ))}
-                  <th className="text-left p-2.5 text-[11px] font-semibold text-slate-500 tracking-wide">{t("ACTION")}</th>
+                  <th className="text-left p-2.5 text-[11px] font-semibold text-[var(--app-text-muted)] tracking-wide">{t("ACTION")}</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedActions.slice(0, 6).map((action) => {
                   const eventStyle = getEventStyles(action.event);
                   return (
-                    <tr key={action.id} className="row-hover border-b border-white/[0.03]">
+                    <tr key={action.id} className="row-hover border-b border-[var(--sidebar-item-border)]">
                       <td className="p-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-[11px] font-semibold shrink-0">{action.avatar}</div>
-                          <span onClick={() => { setSelectedLead(action); setActive("customers"); }} className="btn-hover text-[13px] font-medium text-slate-200 cursor-pointer whitespace-nowrap">{action.name}</span>
+                          <div className="w-7 h-7 rounded-full bg-[var(--sidebar-item-bg)] flex items-center justify-center text-[11px] font-semibold shrink-0 text-[var(--app-text)]">{action.avatar}</div>
+                          <span onClick={() => { setSelectedLead(action); setActive("customers"); }} className="btn-hover text-[13px] font-medium text-[var(--app-text)] cursor-pointer whitespace-nowrap">{action.name}</span>
                         </div>
                       </td>
                       <td className="p-3">
                         <span className={`px-2 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap ${eventStyle.bg} ${eventStyle.text}`}>{t(action.event)}</span>
                       </td>
-                      <td className="p-3 text-[13px] text-slate-200">{t(action.product)}</td>
+                      <td className="p-3 text-[13px] text-[var(--app-text)]">{t(action.product)}</td>
                       <td className="p-3">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-[120px] h-1.5 bg-white/5 rounded-full overflow-hidden shrink-0">
+                          <div className="w-[120px] h-1.5 bg-[var(--sidebar-item-bg)] rounded-full overflow-hidden shrink-0 border border-[var(--sidebar-item-border)]">
                             <div style={{ width: `${action.score}%`, backgroundColor: getScoreColor(action.score) }} className="h-full rounded-full transition-all duration-1000 ease-out" />
                           </div>
-                          <span className="text-xs font-semibold text-slate-50 w-6">{action.score}</span>
+                          <span className="text-xs font-semibold text-[var(--app-header)] w-6">{action.score}</span>
                         </div>
                       </td>
                       <td className="p-3">
@@ -305,7 +305,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
                             setInitialMessage(`Get Latest Info for ${action.name}, what is the best product i can offer to him/her?`);
                             setActive("chat"); 
                           }} 
-                          className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-300 text-xs font-medium whitespace-nowrap"
+                          className="btn-hover px-3 py-1.5 rounded-lg border border-indigo-500/40 text-indigo-600 dark:text-indigo-300 text-xs font-medium whitespace-nowrap"
                         >
                           {t("Review")}
                         </button>
@@ -319,23 +319,23 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
         </div>
 
         <div className="flex flex-col gap-4">
-          <div className="glass-panel card-hover rounded-[32px] p-5 flex flex-col overflow-hidden border border-white/10 backdrop-blur-xl bg-white/[0.02]">
+          <div className="glass-panel card-hover rounded-[32px] p-5 flex flex-col overflow-hidden border border-[var(--sidebar-item-border)] backdrop-blur-xl">
             <div className="flex justify-between items-center mb-4 shrink-0 px-1">
-              <h3 className="text-[14px] font-bold text-slate-100 m-0 tracking-tight">{t("Recent Life Events")}</h3>
-              <button onClick={() => setActive("events")} className="btn-hover text-indigo-300 text-[11px] font-bold tracking-wide transition-all">{t("View All")}</button>
+              <h3 className="text-[14px] font-bold text-[var(--app-header)] m-0 tracking-tight">{t("Recent Life Events")}</h3>
+              <button onClick={() => setActive("events")} className="btn-hover text-indigo-500 dark:text-indigo-300 text-[11px] font-bold tracking-wide transition-all">{t("View All")}</button>
             </div>
             <div className="flex flex-col gap-1.5 overflow-hidden">
               {sortedEvents.slice(0, 5).map((event) => {
                 const eventStyle = getEventStyles(event.eventType);
                 return (
-                  <div key={event.id} className={`flex gap-3.5 p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-300 group cursor-pointer border border-transparent hover:border-white/5 shrink-0`}>
-                    <div className={`w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-base shrink-0 border border-white/5 group-hover:scale-105 transition-transform ${eventStyle.text}`}>
+                  <div key={event.id} className={`flex gap-3.5 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/[0.04] transition-all duration-300 group cursor-pointer border border-transparent hover:border-[var(--sidebar-item-border)] shrink-0`}>
+                    <div className={`w-8 h-8 rounded-lg bg-[var(--sidebar-item-bg)] flex items-center justify-center text-base shrink-0 border border-[var(--sidebar-item-border)] group-hover:scale-105 transition-transform ${eventStyle.text}`}>
                       {React.cloneElement(eventStyle.icon as React.ReactElement<{ size?: number }>, { size: 14 })}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex justify-between items-baseline gap-2">
-                        <div className="text-[13px] font-bold text-slate-100 truncate">{event.customerName}</div>
-                        <div className="text-[9px] font-bold text-slate-500 uppercase shrink-0">{event.timestamp}</div>
+                        <div className="text-[13px] font-bold text-[var(--app-header)] truncate">{event.customerName}</div>
+                        <div className="text-[9px] font-bold text-[var(--app-text-muted)] uppercase shrink-0">{event.timestamp}</div>
                       </div>
                       <div className={`text-[11px] font-medium ${eventStyle.text} truncate`}>
                         {t(event.eventType)}
@@ -349,20 +349,20 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
 
           <div className="glass-panel card-hover rounded-[28px] p-5 bg-indigo-500/5 border border-indigo-500/10 backdrop-blur-md shrink-0 mt-auto">
             <div className="flex gap-3 items-start">
-              <div className="text-indigo-300 mt-0.5"><Sparkles size={18} /></div>
+              <div className="text-indigo-500 dark:text-indigo-300 mt-0.5"><Sparkles size={18} /></div>
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">
-                  <h4 className="text-[13px] font-bold text-slate-100 m-0 uppercase tracking-wider">{t("AI Tips of the Day")}</h4>
+                  <h4 className="text-[13px] font-bold text-[var(--app-header)] m-0 uppercase tracking-wider">{t("AI Tips of the Day")}</h4>
                   <button 
                     onClick={fetchTip} 
                     disabled={tipLoading}
-                    className="text-indigo-300 hover:text-indigo-100 transition-colors disabled:opacity-50"
+                    className="text-indigo-500 dark:text-indigo-300 hover:text-indigo-700 dark:hover:text-indigo-100 transition-colors disabled:opacity-50"
                     title={t("Refresh Tip")}
                   >
                     <RefreshCw size={14} className={tipLoading ? "animate-spin" : ""} />
                   </button>
                 </div>
-                <p className={`text-[12px] text-slate-400 leading-snug m-0 font-medium transition-opacity duration-300 ${tipLoading ? "opacity-50" : "opacity-100"}`}>
+                <p className={`text-[12px] text-[var(--app-text-muted)] leading-snug m-0 font-medium transition-opacity duration-300 ${tipLoading ? "opacity-50" : "opacity-100"}`}>
                   {dailyTip}
                 </p>
               </div>
@@ -371,7 +371,7 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
         </div>
       </div>
 
-      <h3 className="text-lg font-semibold text-slate-50 mb-5 m-0">{t("Recommended Leads")}</h3>
+      <h3 className="text-lg font-semibold text-[var(--app-header)] mb-5 m-0">{t("Recommended Leads")}</h3>
       {renderLeadCards()}
     </div>
   );

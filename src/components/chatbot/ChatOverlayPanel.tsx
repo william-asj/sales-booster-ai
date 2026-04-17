@@ -40,8 +40,8 @@ function TypingIndicator() {
           display: "flex", 
           gap: 5, 
           padding: "12px 16px", 
-          background: "rgba(255, 255, 255, 0.03)", 
-          border: "1px solid rgba(255, 255, 255, 0.05)",
+          background: "var(--sidebar-item-bg)", 
+          border: "1px solid var(--sidebar-item-border)",
           borderRadius: "4px 16px 16px 16px",
           width: "fit-content",
           alignItems: "center"
@@ -77,12 +77,10 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
             key={i}
             onClick={() => onSuggestionClick(t(suggestion))}
             style={{
-              padding: "12px 16px", borderRadius: 12, background: "rgba(255, 255, 255, 0.02)",
-              border: "1px solid rgba(255, 255, 255, 0.05)", color: "var(--claude-text)", textAlign: "left",
+              padding: "12px 16px", borderRadius: 12, background: "var(--sidebar-item-bg)",
+              border: "1px solid var(--sidebar-item-border)", color: "var(--claude-text)", textAlign: "left",
               fontSize: 13, cursor: "pointer", transition: "all 0.2s ease"
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.1)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.05)"; }}
           >
             {t(suggestion)}
           </button>
@@ -273,13 +271,13 @@ export default function ChatOverlayPanel() {
           background: transparent;
         }
         .overlay-custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(155, 155, 155, 0.2);
           border-radius: 10px;
           opacity: 0;
           transition: opacity 0.3s ease;
         }
         .overlay-custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
+          background: rgba(155, 155, 155, 0.3);
           opacity: 1;
         }
         @keyframes gemini-gradient {
@@ -314,18 +312,18 @@ export default function ChatOverlayPanel() {
       <div onClick={(e) => e.stopPropagation()} style={{
         position: "fixed", top: 20, right: 20, bottom: 20, width: 420, zIndex: 1000,
         display: "flex", flexDirection: "column",
-        background: "rgba(255, 255, 255, 0.04)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        border: "1px solid rgba(255, 255, 255, 0.08)", borderRadius: 24,
-        boxShadow: isOpen ? "0 24px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06)" : "none",
+        background: "var(--glass-bg)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        border: "1px solid var(--glass-border)", borderRadius: 24,
+        boxShadow: isOpen ? "var(--glass-shadow)" : "none",
         transform: isOpen ? "translateX(0) scale(1)" : "translateX(120%) scale(0.95)",
         opacity: isOpen ? 1 : 0, transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
         fontFamily: "var(--font-main)", pointerEvents: isOpen ? "auto" : "none", overflow: "hidden",
       }}>
         {/* Header */}
         <div style={{
-          padding: "16px 20px", borderBottom: "1px solid var(--claude-accent)",
+          padding: "16px 20px", borderBottom: "1px solid var(--glass-border)",
           display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
-          background: "rgba(13, 15, 26, 0.2)",
+          background: "rgba(13, 15, 26, 0.05)",
         }}>
           <div style={{
             width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #4285f4, #9b72cb, #d96570)",
@@ -345,16 +343,6 @@ export default function ChatOverlayPanel() {
                     backgroundSize: "200% 200%",
                     animation: "gemini-gradient 2s linear infinite"
                   }} />
-                  <span style={{ 
-                    background: "linear-gradient(90deg, #4285f4, #9b72cb, #d96570, #4285f4)",
-                    backgroundSize: "200% auto",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    animation: "gemini-gradient 3s linear infinite",
-                    fontWeight: 600
-                  }}>
-                    Gemini is thinking…
-                  </span>
                 </>
               ) : (
                 <>
@@ -365,7 +353,7 @@ export default function ChatOverlayPanel() {
             </div>
           </div>
           <button onClick={close} style={{
-            width: 32, height: 32, borderRadius: 10, border: "1px solid var(--claude-accent)", background: "transparent", color: "var(--claude-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
+            width: 32, height: 32, borderRadius: 10, border: "1px solid var(--glass-border)", background: "transparent", color: "var(--claude-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
           }}>✕</button>
         </div>
 
@@ -409,7 +397,7 @@ export default function ChatOverlayPanel() {
           left: 0,
           right: 0,
           height: 200,
-          background: "linear-gradient(to top, #080a12 0%, #080a12 20%, rgba(8,10,18,0.95) 40%, rgba(8,10,18,0.6) 65%, rgba(8,10,18,0.2) 85%, transparent 100%)",
+          background: "var(--chat-fade-overlay)",
           pointerEvents: "none",
           zIndex: 14,
         }} />

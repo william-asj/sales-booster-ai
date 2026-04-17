@@ -39,8 +39,8 @@ function TypingIndicator() {
           display: "flex", 
           gap: 5, 
           padding: "12px 16px", 
-          background: "rgba(255, 255, 255, 0.03)", 
-          border: "1px solid rgba(255, 255, 255, 0.05)",
+          background: "var(--sidebar-item-bg)", 
+          border: "1px solid var(--sidebar-item-border)",
           borderRadius: "4px 16px 16px 16px",
           width: "fit-content",
           alignItems: "center"
@@ -238,12 +238,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
       height: "calc(100vh - 48px)",
       padding: "24px",
       fontFamily: "var(--font-main)",
-      background: "#080a12",
-      backgroundImage: `
-        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
-        radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08), transparent 25%)
-      `,
-      backgroundAttachment: "fixed",
+      background: "var(--app-bg)",
       color: "var(--claude-text)"
     }}>
       <style>{`
@@ -254,13 +249,13 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.1);
+          background: rgba(0, 0, 0, 0.05);
           border-radius: 10px;
           opacity: 0;
           transition: opacity 0.3s ease;
         }
         .custom-scrollbar.is-scrolling::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.2);
+          background: rgba(0, 0, 0, 0.1);
           opacity: 1;
         }
         .chat-container {
@@ -268,12 +263,12 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
           display: flex;
           flex-direction: column;
           position: relative;
-          background: rgba(20, 22, 39, 0.4);
+          background: var(--chat-container-bg);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          border: 1px solid var(--sidebar-item-border);
           border-radius: 24px;
-          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+          box-shadow: var(--glass-shadow), inset 0 1px 0 var(--sidebar-item-border);
           overflow: hidden;
         }
         .centered-content {
@@ -294,12 +289,12 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
           width: 300px;
           display: flex;
           flex-direction: column;
-          background: rgba(20, 22, 39, 0.4);
+          background: var(--chat-container-bg);
           backdrop-filter: blur(24px);
           -webkit-backdrop-filter: blur(24px);
-          border: 1px solid rgba(255, 255, 255, 0.05);
+          border: 1px solid var(--sidebar-item-border);
           border-radius: 24px;
-          box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+          box-shadow: var(--glass-shadow), inset 0 1px 0 var(--sidebar-item-border);
           overflow: hidden;
         }
         @keyframes gemini-gradient {
@@ -335,13 +330,11 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             title={t("New Chat")}
             style={{
               width: 32, height: 32, borderRadius: 8,
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid rgba(255, 255, 255, 0.08)", color: "#e2e8f0",
+              background: "var(--sidebar-item-bg)",
+              border: "1px solid var(--sidebar-item-border)", color: "var(--app-text)",
               display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
               transition: "all 0.2s ease"
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.08)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.03)"; }}
           >
             <Plus size={16} strokeWidth={2.5} />
           </button>
@@ -363,16 +356,14 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                   }}
                   style={{
                     position: "relative", padding: "10px 12px", borderRadius: 10,
-                    background: activeSessionId === session.id ? "rgba(255, 255, 255, 0.05)" : "transparent",
+                    background: activeSessionId === session.id ? "var(--sidebar-item-bg)" : "transparent",
                     cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
                     transition: "all 0.2s ease"
                   }}
-                  onMouseEnter={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; }}
-                  onMouseLeave={e => { if (activeSessionId !== session.id) e.currentTarget.style.background = "transparent"; }}
                 >
-                  <MessageSquare size={16} color={activeSessionId === session.id ? "#f8fafc" : "#94a3b8"} />
+                  <MessageSquare size={16} color={activeSessionId === session.id ? "var(--app-accent)" : "var(--app-text-muted)"} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13.5, color: activeSessionId === session.id ? "#f8fafc" : "#94a3b8", fontWeight: activeSessionId === session.id ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    <div style={{ fontSize: 13.5, color: activeSessionId === session.id ? "var(--app-text)" : "var(--app-text-muted)", fontWeight: activeSessionId === session.id ? 500 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {session.title}
                     </div>
                   </div>
@@ -381,17 +372,9 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                     onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}
                     style={{
                       width: 24, height: 24, borderRadius: 6,
-                      color: "#475569", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      opacity: 0, transition: "all 0.2s ease",
+                      color: "var(--app-text-muted)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      opacity: activeSessionId === session.id ? 1 : 0, transition: "all 0.2s ease",
                     }}
-                    ref={(el) => {
-                      if (el && el.parentElement) {
-                        el.parentElement.onmouseenter = () => { el.style.opacity = "1"; if (activeSessionId !== session.id) el.parentElement!.style.background = "rgba(255, 255, 255, 0.02)"; };
-                        el.parentElement.onmouseleave = () => { el.style.opacity = "0"; if (activeSessionId !== session.id) el.parentElement!.style.background = "transparent"; };
-                      }
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.color = "#ef4444"; }}
-                    onMouseLeave={e => { e.currentTarget.style.color = "#475569"; }}
                   >
                     <Trash2 size={14} />
                   </button>
@@ -407,15 +390,15 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
         <div className="centered-content">
           {/* Header */}
           <div className="messages-max-width" style={{
-            padding: "20px 0", borderBottom: "1px solid rgba(255, 255, 255, 0.03)",
+            padding: "20px 0", borderBottom: "1px solid var(--sidebar-item-border)",
             display: "flex", alignItems: "center", gap: 12, flexShrink: 0,
             background: "transparent", zIndex: 10
           }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 16, fontWeight: 600, color: "#f8fafc", fontFamily: "var(--font-header)" }}>
+              <div style={{ fontSize: 16, fontWeight: 600, color: "var(--claude-header)", fontFamily: "var(--font-header)" }}>
                 {activeSession ? activeSession.title : "SalesBooster AI"}
               </div>
-              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ fontSize: 12, color: "var(--app-text-muted)", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
                 {isTyping ? (
                   <>
                     <div style={{ 
@@ -424,16 +407,6 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                       backgroundSize: "200% 200%",
                       animation: "gemini-gradient 2s linear infinite"
                     }} />
-                    <span style={{ 
-                      background: "linear-gradient(90deg, #4285f4, #9b72cb, #d96570, #4285f4)",
-                      backgroundSize: "200% auto",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      animation: "gemini-gradient 3s linear infinite",
-                      fontWeight: 600
-                    }}>
-                      {/* Gemini is thinking… */}
-                    </span>
                   </>
                 ) : (
                   <>
@@ -460,7 +433,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             <div className="messages-max-width" style={{ padding: "40px 0 200px", display: "flex", flexDirection: "column", gap: 32 }}>
               {(!activeSession || activeSession.messages.length === 0) && !isTyping && !streamingText ? (
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "50vh", gap: 24 }}>
-                  <div style={{ fontSize: 28, fontWeight: 600, color: "#f8fafc", letterSpacing: "-0.02em", fontFamily: "var(--font-header)" }}>{t("How can I help you today?")}</div>
+                  <div style={{ fontSize: 28, fontWeight: 600, color: "var(--claude-header)", letterSpacing: "-0.02em", fontFamily: "var(--font-header)" }}>{t("How can I help you today?")}</div>
                   <div style={{ width: "100%", maxWidth: "600px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     {[
                       "Analyze my recent leads",
@@ -472,13 +445,11 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
                         key={i}
                         onClick={() => sendToAI(t(suggestion))}
                         style={{
-                          padding: "16px", borderRadius: 12, background: "rgba(255, 255, 255, 0.02)",
-                          border: "1px solid rgba(255, 255, 255, 0.05)", color: "#94a3b8", textAlign: "left",
+                          padding: "16px", borderRadius: 12, background: "var(--sidebar-item-bg)",
+                          border: "1px solid var(--sidebar-item-border)", color: "var(--app-text-muted)", textAlign: "left",
                           fontSize: 14, cursor: "pointer", transition: "all 0.2s ease",
                           fontFamily: "var(--font-main)"
                         }}
-                        onMouseEnter={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; }}
                       >
                         {t(suggestion)}
                       </button>
@@ -531,7 +502,7 @@ export default function Chat({ initialMessage, onMessageSent }: ChatProps) {
             left: 0,
             right: 0,
             height: 260,
-            background: "linear-gradient(to top, #080a12 0%, #080a12 20%, rgba(8,10,18,0.95) 40%, rgba(8,10,18,0.6) 65%, rgba(8,10,18,0.2) 85%, transparent 100%)",
+            background: "var(--chat-fade-overlay)",
             pointerEvents: "none",
             zIndex: 14,
           }} />
