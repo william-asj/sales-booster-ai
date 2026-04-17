@@ -3,6 +3,7 @@ import "./globals.css";
 import ChatOverlayPanel from "@/components/chatbot/ChatOverlayPanel";
 import { ChatProvider } from "@/context/ChatContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
   title: "Sales Booster AI",
@@ -17,12 +18,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <LanguageProvider>
-          <ChatProvider>
-            {children}
-            <ChatOverlayPanel />
-          </ChatProvider>
-        </LanguageProvider>
+        <ThemeProvider>
+          <LanguageProvider>
+            <ChatProvider>
+              {children}
+              <ChatOverlayPanel />
+            </ChatProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

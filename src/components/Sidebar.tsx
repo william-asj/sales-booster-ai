@@ -16,6 +16,7 @@ import {
   LogOut,
   User,
 } from "lucide-react";
+import ThemeToggle from "./ThemeToggle";
 
 type Page =
   | "dashboard"
@@ -63,14 +64,14 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
     const isActive = active === page;
     return `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-left mb-1 ${
       isActive
-        ? "bg-indigo-500/20 text-slate-50 border border-indigo-500/30"
-        : "text-slate-400 hover:bg-white/5 hover:text-slate-200 border border-transparent"
+        ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 dark:text-slate-50"
+        : "text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-slate-200 border border-transparent"
     } ${isCollapsed ? "justify-center px-0" : ""}`;
   };
 
   return (
     <aside 
-      className={`h-[calc(100vh-2rem)] sticky top-4 left-4 my-4 ml-4 flex flex-col glass-panel rounded-3xl border border-white/10 transition-all duration-300 ease-in-out z-50 shadow-2xl shadow-black/50 ${
+      className={`h-[calc(100vh-2rem)] sticky top-4 left-4 my-4 ml-4 flex flex-col glass-panel rounded-3xl transition-all duration-300 ease-in-out z-50 ${
         isCollapsed ? "w-[80px]" : "w-[260px]"
       }`}
     >
@@ -92,7 +93,7 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
         </div>
         {!isCollapsed && (
           <div className="animate-fade-in whitespace-nowrap text-left">
-            <h2 className="text-base font-bold text-slate-50 tracking-wide m-0">
+            <h2 className="text-base font-bold text-[var(--app-header)] tracking-wide m-0">
               Sales Booster
             </h2>
             <span className="text-[10px] text-slate-500 font-medium uppercase">AI CRM Platform</span>
@@ -181,23 +182,33 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
         </div>
       </div>
 
+      {/* Theme Toggle Section */}
+      <div className={`px-4 mb-2 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
+        {!isCollapsed && (
+          <span className="text-[10px] font-bold text-slate-500 tracking-[0.1em] uppercase">
+            {t("Theme")}
+          </span>
+        )}
+        <ThemeToggle isCollapsed={isCollapsed} />
+      </div>
+
       {/* Agent Profile Footer (Discord-style) */}
-      <div className={`mt-auto p-2 mx-2 mb-4 rounded-2xl bg-white/[0.03] border border-white/5 relative ${isCollapsed ? "flex justify-center" : ""}`}>
+      <div className={`mt-auto p-2 mx-2 mb-4 rounded-2xl bg-[var(--sidebar-item-bg)] border border-[var(--sidebar-item-border)] relative ${isCollapsed ? "flex justify-center" : ""}`}>
         <div className={`flex items-center w-full ${isCollapsed ? "justify-center" : "gap-2"}`}>
           <div 
             ref={triggerRef}
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className={`flex items-center flex-1 min-w-0 p-1.5 hover:bg-white/5 rounded-xl transition-colors cursor-pointer group ${isCollapsed ? "p-0 justify-center flex-none" : "gap-2"}`}
+            className={`flex items-center flex-1 min-w-0 p-1.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors cursor-pointer group ${isCollapsed ? "p-0 justify-center flex-none" : "gap-2"}`}
           >
             <div className="relative shrink-0">
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white shadow-lg">
                 AG
               </div>
-              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#0f111a]" />
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[var(--sidebar-menu-bg)]" />
             </div>
             {!isCollapsed && (
               <div className="min-w-0 animate-fade-in">
-                <div className="text-[12px] font-bold text-slate-100 truncate leading-tight mb-0.5">
+                <div className="text-[12px] font-bold text-[var(--app-text)] truncate leading-tight mb-0.5">
                   {t("Agent Login")}
                 </div>
                 <div className="text-[10px] text-slate-500 truncate leading-none flex items-center gap-1">
@@ -212,8 +223,8 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
               onClick={() => setActive("settings")}
               className={`p-2 rounded-xl transition-all duration-200 ${
                 active === "settings"
-                  ? "bg-indigo-500/20 text-indigo-300"
-                  : "text-slate-400 hover:bg-white/10 hover:text-slate-100"
+                  ? "bg-indigo-500/20 text-indigo-400 dark:text-indigo-300"
+                  : "text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-slate-600 dark:hover:text-slate-100"
               }`}
               title={t("Settings")}
             >
@@ -226,24 +237,24 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
         {showProfileMenu && (
           <div 
             ref={menuRef}
-            className={`absolute bg-[#10121e] rounded-2xl border border-white/10 shadow-2xl animate-fade-in overflow-hidden z-[100] ${
+            className={`absolute bg-[var(--sidebar-menu-bg)] rounded-2xl border border-[var(--sidebar-item-border)] shadow-2xl animate-fade-in overflow-hidden z-[100] ${
               isCollapsed 
                 ? "bottom-0 left-16 w-56" 
                 : "bottom-full left-0 mb-2 w-full min-w-[240px]"
             }`}
           >
-            <div className="p-4 border-b border-white/5 bg-white/[0.02]">
+            <div className="p-4 border-b border-[var(--sidebar-item-border)] bg-[var(--sidebar-item-bg)]">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold text-white">
                   AG
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-slate-100 truncate">{t("Agent Login")}</div>
+                  <div className="text-sm font-bold text-[var(--app-text)] truncate">{t("Agent Login")}</div>
                   <div className="text-xs text-slate-400 truncate">agent@salesbooster.id</div>
                 </div>
               </div>
-              <div className="flex items-center gap-2 text-[10px] text-green-400 bg-green-400/10 px-2 py-1 rounded-lg w-fit">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+              <div className="flex items-center gap-2 text-[10px] text-green-500 bg-green-500/10 px-2 py-1 rounded-lg w-fit">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                 {t("Online").toUpperCase()}
               </div>
             </div>
@@ -254,9 +265,9 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
                   setActive("settings");
                   setShowProfileMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-white transition-colors"
               >
-                <User size={16} className="text-slate-500" />
+                <User size={16} className="text-slate-400" />
                 {t("Profile Details")}
               </button>
               <button 
@@ -264,13 +275,13 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
                   setActive("settings");
                   setShowProfileMenu(false);
                 }}
-                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:bg-white/5 hover:text-white transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-slate-500 hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-white transition-colors"
               >
-                <Settings size={16} className="text-slate-500" />
+                <Settings size={16} className="text-slate-400" />
                 {t("Settings")}
               </button>
-              <div className="h-px bg-white/5 my-1 mx-2" />
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:bg-red-500/10 transition-colors">
+              <div className="h-px bg-[var(--sidebar-item-border)] my-1 mx-2" />
+              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-red-500 dark:text-red-400 hover:bg-red-500/10 transition-colors">
                 <LogOut size={16} />
                 {t("Log Out")}
               </button>

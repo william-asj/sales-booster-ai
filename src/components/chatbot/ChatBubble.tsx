@@ -76,17 +76,17 @@ function AITextMessage({ text }: { text: string }) {
       <ReactMarkdown
         components={{
           h1: ({ children }) => (
-            <h1 style={{ fontSize: "1.2rem", fontWeight: "700", margin: "1rem 0 0.5rem 0", lineHeight: "1.4" }}>
+            <h1 style={{ fontSize: "1.2rem", fontWeight: "700", margin: "1rem 0 0.5rem 0", lineHeight: "1.4", color: "var(--claude-header)" }}>
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 style={{ fontSize: "1.1rem", fontWeight: "700", margin: "1rem 0 0.4rem 0", lineHeight: "1.4" }}>
+            <h2 style={{ fontSize: "1.1rem", fontWeight: "700", margin: "1rem 0 0.4rem 0", lineHeight: "1.4", color: "var(--claude-header)" }}>
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 style={{ fontSize: "1rem", fontWeight: "700", margin: "0.875rem 0 0.35rem 0", lineHeight: "1.4" }}>
+            <h3 style={{ fontSize: "1rem", fontWeight: "700", margin: "0.875rem 0 0.35rem 0", lineHeight: "1.4", color: "var(--claude-header)" }}>
               {children}
             </h3>
           ),
@@ -96,12 +96,12 @@ function AITextMessage({ text }: { text: string }) {
             </p>
           ),
           ul: ({ children }) => (
-            <ul style={{ margin: "0 0 0.75rem 0", paddingLeft: "1.25rem" }}>
+            <ul style={{ margin: "0 0 0.75rem 0", paddingLeft: "1.25rem", listStyleType: "disc" }}>
               {children}
             </ul>
           ),
           ol: ({ children }) => (
-            <ol style={{ margin: "0 0 0.75rem 0", paddingLeft: "1.25rem" }}>
+            <ol style={{ margin: "0 0 0.75rem 0", paddingLeft: "1.25rem", listStyleType: "decimal" }}>
               {children}
             </ol>
           ),
@@ -111,7 +111,7 @@ function AITextMessage({ text }: { text: string }) {
             </li>
           ),
           strong: ({ children }) => (
-            <strong style={{ fontWeight: "700" }}>{children}</strong>
+            <strong style={{ fontWeight: "700", color: "var(--claude-header)" }}>{children}</strong>
           ),
         }}
       >
@@ -184,7 +184,7 @@ function UserQABubble({ text }: { text: string }) {
       {pairs.map((pair, idx) => (
         <div key={idx} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
           <div style={{ 
-            color: "#94a3b8", 
+            color: "var(--app-text-muted)", 
             fontSize: 11, 
             fontWeight: 700, 
             textTransform: "uppercase", 
@@ -193,7 +193,7 @@ function UserQABubble({ text }: { text: string }) {
             Q: {pair.q}
           </div>
           <div style={{ 
-            color: "#e2e8f0", 
+            color: "var(--app-text)", 
             fontSize: 13, 
             fontWeight: 500 
           }}>
@@ -234,14 +234,14 @@ export default function ChatBubble({ message, onSubmitQuestionnaire, onBackQuest
               {message.attachments.map((att, idx) => (
                 <div key={idx} style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  background: "var(--claude-accent)",
-                  border: "1px solid rgba(255, 255, 255, 0.08)",
+                  background: "var(--sidebar-item-bg)",
+                  border: "1px solid var(--sidebar-item-border)",
                   borderRadius: 12, padding: "6px 12px 6px 6px",
                   maxWidth: 220
                 }}>
                   <FileBadge name={att.name} mimeType={att.mimeType} />
                   <span style={{
-                    fontSize: 12, color: "var(--claude-text)", fontWeight: 500,
+                    fontSize: 12, color: "var(--app-text)", fontWeight: 500,
                     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap"
                   }}>
                     {att.name}
@@ -254,11 +254,11 @@ export default function ChatBubble({ message, onSubmitQuestionnaire, onBackQuest
           {/* TEXT BUBBLE - Claude-like round square */}
           {message.text && (
             <div style={{
-              background: "var(--claude-accent)",
+              background: "var(--chat-bubble-user)",
               borderRadius: "16px",
               padding: "14px 16px",
               fontSize: "var(--base-size)",
-              color: "var(--claude-text)",
+              color: "var(--chat-bubble-user-text)",
               lineHeight: "var(--line-height)",
               fontFamily: "var(--font-main)",
               wordBreak: "break-word",

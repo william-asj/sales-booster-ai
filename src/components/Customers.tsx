@@ -21,9 +21,9 @@ interface Props {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getScoreColor = (score: number) => {
-  if (score >= 80) return "text-emerald-400";
-  if (score >= 60) return "text-amber-400";
-  return "text-rose-400";
+  if (score >= 80) return "text-emerald-500 dark:text-emerald-400";
+  if (score >= 60) return "text-amber-500 dark:text-amber-400";
+  return "text-rose-500 dark:text-rose-400";
 };
 
 const formatIDR = (amount: number) => {
@@ -48,7 +48,7 @@ function LifeStageBadge({ age }: { age: number }) {
     >
       <span className="text-base leading-none">{stage.icon}</span>
       <div className="flex flex-col leading-tight">
-        <span className="font-black uppercase tracking-wider text-[9px]">{t("Life Stage")}</span>
+        <span className="font-black uppercase tracking-wider text-[9px] opacity-70">{t("Life Stage")}</span>
         <span className="font-bold text-[11px]">{t(stage.labelId)} · {stage.ageRange}</span>
       </div>
     </div>
@@ -70,27 +70,27 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
   const isNearMaturity = monthsLeft < 24;
 
   return (
-    <div className="glass-panel rounded-2xl p-4 border border-white/5 flex flex-col gap-3">
+    <div className="glass-panel rounded-2xl p-4 border border-[var(--sidebar-item-border)] flex flex-col gap-3">
       {/* Header row */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-0.5">
+          <div className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-0.5">
             {policy.productName}
           </div>
-          <div className="text-xs text-slate-400 truncate">{policy.subProductName}</div>
+          <div className="text-xs text-[var(--app-text-muted)] truncate">{policy.subProductName}</div>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
             {policy.status}
           </span>
         </div>
       </div>
 
       {/* Coverage amount */}
-      <div className="bg-white/[0.03] rounded-xl px-4 py-3 border border-white/5 flex items-center justify-between">
-        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t("Sum Assured")}</span>
-        <span className="text-sm font-black text-slate-50">{formatIDR(policy.sumAssured)}</span>
+      <div className="bg-[var(--sidebar-item-bg)] rounded-xl px-4 py-3 border border-[var(--sidebar-item-border)] flex items-center justify-between">
+        <span className="text-[10px] text-[var(--app-text-muted)] font-bold uppercase tracking-wider">{t("Sum Assured")}</span>
+        <span className="text-sm font-black text-[var(--app-header)]">{formatIDR(policy.sumAssured)}</span>
       </div>
 
       {/* Details grid */}
@@ -101,26 +101,26 @@ function PolicyCard({ policy }: { policy: PolicyRecord }) {
           { label: "Start Date", value: policy.startDate, icon: <Calendar size={12} /> },
           { label: "Maturity", value: policy.maturityDate, icon: <Clock size={12} /> },
         ].map((item, i) => (
-          <div key={i} className="flex flex-col gap-1 p-2.5 rounded-xl bg-white/[0.04]">
-            <div className="flex items-center gap-1.5 text-slate-400">
+          <div key={i} className="flex flex-col gap-1 p-2.5 rounded-xl bg-[var(--sidebar-item-bg)]">
+            <div className="flex items-center gap-1.5 text-[var(--app-text-muted)]">
               {item.icon}
               <span className="text-[10px] font-bold uppercase tracking-wider">{t(item.label)}</span>
             </div>
-            <span className="text-xs font-bold text-slate-100 break-words">{item.value}</span>
+            <span className="text-xs font-bold text-[var(--app-text)] break-words">{item.value}</span>
           </div>
         ))}
       </div>
 
       {/* Policy age + maturity countdown */}
       <div className="flex items-center justify-between pt-1">
-        <span className="text-[10px] text-slate-500">
-          {t("Policy age")}: <span className="text-slate-300 font-bold">{policy.policyAgeMonths} {t("months")}</span>
+        <span className="text-[10px] text-[var(--app-text-muted)]">
+          {t("Policy age")}: <span className="text-[var(--app-text)] font-bold">{policy.policyAgeMonths} {t("months")}</span>
         </span>
         <span
           className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
             isNearMaturity
-              ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-              : "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"
+              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+              : "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20"
           }`}
         >
           {monthsLeft <= 0 ? t("Matured") : isNearMaturity ? `⚠ ${yearsLeft}${t("yr left")}` : `${yearsLeft}${t("yr left")}`}
@@ -162,12 +162,12 @@ function PolicyHistoryDrawer({
       <div
         className="fixed top-5 right-5 bottom-5 z-50 w-full max-w-[420px] flex flex-col"
         style={{
-          background: "rgba(8, 10, 18, 0.8)",
+          background: "var(--sidebar-menu-bg)",
           backdropFilter: "blur(100px)",
           WebkitBackdropFilter: "blur(100px)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          border: "1px solid var(--sidebar-item-border)",
           borderRadius: 24,
-          boxShadow: isOpen ? "0 24px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06)" : "none",
+          boxShadow: isOpen ? "var(--glass-shadow)" : "none",
           transform: isOpen ? "translateX(0) scale(1)" : "translateX(120%) scale(0.95)",
           opacity: isOpen ? 1 : 0,
           transition: "transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease",
@@ -176,17 +176,17 @@ function PolicyHistoryDrawer({
         }}
       >
         {/* Drawer header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/5 shrink-0">
+        <div className="flex items-center justify-between p-6 border-b border-[var(--sidebar-item-border)] shrink-0">
           <div>
-            <h2 className="text-base font-black text-slate-50 tracking-tight">{t("Policy Records")}</h2>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <h2 className="text-base font-black text-[var(--app-header)] tracking-tight">{t("Policy Records")}</h2>
+            <p className="text-xs text-[var(--app-text-muted)] mt-0.5">
               {customer.name} · {policies.length} {t("active")}{" "}
               {policies.length === 1 ? t("policy") : t("policies")}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:bg-white/5 hover:text-slate-100 transition-colors"
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--app-text-muted)] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[var(--app-header)] transition-colors"
           >
             <X size={18} />
           </button>
@@ -208,7 +208,7 @@ function PolicyHistoryDrawer({
             >
               {t(getLifeStage(customer.age).labelId)} — {t("Age")} {customer.age} ({getLifeStage(customer.age).ageRange})
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs text-[var(--app-text-muted)] leading-relaxed">
               {t(getLifeStage(customer.age).description)}
             </p>
             <div className="flex flex-wrap gap-1 mt-2">
@@ -232,7 +232,7 @@ function PolicyHistoryDrawer({
         {/* Policy list */}
         <div className="flex-1 overflow-y-auto scrollbar-hide p-5 flex flex-col gap-4">
           {policies.length === 0 ? (
-            <div className="text-center py-10 text-slate-500 text-sm">
+            <div className="text-center py-10 text-[var(--app-text-muted)] text-sm italic">
               {t("No policy records found.")}
             </div>
           ) : (
@@ -319,16 +319,16 @@ export default function Customers({
       <div className="w-full md:w-72 lg:w-80 flex flex-col gap-4 h-[350px] md:h-full shrink-0">
         <div className="glass-panel rounded-3xl p-4 flex flex-col gap-4 overflow-hidden shadow-xl h-full">
           <div className="flex items-center justify-between px-2">
-            <h2 className="text-base lg:text-lg font-bold text-slate-50 tracking-tight">{t("Customers")}</h2>
+            <h2 className="text-base lg:text-lg font-bold text-[var(--app-header)] tracking-tight">{t("Customers")}</h2>
             <div className="flex gap-1">
               <button
                 onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
-                className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-colors"
+                className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-[var(--app-text-muted)] transition-colors"
                 title={sortOrder === "asc" ? t("Sort Descending") : t("Sort Ascending")}
               >
                 {sortOrder === "asc" ? <SortAsc size={18} /> : <SortDesc size={18} />}
               </button>
-              <button className="p-2 rounded-xl hover:bg-white/5 text-slate-400 transition-colors">
+              <button className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-[var(--app-text-muted)] transition-colors">
                 <Filter size={18} />
               </button>
             </div>
@@ -336,13 +336,13 @@ export default function Customers({
 
           <div className="relative">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)]"
               size={16}
             />
             <input
               type="text"
               placeholder={t("Search by name, event, or phone...")}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-2 pl-10 pr-4 text-xs lg:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
+              className="w-full bg-[var(--sidebar-item-bg)] border border-[var(--sidebar-item-border)] rounded-2xl py-2 pl-10 pr-4 text-xs lg:text-sm text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -358,24 +358,24 @@ export default function Customers({
                   className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 group ${
                     selected.id === lead.id
                       ? "bg-indigo-500/20 border border-indigo-500/30 shadow-lg"
-                      : "hover:bg-white/5 border border-transparent"
+                      : "hover:bg-black/5 dark:hover:bg-white/5 border border-transparent"
                   }`}
                 >
                   <div
                     className={`w-9 h-9 lg:w-10 lg:h-10 rounded-full flex items-center justify-center font-bold text-[10px] lg:text-xs shrink-0 transition-transform group-hover:scale-110 ${
                       selected.id === lead.id
-                        ? "bg-indigo-500 text-white"
-                        : "bg-white/10 text-slate-300"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-[var(--sidebar-item-bg)] text-[var(--app-text-muted)]"
                     }`}
                   >
                     {lead.avatar}
                   </div>
                   <div className="flex-1 min-w-0 text-left">
-                    <div className="text-xs lg:text-[13px] font-bold text-slate-100 truncate">
+                    <div className="text-xs lg:text-[13px] font-bold text-[var(--app-text)] truncate">
                       {lead.name}
                     </div>
-                    <div className="text-[10px] lg:text-[11px] text-slate-500 truncate mt-0.5 flex items-center gap-1">
-                      <ShieldCheck size={9} className="text-indigo-400" />
+                    <div className="text-[10px] lg:text-[11px] text-[var(--app-text-muted)] truncate mt-0.5 flex items-center gap-1">
+                      <ShieldCheck size={9} className="text-indigo-600 dark:text-indigo-400" />
                       {pCount} {pCount === 1 ? "policy" : "policies"} · {lead.event}
                     </div>
                   </div>
@@ -386,7 +386,7 @@ export default function Customers({
               );
             })}
             {filteredAndSortedLeads.length === 0 && (
-              <div className="text-center py-10 text-slate-500 text-xs italic">
+              <div className="text-center py-10 text-[var(--app-text-muted)] text-xs italic">
                 No customers found matching your search.
               </div>
             )}
@@ -406,7 +406,7 @@ export default function Customers({
               <div className="w-20 h-20 lg:w-24 lg:h-24 rounded-[24px] lg:rounded-[28px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl lg:text-3xl font-bold text-white shadow-2xl shadow-indigo-500/20">
                 {selected.avatar}
               </div>
-              <div className="absolute -bottom-1 -right-1 lg:-bottom-2 lg:-right-2 w-7 h-7 lg:w-8 lg:h-8 rounded-xl lg:rounded-2xl bg-slate-900 border-4 border-[#080a12] flex items-center justify-center text-emerald-400">
+              <div className="absolute -bottom-1 -right-1 lg:-bottom-2 lg:-right-2 w-7 h-7 lg:w-8 lg:h-8 rounded-xl lg:rounded-2xl bg-[var(--app-bg)] border-4 border-[var(--sidebar-menu-bg)] flex items-center justify-center text-emerald-500 dark:text-emerald-400 shadow-lg">
                 <ShieldCheck size={14} />
               </div>
             </div>
@@ -414,31 +414,31 @@ export default function Customers({
             <div className="flex-1 sm:pt-2 w-full">
               <div className="flex flex-col xl:flex-row justify-between items-center xl:items-start gap-4">
                 <div className="flex flex-col items-center sm:items-start gap-2">
-                  <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-slate-50 tracking-tight">
+                  <h1 className="text-xl md:text-2xl lg:text-3xl font-black text-[var(--app-header)] tracking-tight">
                     {selected.name}
                   </h1>
                   {/* Life Stage Badge in header */}
                   <LifeStageBadge age={selected.age} />
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 lg:gap-4 text-slate-400">
-                    <div className="flex items-center gap-1.5 text-[10px] md:text-xs lg:text-sm">
-                      <Phone size={14} className="text-indigo-400 shrink-0" />
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 lg:gap-4 text-[var(--app-text-muted)]">
+                    <div className="flex items-center gap-1.5 text-[10px] md:text-xs lg:text-sm font-medium">
+                      <Phone size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
                       {selected.phone}
                     </div>
-                    <div className="hidden sm:block w-1 h-1 rounded-full bg-slate-700" />
-                    <div className="flex items-center gap-1.5 text-[10px] md:text-xs lg:text-sm">
-                      <MapPin size={14} className="text-indigo-400 shrink-0" />
+                    <div className="hidden sm:block w-1 h-1 rounded-full bg-[var(--sidebar-item-border)]" />
+                    <div className="flex items-center gap-1.5 text-[10px] md:text-xs lg:text-sm font-medium">
+                      <MapPin size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
                       {t(selected.city)}, {t(selected.province)}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex gap-2 lg:gap-3">
-                  <button className="glass-panel p-2 lg:p-2.5 rounded-xl hover:bg-white/10 transition-colors text-slate-300">
+                  <button className="glass-panel p-2 lg:p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-[var(--app-text-muted)]">
                     <MoreVertical size={18} />
                   </button>
                   <button
                     onClick={() => { setSelectedLead(selected); setActive("chat"); }}
-                    className="flex items-center gap-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl lg:rounded-2xl font-bold text-xs lg:text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95 whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 lg:px-6 py-2.5 lg:py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl lg:rounded-2xl font-bold text-xs lg:text-sm transition-all shadow-lg shadow-indigo-600/20 active:scale-95 whitespace-nowrap"
                   >
                     <MessageSquare size={16} />
                     AI Assistant
@@ -456,23 +456,23 @@ export default function Customers({
             {/* AI Insights Bar */}
             <div className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 lg:p-6 border-l-4 border-indigo-500">
               <div className="flex items-center gap-4 mb-5 lg:mb-6">
-                <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
                   <Activity size={18} />
                 </div>
                 <div>
-                  <h3 className="text-[10px] md:text-xs lg:text-sm font-bold text-slate-100 uppercase tracking-widest leading-none">
+                  <h3 className="text-[10px] md:text-xs lg:text-sm font-bold text-[var(--app-header)] uppercase tracking-widest leading-none">
                     {t("AI Matching Insights")}
                   </h3>
-                  <p className="text-[9px] md:text-[10px] lg:text-xs text-slate-500 mt-1 lg:mt-1.5">
+                  <p className="text-[9px] md:text-[10px] lg:text-xs text-[var(--app-text-muted)] mt-1 lg:mt-1.5">
                     {t("Real-time behavior analysis and scoring")}
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 lg:gap-6">
-                <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 lg:p-5">
+                <div className="bg-[var(--sidebar-item-bg)] border border-[var(--sidebar-item-border)] rounded-2xl p-4 lg:p-5">
                   <div className="flex justify-between items-end mb-3 lg:mb-4">
-                    <span className="text-[9px] md:text-[10px] lg:text-xs font-bold text-slate-400 uppercase tracking-wider">
+                    <span className="text-[9px] md:text-[10px] lg:text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-wider">
                       {t("Purchase Intent")}
                     </span>
                     <span
@@ -481,7 +481,7 @@ export default function Customers({
                       {selected.score}%
                     </span>
                   </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-2 w-full bg-[var(--app-bg)] border border-[var(--sidebar-item-border)] rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-1000 ${
                         selected.score >= 80
@@ -493,9 +493,9 @@ export default function Customers({
                       style={{ width: `${selected.score}%` }}
                     />
                   </div>
-                  <p className="text-[9px] md:text-[10px] lg:text-[11px] text-slate-500 mt-3 lg:mt-4 leading-relaxed">
+                  <p className="text-[9px] md:text-[10px] lg:text-[11px] text-[var(--app-text-muted)] mt-3 lg:mt-4 leading-relaxed">
                     {t("Based on")}{" "}
-                    <span className="text-indigo-400 font-bold">
+                    <span className="text-indigo-600 dark:text-indigo-400 font-bold">
                       {t(lifeStage.labelId)} {t("life stage")}
                     </span>{" "}
                     {t("profile and life events,")}{" "}
@@ -508,18 +508,18 @@ export default function Customers({
                 </div>
 
                 <div className="flex flex-col">
-                  <div className="flex-1 bg-amber-400/5 border border-amber-400/10 rounded-2xl p-4 lg:p-5 flex gap-3 lg:gap-4">
-                    <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-amber-400/10 flex items-center justify-center text-amber-400 shrink-0">
+                  <div className="flex-1 bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4 lg:p-5 flex gap-3 lg:gap-4">
+                    <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
                       <AlertCircle size={18} />
                     </div>
                     <div>
-                      <div className="text-[9px] md:text-[10px] font-black text-amber-400 uppercase tracking-[0.15em] mb-1">
+                      <div className="text-[9px] md:text-[10px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-[0.15em] mb-1">
                         {t("Opportunity")}
                       </div>
-                      <div className="text-xs md:text-sm lg:text-base font-bold text-slate-100 leading-tight">
+                      <div className="text-xs md:text-sm lg:text-base font-bold text-[var(--app-header)] leading-tight">
                         {t(selected.event)}
                       </div>
-                      <p className="text-[9px] md:text-[10px] lg:text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                      <p className="text-[9px] md:text-[10px] lg:text-[11px] text-[var(--app-text-muted)] mt-1.5 leading-relaxed">
                         {t("Historically leads to 45% conversion increase.")}
                       </p>
                     </div>
@@ -531,17 +531,17 @@ export default function Customers({
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
               {[
-                { icon: <Calendar size={18} />, label: t("Age & DOB"), value: `${selected.age} ${t("Years")}`, subValue: selected.dob, color: "text-blue-400" },
-                { icon: <Briefcase size={18} />, label: t("Occupation"), value: t(selected.occupation), color: "text-amber-400" },
-                { icon: <Wallet size={18} />, label: t("Salary"), value: t(selected.salaryBucket), color: "text-emerald-400" },
-                { icon: <Users size={18} />, label: t("Segment"), value: t(selected.segment), color: "text-purple-400" },
-                { icon: <TrendingUp size={18} />, label: t("Premium"), value: selected.premium, color: "text-indigo-400" },
+                { icon: <Calendar size={18} />, label: t("Age & DOB"), value: `${selected.age} ${t("Years")}`, subValue: selected.dob, color: "text-blue-600 dark:text-blue-400" },
+                { icon: <Briefcase size={18} />, label: t("Occupation"), value: t(selected.occupation), color: "text-amber-600 dark:text-amber-400" },
+                { icon: <Wallet size={18} />, label: t("Salary"), value: t(selected.salaryBucket), color: "text-emerald-600 dark:text-emerald-400" },
+                { icon: <Users size={18} />, label: t("Segment"), value: t(selected.segment), color: "text-purple-600 dark:text-purple-400" },
+                { icon: <TrendingUp size={18} />, label: t("Premium"), value: selected.premium, color: "text-indigo-600 dark:text-indigo-400" },
                 // ── ENHANCED POLICIES CARD ──────────────────────────────────
                 {
                   icon: <ShieldCheck size={18} />,
                   label: t("Policies"),
                   value: `${policyCount} ${t("Active")}`,
-                  color: "text-rose-400",
+                  color: "text-rose-600 dark:text-rose-400",
                   clickable: true,
                 },
               ].map((stat, i) => (
@@ -550,30 +550,30 @@ export default function Customers({
                   onClick={"clickable" in stat && stat.clickable ? () => setShowPolicyDrawer(true) : undefined}
                   className={`glass-panel rounded-2xl p-4 lg:p-5 flex items-center gap-3 lg:gap-4 ${
                     "clickable" in stat && stat.clickable
-                      ? "cursor-pointer hover:bg-white/5 hover:border-indigo-500/20 transition-all duration-200 border border-transparent"
+                      ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 hover:border-indigo-500/20 transition-all duration-200 border border-transparent"
                       : "card-hover"
                   }`}
                 >
                   <div
-                    className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-white/5 flex items-center justify-center shrink-0 ${stat.color}`}
+                    className={`w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-[var(--sidebar-item-bg)] flex items-center justify-center shrink-0 ${stat.color}`}
                   >
                     {React.cloneElement(stat.icon as React.ReactElement<{ size?: number }>, { size: 16 })}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-[9px] md:text-[10px] lg:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate">
+                    <div className="text-[9px] md:text-[10px] lg:text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider truncate">
                       {stat.label}
                     </div>
                     <div className="flex items-center justify-between gap-1">
-                      <div className="text-xs md:text-sm lg:text-base font-bold text-slate-100 leading-tight break-words">
+                      <div className="text-xs md:text-sm lg:text-base font-bold text-[var(--app-text)] leading-tight break-words">
                         {stat.value}
                       </div>
                       {"clickable" in stat && stat.clickable && (
-                        <ChevronRight size={12} className="text-indigo-400 shrink-0" />
+                        <ChevronRight size={12} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
                       )}
                     </div>
                     {"subValue" in stat && stat.subValue && (
                       <div
-                        className={`text-[9px] md:text-[10px] lg:text-[11px] break-words mt-0.5 ${"clickable" in stat && stat.clickable ? "text-indigo-400 font-bold" : "text-slate-400"}`}
+                        className={`text-[9px] md:text-[10px] lg:text-[11px] break-words mt-0.5 ${"clickable" in stat && stat.clickable ? "text-indigo-600 dark:text-indigo-400 font-bold" : "text-[var(--app-text-muted)]"}`}
                       >
                         {stat.subValue}
                       </div>
@@ -585,7 +585,7 @@ export default function Customers({
 
             {/* Life Stage Insight Card */}
             <div
-              className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 lg:p-6 border"
+              className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 lg:p-6 border transition-all duration-500"
               style={{
                 borderColor: `${lifeStage.color}20`,
                 background: lifeStage.bgColor,
@@ -600,14 +600,14 @@ export default function Customers({
                   >
                     Life Stage Insight
                   </div>
-                  <div className="text-sm font-bold text-slate-100">
+                  <div className="text-sm font-bold text-[var(--app-header)]">
                     {t(lifeStage.labelId)} · Age {lifeStage.ageRange}
                   </div>
                 </div>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed mb-3">{lifeStage.description}</p>
+              <p className="text-xs text-[var(--app-text-muted)] leading-relaxed mb-3">{t(lifeStage.description)}</p>
               <div className="flex flex-wrap gap-2">
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-wider self-center">
+                <span className="text-[9px] font-black text-[var(--app-text-muted)] uppercase tracking-wider self-center">
                   Focus:
                 </span>
                 {lifeStage.recommendedFocus.map((f) => (
@@ -620,7 +620,7 @@ export default function Customers({
                       background: `${lifeStage.color}10`,
                     }}
                   >
-                    {f}
+                    {t(f)}
                   </span>
                 ))}
               </div>
@@ -629,37 +629,37 @@ export default function Customers({
 
           {/* Right Column */}
           <div className="flex flex-col gap-4 lg:gap-6">
-            <div className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 lg:p-6 bg-indigo-600/5 border-indigo-500/20 flex flex-col gap-5 lg:gap-6">
+            <div className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 lg:p-6 bg-indigo-500/5 border border-indigo-500/10 flex flex-col gap-5 lg:gap-6">
               <div>
-                <h3 className="text-[10px] md:text-xs lg:text-sm font-bold text-slate-100 uppercase tracking-widest mb-1">
+                <h3 className="text-[10px] md:text-xs lg:text-sm font-bold text-[var(--app-header)] uppercase tracking-widest mb-1">
                   {t("Recommendation")}
                 </h3>
-                <p className="text-[9px] md:text-[10px] lg:text-xs text-slate-500">
+                <p className="text-[9px] md:text-[10px] lg:text-xs text-[var(--app-text-muted)]">
                   {t("AI-suggested product strategy")}
                 </p>
               </div>
 
-              <div className="bg-white/5 rounded-2xl p-4 lg:p-6 border border-white/10">
+              <div className="bg-[var(--sidebar-item-bg)] rounded-2xl p-4 lg:p-6 border border-[var(--sidebar-item-border)]">
                 <div className="flex items-center gap-3 lg:gap-4 mb-4">
-                  <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 shrink-0">
+                  <div className="w-9 h-9 lg:w-12 lg:h-12 rounded-xl lg:rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/20 shrink-0">
                     <ShieldCheck size={18} className="lg:hidden" />
                     <ShieldCheck size={24} className="hidden lg:block" />
                   </div>
-                  <h4 className="text-[13px] md:text-sm lg:text-lg font-bold text-slate-50 leading-snug">
+                  <h4 className="text-[13px] md:text-sm lg:text-lg font-bold text-[var(--app-text)] leading-snug">
                     {t(selected.product)}
                   </h4>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] md:text-[10px] lg:text-[11px] font-bold text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                  <span className="text-[9px] md:text-[10px] lg:text-[11px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-lg uppercase tracking-wider">
                     {t("Best Match")}
                   </span>
                 </div>
 
-                <div className="h-px bg-white/5 my-4 lg:my-6" />
+                <div className="h-px bg-[var(--sidebar-item-border)] my-4 lg:my-6" />
 
                 <ul className="flex flex-col gap-2.5">
                   {[t("Guaranteed death benefit"), t("Tax-advantaged growth")].map((feat, i) => (
-                    <li key={i} className="flex items-center gap-2 text-[9px] md:text-[10px] lg:text-[11px] text-slate-400">
+                    <li key={i} className="flex items-center gap-2 text-[9px] md:text-[10px] lg:text-[11px] text-[var(--app-text-muted)] font-medium">
                       <div className="w-1 h-1 rounded-full bg-indigo-500 shrink-0" />
                       <span className="truncate">{feat}</span>
                     </li>
@@ -673,30 +673,30 @@ export default function Customers({
                   setInitialMessage(`Generate pitch for ${selected.name} to offer ${selected.product}`);
                   setActive("chat");
                 }}
-                className="w-full py-3.5 lg:py-4 bg-white text-slate-900 rounded-xl lg:rounded-2xl font-black text-[10px] md:text-xs lg:text-sm transition-all hover:bg-slate-100 active:scale-[0.98] shadow-xl whitespace-nowrap"
+                className="w-full py-3.5 lg:py-4 bg-indigo-600 text-white rounded-xl lg:rounded-2xl font-black text-[10px] md:text-xs lg:text-sm transition-all hover:bg-indigo-700 active:scale-[0.98] shadow-xl whitespace-nowrap"
               >
                 {t("GENERATE PITCH")}
               </button>
             </div>
 
-            <div className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 lg:p-6 border border-white/5">
-              <h3 className="text-[9px] md:text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">
+            <div className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 lg:p-6 border border-[var(--sidebar-item-border)]">
+              <h3 className="text-[9px] md:text-[10px] lg:text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-[0.2em] mb-4">
                 {t("Contact")}
               </h3>
               <div className="flex flex-col gap-3 lg:gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--sidebar-item-bg)] flex items-center justify-center text-[var(--app-text-muted)] shrink-0 border border-[var(--sidebar-item-border)]">
                     <Mail size={14} />
                   </div>
-                  <div className="text-[10px] lg:text-[11px] text-slate-300 font-medium truncate">
+                  <div className="text-[10px] lg:text-[11px] text-[var(--app-text)] font-bold truncate">
                     {selected.name.split(" ")[0].toLowerCase()}@email.id
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-[var(--sidebar-item-bg)] flex items-center justify-center text-[var(--app-text-muted)] shrink-0 border border-[var(--sidebar-item-border)]">
                     <Phone size={14} />
                   </div>
-                  <div className="text-[10px] lg:text-[11px] text-slate-300 font-medium truncate">
+                  <div className="text-[10px] lg:text-[11px] text-[var(--app-text)] font-bold truncate">
                     {selected.phone}
                   </div>
                 </div>
@@ -705,14 +705,14 @@ export default function Customers({
 
             {/* Quick policy preview (top 2) */}
             {customerPolicies.length > 0 && (
-              <div className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 border border-white/5">
+              <div className="glass-panel card-hover rounded-[24px] lg:rounded-[28px] p-5 border border-[var(--sidebar-item-border)]">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-[9px] md:text-[10px] lg:text-xs font-bold text-slate-500 uppercase tracking-[0.2em]">
+                  <h3 className="text-[9px] md:text-[10px] lg:text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-[0.2em]">
                     {t("Active Policies")}
                   </h3>
                   <button
                     onClick={() => setShowPolicyDrawer(true)}
-                    className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors"
+                    className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 hover:brightness-125 uppercase tracking-wider transition-all"
                   >
                     {t("View all →")}
                   </button>
@@ -721,15 +721,15 @@ export default function Customers({
                   {customerPolicies.slice(0, 2).map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-white/[0.02] border border-white/5"
+                      className="flex items-center justify-between p-3 rounded-xl bg-[var(--sidebar-item-bg)] border border-[var(--sidebar-item-border)]"
                     >
                       <div className="flex flex-col min-w-0">
-                        <span className="text-[10px] font-bold text-slate-300 truncate">
+                        <span className="text-[10px] font-bold text-[var(--app-text)] truncate">
                           {p.productName}
                         </span>
-                        <span className="text-[9px] text-slate-500 truncate">{p.subProductName}</span>
+                        <span className="text-[9px] text-[var(--app-text-muted)] truncate">{p.subProductName}</span>
                       </div>
-                      <span className="text-[10px] font-black text-emerald-400 shrink-0 ml-2">
+                      <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-500 shrink-0 ml-2">
                         {formatIDR(p.sumAssured)}
                       </span>
                     </div>
@@ -737,7 +737,7 @@ export default function Customers({
                   {customerPolicies.length > 2 && (
                     <button
                       onClick={() => setShowPolicyDrawer(true)}
-                      className="text-[9px] text-center text-slate-500 hover:text-indigo-400 pt-1 transition-colors font-bold"
+                      className="text-[9px] text-center text-[var(--app-text-muted)] hover:text-indigo-600 dark:hover:text-indigo-400 pt-1 transition-colors font-bold"
                     >
                       +{customerPolicies.length - 2} {t("more policies")}
                     </button>

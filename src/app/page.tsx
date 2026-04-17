@@ -18,7 +18,7 @@ export default function Home() {
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
 
   return (
-    <div style={{ display: "flex", background: "#080a12", minHeight: "100vh" }}>
+    <div style={{ display: "flex", backgroundColor: "var(--app-bg)", minHeight: "100vh", position: "relative" }}>
       <Sidebar active={active} setActive={setActive} />
 
       <main style={{ flex: 1, overflowY: "auto", maxHeight: "100vh" }}>
