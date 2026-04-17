@@ -8,303 +8,468 @@ import {
   MoreVertical,
   HeartPulse,
   Search,
-  Filter,
   Clock,
   ArrowUpRight,
   MessageSquare,
   ShieldCheck,
-  CircleAlert,
-  Eye,
+  Calendar,
+  Sparkles,
   RefreshCw,
+  ArrowUpCircle,
+  AlertOctagon,
+  FileText,
+  HeartCrack,
+  UserX,
   CircleMinus,
-  CheckCircle2
+  FileEdit,
+  ArrowRight,
+  ChevronRight
 } from "lucide-react";
-import { db, Lead } from "@/lib/data";
+import { db, LifeEvent, Lead, Page } from "@/lib/data";
 import { useLanguage } from "@/context/LanguageContext";
 
-interface EventsProps {
-  setActive: (page: string) => void;
-  setSelectedLead: (lead: Lead) => void;
-  setInitialMessage: (message: string) => void;
-}
-
-interface ColorStyle {
-  bg: string;
-  border: string;
-  text: string;
-  glow: string;
-}
-
-// ─── Constants & Helpers ──────────────────────────────────────────────────────
-
-const BIRTHDAY_TYPES = ["Birthday"];
-const POLICY_STATUS_TYPES = ["Inforce", "Policy Being Processed", "Lapse", "Surrender", "Reinstate"];
-const CLAIM_WAIVER_TYPES = ["Health Claim", "Freelook"];
-
-const INSIGHT_STYLES: Record<string, { activeBg: string; dot: string; textActive: string; textValue: string; }> = {
-  emerald: {
-    activeBg: "bg-emerald-500/20 border-emerald-500/30 shadow-lg shadow-emerald-500/10",
-    dot: "bg-emerald-400",
-    textActive: "text-emerald-600 dark:text-emerald-300",
-    textValue: "text-emerald-600 dark:text-emerald-400",
-  },
-  amber: {
-    activeBg: "bg-amber-500/20 border-amber-500/30 shadow-lg shadow-amber-500/10",
-    dot: "bg-amber-400",
-    textActive: "text-amber-600 dark:text-amber-300",
-    textValue: "text-amber-600 dark:text-amber-400",
-  },
-  rose: {
-    activeBg: "bg-rose-500/20 border-rose-500/30 shadow-lg shadow-rose-500/10",
-    dot: "bg-rose-400",
-    textActive: "text-rose-600 dark:text-rose-300",
-    textValue: "text-rose-600 dark:text-rose-400",
-  }
-};
-
-/**
- * Calculates a weight for sorting. 
- * Larger number = Newer/More Recent for "ago" events.
- * Smaller number = Sooner/Nearer for "future" events.
- */
-const getTimestampWeight = (ts: string) => {
+// Helper to weigh timestamps for sorting (Future -> Present -> Past)
+const getTimestampWeight = (ts: string): number => {
   const lower = ts.toLowerCase();
-  
-  // FUTURE EVENTS (Positive weights)
-  if (lower.includes("tomorrow")) return 1;
-  const inDayMatch = lower.match(/in\s+(\d+)\s+day/);
-  if (inDayMatch) return parseInt(inDayMatch[1]);
-  
-  // TODAY & PAST EVENTS (We use negative minutes from "now")
-  const minMatch = lower.match(/(\d+)\s+min/);
-  if (minMatch && lower.includes("ago")) return -parseInt(minMatch[1]);
-  
-  const hrMatch = lower.match(/(\d+)\s+hr/);
-  if (hrMatch && lower.includes("ago")) return -parseInt(hrMatch[1]) * 60;
-  
-  if (lower === "today") return -1439;
-  
-  const dayMatch = lower.match(/(\d+)\s+day/);
-  if (dayMatch && lower.includes("ago")) return -parseInt(dayMatch[1]) * 1440;
-  
-  const weekMatch = lower.match(/(\d+)\s+week/);
-  if (weekMatch && lower.includes("ago")) return -parseInt(weekMatch[1]) * 10080;
-  
-  return -999999;
+
+  // FUTURE — show first
+  if (lower.includes("tomorrow")) return 200;
+  const inDaysMatch = lower.match(/in\s+(\d+)\s+day/);
+  if (inDaysMatch) return 200 - parseInt(inDaysMatch[1]);
+
+  // TODAY — recent activity
+  const minsMatch = lower.match(/(\d+)\s+min.*ago/);
+  if (minsMatch) return 100 - parseInt(minsMatch[1]);
+  const hrsMatch = lower.match(/(\d+)\s+hr.*ago/);
+  if (hrsMatch) return 80 - parseInt(hrsMatch[1]);
+  if (lower === "today" || lower === "just now") return 75;
+
+  // PAST — show last
+  const daysAgoMatch = lower.match(/(\d+)\s+day.*ago/);
+  if (daysAgoMatch) return -parseInt(daysAgoMatch[1]);
+  const weeksAgoMatch = lower.match(/(\d+)\s+week.*ago/);
+  if (weeksAgoMatch) return -parseInt(weeksAgoMatch[1]) * 7;
+
+  return 0;
 };
 
-const getEventCategory = (timestamp: string) => {
-  const ts = timestamp.toLowerCase();
-  if (ts.startsWith("in ") || ts.includes("tomorrow")) return "Future";
-  if (ts.includes("today") || (ts.includes("ago") && (ts.includes("min") || ts.includes("hr")))) return "Today";
-  return "Past";
+const getEventTimeCategory = (timestamp: string) => {
+  const lower = timestamp.toLowerCase();
+  if (lower.includes("today") || lower.includes("just now") || lower.includes("min") || lower.includes("hr")) return "Happening Today";
+  if (lower.includes("tomorrow") || lower.includes("in ")) return "Upcoming Milestones";
+  return "Previous Milestones";
 };
 
-const getEventStyles = (type: string) => {
-  const colorMap: Record<string, ColorStyle> = {
-    rose: { bg: "bg-rose-500/5", border: "border-rose-500/20", text: "text-rose-600 dark:text-rose-400", glow: "bg-rose-400/20" },
-    blue: { bg: "bg-blue-500/5", border: "border-blue-500/20", text: "text-blue-600 dark:text-blue-400", glow: "bg-blue-400/20" },
-    amber: { bg: "bg-amber-500/5", border: "border-amber-500/20", text: "text-amber-600 dark:text-amber-400", glow: "bg-amber-400/20" },
-    emerald: { bg: "bg-emerald-500/5", border: "border-emerald-500/20", text: "text-emerald-600 dark:text-emerald-400", glow: "bg-emerald-400/20" },
-    purple: { bg: "bg-purple-500/5", border: "border-purple-500/20", text: "text-purple-600 dark:text-purple-400", glow: "bg-purple-400/20" },
-    indigo: { bg: "bg-indigo-500/5", border: "border-indigo-500/20", text: "text-indigo-600 dark:text-indigo-400", glow: "bg-indigo-400/20" }
-  };
+interface Props {
+  setActive: (page: Page) => void;
+  setSelectedLead: (lead: Lead | null) => void;
+  setInitialMessage: (message: string | null) => void;
+}
 
-  const typeToColor: Record<string, string> = {
-    "Birthday": "emerald", "Inforce": "emerald", "Policy Being Processed": "amber",
-    "Health Claim": "rose", "Lapse": "rose", "Surrender": "rose",
-    "Freelook": "blue", "Reinstate": "indigo"
-  };
-
-  const color = typeToColor[type] || "indigo";
-  const style = colorMap[color] || colorMap.indigo;
-
-  let IconComponent = HeartPulse;
-  switch (type) {
-    case "Birthday": IconComponent = Baby; break;
-    case "Policy Being Processed": IconComponent = Clock; break;
-    case "Lapse": IconComponent = CircleAlert; break;
-    case "Inforce": IconComponent = ShieldCheck; break;
-    case "Surrender": IconComponent = CircleMinus; break;
-    case "Freelook": IconComponent = Eye; break;
-    case "Reinstate": IconComponent = RefreshCw; break;
-    case "Health Claim": IconComponent = Activity; break;
-  }
-
-  return { ...style, icon: <IconComponent size={16} className={style.text} /> };
-};
-
-const getPriorityStyles = (priority: string) => {
-  switch (priority) {
-    case "High": return "text-rose-600 dark:text-rose-300 bg-rose-500/10 border-rose-500/20";
-    case "Medium": return "text-amber-600 dark:text-amber-300 bg-amber-500/10 border-amber-500/20";
-    default: return "text-[var(--app-text-muted)] bg-[var(--sidebar-item-bg)] border-[var(--sidebar-item-border)]";
-  }
-};
-
-// ─── Main Component ───────────────────────────────────────────────────────────
-
-export default function EventsTimeline({ setActive, setSelectedLead, setInitialMessage }: EventsProps) {
+export default function Events({ setActive, setSelectedLead, setInitialMessage }: Props) {
   const { t } = useLanguage();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string | null>(null);
-  const events = db.getEvents();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeFilter, setActiveFilter] = useState(t("All Events"));
+  
+  // NLP State
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [events, setEvents] = useState<LifeEvent[]>(db.getEvents());
+
+  const RETENTION_TYPES = ["Surrender Intent", "Lapse Warning", "Fund Withdrawal", "Surrender", "Lapse"];
+  const CLAIM_TYPES = ["Health Claim", "Death Claim", "Critical Illness Claim", "Freelook"];
+  const GROWTH_TYPES = ["Top-Up Request", "Top-Up Reinstate", "Endorsement", "Fund Switching", "Reinstate", "Birthday"];
+
+  const handleAnalyze = async () => {
+    if (!noteText.trim()) return;
+    setIsAnalyzing(true);
+    try {
+      const res = await fetch("/api/events/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: noteText })
+      });
+      const data = await res.json();
+      if (data.events && Array.isArray(data.events)) {
+        data.events.forEach((e: Omit<LifeEvent, "id">) => db.addEvent(e));
+        setEvents(db.getEvents());
+        setNoteText("");
+      }
+    } catch (e) {
+      console.error("NLP Analysis Error:", e);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const getEventStyles = (type: string) => {
+    let IconComponent = HeartPulse;
+    let colorClass = "indigo";
+
+    // Enhanced mappings for policy and data events
+    switch (type) {
+      case "Birthday":
+        IconComponent = Baby;
+        colorClass = "emerald";
+        break;
+      case "Top-Up Request":
+      case "Top-Up":
+        IconComponent = ArrowUpCircle;
+        colorClass = "emerald";
+        break;
+      case "Top-Up Reinstate":
+      case "Reinstate":
+        IconComponent = RefreshCw;
+        colorClass = "emerald";
+        break;
+      case "Surrender Intent":
+      case "Surrender":
+        IconComponent = UserX;
+        colorClass = "rose";
+        break;
+      case "Lapse Warning":
+      case "Lapse":
+        IconComponent = AlertOctagon;
+        colorClass = "rose";
+        break;
+      case "Fund Withdrawal":
+        IconComponent = CircleMinus;
+        colorClass = "rose";
+        break;
+      case "Endorsement":
+      case "Fund Switching":
+        IconComponent = FileEdit;
+        colorClass = "indigo";
+        break;
+      case "Health Claim":
+      case "Critical Illness Claim":
+        IconComponent = HeartCrack;
+        colorClass = "rose";
+        break;
+      case "Death Claim":
+        IconComponent = FileText;
+        colorClass = "rose";
+        break;
+      case "Inforce":
+        IconComponent = ShieldCheck;
+        colorClass = "blue";
+        break;
+      case "Policy Being Processed":
+        IconComponent = Clock;
+        colorClass = "amber";
+        break;
+      case "Freelook":
+        IconComponent = FileEdit;
+        colorClass = "blue";
+        break;
+      default:
+        IconComponent = HeartPulse;
+        colorClass = "indigo";
+    }
+
+    return { IconComponent, colorClass };
+  };
 
   const filteredEvents = useMemo(() => {
-    return events.filter(event => {
-      const matchesSearch = event.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           event.eventType.toLowerCase().includes(searchQuery.toLowerCase());
-      if (!matchesSearch) return false;
-      if (activeFilter === t("Birthday Greetings")) return BIRTHDAY_TYPES.includes(event.eventType);
-      if (activeFilter === t("Policy Milestones")) return POLICY_STATUS_TYPES.includes(event.eventType);
-      if (activeFilter === t("Claims & Requests")) return CLAIM_WAIVER_TYPES.includes(event.eventType);
-      return true;
-    });
-  }, [events, searchQuery, activeFilter, t]);
+    return events.filter((event) => {
+      const matchesSearch =
+        event.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.eventType.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const categories = [
-    { id: "Future", label: t("Upcoming Milestones"), icon: <TrendingUp size={14} className="text-indigo-500 dark:text-indigo-400" />, bg: "bg-indigo-500/10", border: "border-indigo-500/20" },
-    { id: "Today", label: t("Happening Today"), icon: <Activity size={14} className="text-emerald-500 dark:text-emerald-400" />, bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-    { id: "Past", label: t("Previous Events"), icon: <Clock size={14} className="text-[var(--app-text-muted)]" />, bg: "var(--sidebar-item-bg)", border: "var(--sidebar-item-border)" }
+      if (activeFilter === t("All Events")) return matchesSearch;
+      if (activeFilter === t("Retention & Risks")) return matchesSearch && RETENTION_TYPES.includes(event.eventType);
+      if (activeFilter === t("Claims & Servicing")) return matchesSearch && CLAIM_TYPES.includes(event.eventType);
+      if (activeFilter === t("Growth & Milestones")) return matchesSearch && GROWTH_TYPES.includes(event.eventType);
+      if (activeFilter === t("High Priority")) return matchesSearch && event.priority === "High";
+
+      return matchesSearch;
+    });
+  }, [events, searchTerm, activeFilter, t, RETENTION_TYPES, CLAIM_TYPES, GROWTH_TYPES]);
+
+  const groupedEvents = useMemo(() => {
+    const groups: Record<string, LifeEvent[]> = {
+      "Upcoming Milestones": [],
+      "Happening Today": [],
+      "Previous Milestones": [],
+    };
+
+    filteredEvents.forEach((event) => {
+      const cat = getEventTimeCategory(event.timestamp);
+      groups[cat].push(event);
+    });
+
+    // Sort within each group: High priority first, then by timestamp weight
+    Object.keys(groups).forEach((key) => {
+      groups[key].sort((a, b) => {
+        const priorityWeight: Record<string, number> = { High: 3, Medium: 2, Low: 1 };
+        const aWeight = priorityWeight[a.priority] || 0;
+        const bWeight = priorityWeight[b.priority] || 0;
+        
+        if (aWeight !== bWeight) return bWeight - aWeight;
+        return getTimestampWeight(b.timestamp) - getTimestampWeight(a.timestamp);
+      });
+    });
+
+    return groups;
+  }, [filteredEvents]);
+
+  const insights = [
+    { label: t("Retention & Risks"), value: events.filter(e => RETENTION_TYPES.includes(e.eventType)).length.toString().padStart(2, "0"), color: "rose" },
+    { label: t("Claims & Servicing"), value: events.filter(e => CLAIM_TYPES.includes(e.eventType)).length.toString().padStart(2, "0"), color: "amber" },
+    { label: t("Growth & Milestones"), value: events.filter(e => GROWTH_TYPES.includes(e.eventType)).length.toString().padStart(2, "0"), color: "emerald" },
   ];
 
-  const birthdayCount = events.filter(e => BIRTHDAY_TYPES.includes(e.eventType)).length;
-  const policyStatusCount = events.filter(e => POLICY_STATUS_TYPES.includes(e.eventType)).length;
-  const claimWaiverCount = events.filter(e => CLAIM_WAIVER_TYPES.includes(e.eventType)).length;
+  const handleChat = (event: LifeEvent) => {
+    const lead = db.getLeadByName(event.customerName);
+    
+    let prompt = `Analyze life event for ${event.customerName}: ${event.eventType}. What is the best product recommendation?`;
+    
+    if (RETENTION_TYPES.includes(event.eventType)) {
+      prompt = `Draft a retention script for ${event.customerName} who has a ${event.eventType}. Highlight potential losses if they proceed (surrender values vs premium holiday) and suggest empathetic alternatives.`;
+    } else if (GROWTH_TYPES.includes(event.eventType)) {
+      prompt = `Analyze this ${event.eventType} for ${event.customerName}. Suggest the best fund allocation or product upsell based on their profile, and draft a persuasive WhatsApp message for the agent to send.`;
+    } else if (CLAIM_TYPES.includes(event.eventType)) {
+      prompt = `Draft an empathetic service message for ${event.customerName} regarding their ${event.eventType}. Outline the next steps for processing and how I as an agent can help.`;
+    } else if (lead) {
+      prompt = `Get Latest Info for ${lead.name}, based on their ${event.eventType} event, what is the best product i can offer to him/her?`;
+    }
+
+    if (lead) setSelectedLead(lead);
+    setInitialMessage(prompt);
+    setActive("chat");
+  };
 
   return (
-    <div className="animate-fade-in px-6 md:px-10 py-8 max-w-[1400px] w-full mx-auto min-h-screen">
-      <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 dark:text-indigo-400 border border-indigo-500/20">
-              <HeartPulse size={20} />
-            </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-[var(--app-header)] tracking-tight m-0">{t("Recent Life Events")}</h1>
-          </div>
-          <p className="text-sm md:text-base text-[var(--app-text-muted)] max-w-xl font-medium">{t("AI-detected milestones and behavior triggers.")}</p>
+    <div className="p-8 pb-32 max-w-[1400px] mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--app-header)] mb-2 tracking-tight">
+            {t("Customer Life Events")}
+          </h1>
+          <p className="text-[var(--app-text-muted)] max-w-2xl">
+            {t("AI-powered intent detection from policy triggers and unstructured customer notes.")}
+          </p>
         </div>
-
-        <div className="flex items-center gap-3 w-full lg:w-auto">
-          <div className="relative flex-1 lg:w-80 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--app-text-muted)] group-focus-within:text-indigo-500 transition-colors" size={18} />
-            <input 
-              type="text" placeholder={t("Search events or customers...")}
-              className="w-full bg-[var(--sidebar-item-bg)] backdrop-blur-md border border-[var(--sidebar-item-border)] rounded-[20px] py-3 pl-12 pr-4 text-sm text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
-              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+        <div className="flex items-center gap-3">
+          <div className="relative group">
+            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-[var(--app-text-muted)] group-focus-within:text-indigo-500 transition-colors">
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder={t("Search name or event...")}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2.5 bg-[var(--sidebar-item-bg)] border border-[var(--sidebar-item-border)] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all w-64 text-[var(--app-text)]"
             />
           </div>
-          <button 
-            onClick={() => { setSearchQuery(""); setActiveFilter(null); }}
-            className={`glass-panel p-3 rounded-[18px] transition-colors border backdrop-blur-lg shrink-0 ${activeFilter || searchQuery ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/30' : 'text-[var(--app-text-muted)] border-[var(--sidebar-item-border)] hover:bg-black/5 dark:hover:bg-white/[0.08]'}`}
-          >
-            <Filter size={20} />
-          </button>
         </div>
-      </header>
+      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-10 items-start">
-        <div className="space-y-12">
-          {categories.map((cat) => {
-            const categoryEvents = filteredEvents
-              .filter(e => getEventCategory(e.timestamp) === cat.id)
-              .sort((a, b) => {
-                const wA = getTimestampWeight(a.timestamp);
-                const wB = getTimestampWeight(b.timestamp);
-                if (cat.id === "Future") return wA - wB;
-                return wB - wA;
-              });
+      {/* AI Note Analyzer */}
+      <div className="mb-6 p-4 glass-panel rounded-[24px] border border-indigo-500/30 bg-indigo-500/5 relative overflow-hidden group">
+        <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+                <Sparkles size={18} />
+              </div>
+              <h3 className="font-bold text-[var(--app-header)] text-sm tracking-wide uppercase">{t("AI Event Extractor")}</h3>
+            </div>
+            <div className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+              {t("Powered by Gemini")}
+            </div>
+          </div>
+          <textarea
+            value={noteText}
+            onChange={(e) => setNoteText(e.target.value)}
+            placeholder={t("Paste customer chat, email, or meeting notes here to automatically extract events (e.g., 'Customer wants to top up his Maxi Pro policy')...")}
+            className="w-full h-16 bg-[var(--sidebar-item-bg)] border border-[var(--sidebar-item-border)] rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none text-[var(--app-text)] placeholder:text-[var(--app-text-muted)] transition-all"
+          />
+          <div className="flex justify-end">
+            <button 
+              onClick={handleAnalyze} 
+              disabled={isAnalyzing || !noteText.trim()}
+              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+            >
+              {isAnalyzing ? <RefreshCw size={16} className="animate-spin" /> : <TrendingUp size={16} />}
+              {isAnalyzing ? t("Analyzing...") : t("Extract Events")}
+            </button>
+          </div>
+        </div>
+      </div>
 
-            if (categoryEvents.length === 0) return null;
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Left column: Insights Summary */}
+        <div className="space-y-6 sticky top-6 h-fit">
+          <div className="glass-panel p-6 rounded-[24px] border border-[var(--sidebar-item-border)] shadow-sm">
+            <h3 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-widest mb-6">
+              {t("Insights Summary")}
+            </h3>
+            <div className="space-y-4">
+              {insights.map((insight) => (
+                <button
+                  key={insight.label}
+                  onClick={() => setActiveFilter(activeFilter === insight.label ? t("All Events") : insight.label)}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl transition-all border ${
+                    activeFilter === insight.label
+                      ? "bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400"
+                      : "border-transparent text-[var(--app-text-muted)] hover:bg-[var(--sidebar-item-bg)]"
+                  }`}
+                >
+                  <span className="text-sm font-medium">{insight.label}</span>
+                  <span className={`text-lg font-bold text-${insight.color}-500`}>
+                    {insight.value}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="mt-8 pt-6 border-t border-[var(--sidebar-item-border)]">
+              <button
+                onClick={() => setActiveFilter(activeFilter === t("High Priority") ? t("All Events") : t("High Priority"))}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
+                  activeFilter === t("High Priority")
+                    ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30"
+                    : "bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white"
+                }`}
+              >
+                <Activity size={16} />
+                {t("Review High Urgency")}
+              </button>
+            </div>
+          </div>
 
-            return (
-              <div key={cat.id} className="space-y-6">
-                <div className="flex items-center gap-3 px-1 mb-8">
-                  <div className={`flex items-center gap-2 ${cat.id === "Past" ? "bg-[var(--sidebar-item-bg)] border-[var(--sidebar-item-border)]" : `${cat.bg} border ${cat.border}`} px-3 py-1.5 rounded-xl`}>
-                    {cat.icon}
-                    <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--app-text-muted)]">{cat.label}</span>
-                  </div>
-                  <div className="h-px flex-1 bg-gradient-to-r from-[var(--sidebar-item-border)] to-transparent" />
-                </div>
+          <div className="glass-panel p-6 rounded-[24px] border border-[var(--sidebar-item-border)] bg-indigo-600 text-white overflow-hidden relative shadow-xl">
+            <div className="absolute -right-6 -top-6 p-12 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+            <h4 className="text-sm font-bold mb-2 relative z-10">{t("Pro Tip")}</h4>
+            <p className="text-xs text-indigo-100 leading-relaxed mb-4 relative z-10">
+              {t("Policy modification requests often hide secondary needs. Always ask about their long-term goals.")}
+            </p>
+            <button className="text-xs font-bold flex items-center gap-1.5 hover:gap-2 transition-all relative z-10">
+              {t("Learn more")} <ArrowUpRight size={14} />
+            </button>
+          </div>
+        </div>
 
-                <div className="space-y-2">
-                  {categoryEvents.map((event, idx) => {
-                    const styles = getEventStyles(event.eventType);
-                    const isLast = idx === categoryEvents.length - 1;
+        {/* Right column: Event Timeline */}
+        <div className="lg:col-span-3">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-[var(--app-header)]">
+              {activeFilter}
+              <span className="ml-2 px-2 py-0.5 text-[10px] font-bold bg-indigo-500/10 text-indigo-500 rounded-full">
+                {Object.values(groupedEvents).flat().length}
+              </span>
+            </h3>
+          </div>
 
-                    return (
-                      <div key={event.id} className="group relative flex gap-6">
-                        <div className="flex flex-col items-center shrink-0">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 group-hover:scale-110 z-10 backdrop-blur-xl ${styles.bg} ${styles.border}`}>
-                            {styles.icon}
-                          </div>
-                          {!isLast && <div className="w-px h-full bg-gradient-to-b from-[var(--sidebar-item-border)] to-transparent my-1" />}
-                        </div>
+          {Object.values(groupedEvents).flat().length > 0 ? (
+            <div className="space-y-10">
+              {["Upcoming Milestones", "Happening Today", "Previous Milestones"].map((groupName) => {
+                const groupEvents = groupedEvents[groupName];
+                if (groupEvents.length === 0) return null;
 
-                        <div className="flex-1 pb-2">
-                          <div className="glass-panel card-hover rounded-[24px] p-4 md:p-5 border border-[var(--sidebar-item-border)] backdrop-blur-xl transition-all duration-500 relative overflow-hidden group/card">
-                            <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full blur-[50px] opacity-0 group-hover/card:opacity-20 transition-opacity duration-700 pointer-events-none ${styles.glow}`} />
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="text-lg font-bold text-[var(--app-header)] tracking-tight">{event.customerName}</h3>
-                                  <span className={`px-2 py-0.5 rounded-[8px] text-[9px] font-bold uppercase tracking-wider border ${getPriorityStyles(event.priority)}`}>{t(event.priority)}</span>
-                                </div>
-                                <div className={`text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 ${styles.text}`}>{t(event.eventType)}</div>
+                let CategoryIcon = Calendar;
+                let iconColor = "text-indigo-500";
+                if (groupName === "Happening Today") {
+                  CategoryIcon = Activity;
+                  iconColor = "text-emerald-500";
+                } else if (groupName === "Previous Milestones") {
+                  CategoryIcon = Clock;
+                  iconColor = "text-[var(--app-text-muted)]";
+                }
+
+                return (
+                  <div key={groupName} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="flex items-center gap-2 mb-6">
+                      <CategoryIcon size={16} className={iconColor} />
+                      <h4 className="text-xs font-bold text-[var(--app-text-muted)] uppercase tracking-[0.2em] ml-1">{t(groupName)}</h4>
+                      <div className="flex-1 h-px bg-gradient-to-r from-[var(--sidebar-item-border)] to-transparent ml-2" />
+                    </div>
+                    <div className="space-y-4">
+                      {groupEvents.map((event) => {
+                        const { IconComponent, colorClass } = getEventStyles(event.eventType);
+                        return (
+                          <div
+                            key={event.id}
+                            className="group glass-panel p-5 rounded-[24px] border border-[var(--sidebar-item-border)] hover:border-indigo-500/30 transition-all hover:shadow-lg bg-white dark:bg-white/5"
+                          >
+                            <div className="flex items-start gap-5">
+                              <div className={`mt-1 p-3.5 rounded-2xl bg-${colorClass}-500/10 text-${colorClass}-500 transition-transform group-hover:scale-110 duration-300`}>
+                                <IconComponent size={24} />
                               </div>
-                              <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-4 text-[var(--app-text-muted)] text-[10px] font-bold uppercase tracking-tighter">
-                                  <span className="flex items-center gap-1.5 bg-black/5 dark:bg-white/5 px-2.5 py-1 rounded-full border border-[var(--sidebar-item-border)]"><Clock size={10} />{t(event.timestamp)}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <h4 className="text-base font-bold text-[var(--app-header)] truncate">
+                                    {event.customerName}
+                                  </h4>
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-[10px] font-bold text-[var(--app-text-muted)] flex items-center gap-1">
+                                      <Clock size={12} />
+                                      {event.timestamp}
+                                    </span>
+                                    <button className="p-1 text-[var(--app-text-muted)] hover:text-indigo-500 transition-colors">
+                                      <MoreVertical size={16} />
+                                    </button>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <button onClick={() => { const lead = db.getLeadByName(event.customerName); if (lead) { setSelectedLead(lead); setActive("customers"); } }} className="h-9 w-9 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center active:scale-[0.95]"><ArrowUpRight size={16} /></button>
-                                  <button onClick={() => { const lead = db.getLeadByName(event.customerName); if (lead) { setSelectedLead(lead); setInitialMessage(`Get Latest Info for ${lead.name}, what is the best product i can offer to him/her?`); setActive("chat"); } }} className="h-9 w-9 bg-[var(--sidebar-item-bg)] hover:bg-black/5 dark:hover:bg-white/10 text-[var(--app-text)] rounded-xl transition-all border border-[var(--sidebar-item-border)] flex items-center justify-center active:scale-[0.95]"><MessageSquare size={16} className="text-indigo-600 dark:text-indigo-400" /></button>
-                                  <button className="h-9 w-9 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-[var(--app-text-muted)] flex items-center justify-center"><MoreVertical size={16} /></button>
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-${colorClass}-500/10 text-${colorClass}-600 dark:text-${colorClass}-400 border border-${colorClass}-500/20`}>
+                                    {event.eventType}
+                                  </span>
+                                  {event.priority === "High" && (
+                                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-500 text-white">
+                                      {t("URGENT")}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-sm text-[var(--app-text-muted)] leading-relaxed mb-5 group-hover:text-[var(--app-text)] transition-colors">
+                                  {event.description}
+                                </p>
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={() => handleChat(event)}
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 hover:bg-indigo-500 text-indigo-500 hover:text-white text-xs font-bold rounded-xl transition-all border border-indigo-500/20"
+                                  >
+                                    <MessageSquare size={14} />
+                                    {t("Chat AI Assistant")}
+                                  </button>
+                                  <button className="flex items-center gap-2 px-4 py-2 bg-transparent hover:bg-[var(--sidebar-item-bg)] text-[var(--app-text-muted)] hover:text-[var(--app-text)] text-xs font-bold rounded-xl transition-all border border-[var(--sidebar-item-border)]">
+                                    <Calendar size={14} />
+                                    {t("Book Meeting")}
+                                  </button>
                                 </div>
                               </div>
                             </div>
-                            <p className="text-[var(--app-text-muted)] text-xs md:text-sm leading-relaxed max-w-4xl mt-3 font-medium line-clamp-2 group-hover/card:line-clamp-none transition-all">{t(event.description)}</p>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="space-y-6 lg:sticky lg:top-8">
-          <div className="glass-panel rounded-[32px] p-6 border border-[var(--sidebar-item-border)] backdrop-blur-xl">
-            <h3 className="text-sm font-bold text-[var(--app-header)] mb-6 uppercase tracking-widest px-2">{t("Insights Summary")}</h3>
-            <div className="space-y-4">
-              {[
-                { label: t("Birthday Greetings"), value: birthdayCount.toString().padStart(2, "0"), color: "emerald" },
-                { label: t("Policy Milestones"), value: policyStatusCount.toString().padStart(2, "0"), color: "amber" },
-                { label: t("Claims & Requests"), value: claimWaiverCount.toString().padStart(2, "0"), color: "rose" },
-              ].map((item, i) => {
-                const isActive = activeFilter === item.label;
-                const styles = INSIGHT_STYLES[item.color];
-                return (
-                  <button key={i} onClick={() => setActiveFilter(isActive ? null : item.label)} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border duration-300 group ${isActive ? `${styles.activeBg}` : 'bg-[var(--sidebar-item-bg)] border-[var(--sidebar-item-border)] hover:bg-black/5 dark:hover:bg-white/[0.05] hover:border-black/10 dark:hover:border-white/10'}`}>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full transition-transform duration-300 ${isActive ? 'scale-125' : 'scale-100'} ${styles.dot}`} />
-                      <span className={`text-xs font-bold uppercase tracking-wider transition-colors ${isActive ? styles.textActive : 'text-[var(--app-text-muted)] group-hover:text-[var(--app-text)]'}`}>{item.label}</span>
+                        );
+                      })}
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-lg font-bold transition-colors ${styles.textValue}`}>{item.value}</span>
-                      {isActive && <CheckCircle2 size={16} className={`${styles.textValue} animate-in zoom-in-50 duration-300`} />}
-                    </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
-          </div>
-          <div className="glass-panel rounded-[32px] p-6 border border-indigo-500/20 backdrop-blur-xl bg-indigo-500/[0.03]">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-4 border border-indigo-500/20"><TrendingUp size={20} /></div>
-            <h4 className="text-sm font-bold text-[var(--app-header)] mb-2 uppercase tracking-wider leading-tight">{t("Conversion Tip")}</h4>
-            <p className="text-[13px] text-[var(--app-text-muted)] leading-relaxed font-medium">{t("Customers undergoing a")} <span className="text-indigo-600 dark:text-indigo-300">{t("Life Event")}</span> {t("are 4.5x more likely to increase their coverage within the first 72 hours.")}</p>
+          ) : (
+            <div className="text-center py-20 glass-panel rounded-[32px] border border-dashed border-[var(--sidebar-item-border)]">
+              <div className="w-16 h-16 bg-[var(--sidebar-item-bg)] rounded-full flex items-center justify-center mx-auto mb-4 text-[var(--app-text-muted)]">
+                <Search size={24} />
+              </div>
+              <h4 className="font-bold text-[var(--app-header)] mb-1">{t("No events found")}</h4>
+              <p className="text-sm text-[var(--app-text-muted)]">{t("Try adjusting your search or filters.")}</p>
+            </div>
+          )}
+
+          {/* Marketing/Stats footer */}
+          <div className="mt-8 p-6 glass-panel rounded-[24px] bg-gradient-to-br from-indigo-500/10 to-transparent border border-indigo-500/20">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-white dark:bg-white/10 rounded-2xl flex items-center justify-center text-indigo-500 shadow-lg">
+                <TrendingUp size={24} />
+              </div>
+              <p className="text-sm text-[var(--app-text)] font-medium leading-relaxed">
+                {t("Customers with a")} <span className="text-indigo-600 dark:text-indigo-300 font-bold">{t("Life Event")}</span> {t("are 4.5x more likely to increase their coverage within the first 72 hours.")}
+              </p>
+            </div>
           </div>
         </div>
       </div>
