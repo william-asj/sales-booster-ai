@@ -563,8 +563,8 @@ export default function Customers({
                     <div className="text-[9px] md:text-[10px] lg:text-[11px] font-bold text-[var(--app-text-muted)] uppercase tracking-wider truncate">
                       {stat.label}
                     </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="text-xs md:text-sm lg:text-base font-bold text-[var(--app-text)] leading-tight break-words">
+                    <div className="flex items-start justify-between gap-1">
+                      <div className="text-xs md:text-sm lg:text-base font-bold text-[var(--app-text)] leading-tight break-words flex-1 min-w-0">
                         {stat.value}
                       </div>
                       {"clickable" in stat && stat.clickable && (

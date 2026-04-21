@@ -12,16 +12,16 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  // Default to "dark" as requested
   const [theme, setTheme] = useState<Theme>("dark");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const savedTheme = localStorage.getItem("theme") as Theme;
-    if (savedTheme) {
+    if (savedTheme && savedTheme !== "dark") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTheme(savedTheme);
     }
+    setMounted(true);
   }, []);
 
   useEffect(() => {

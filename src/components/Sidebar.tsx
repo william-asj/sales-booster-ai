@@ -64,8 +64,8 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
     const isActive = active === page;
     return `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 text-left mb-1 ${
       isActive
-        ? "bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 dark:text-slate-50"
-        : "text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-600 dark:hover:text-slate-200 border border-transparent"
+        ? "bg-indigo-500/20 text-indigo-600 border border-indigo-500/30 dark:text-slate-50"
+        : "text-slate-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/5 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent"
     } ${isCollapsed ? "justify-center px-0" : ""}`;
   };
 
@@ -211,7 +211,7 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
                 <div className="text-[12px] font-bold text-[var(--app-text)] truncate leading-tight mb-0.5">
                   {t("Agent Login")}
                 </div>
-                <div className="text-[10px] text-slate-500 truncate leading-none flex items-center gap-1">
+                <div className="text-[10px] text-slate-600 dark:text-slate-500 truncate leading-none flex items-center gap-1">
                   {t("Online")}
                 </div>
               </div>
@@ -223,8 +223,8 @@ export default function Sidebar({ active, setActive }: SidebarProps) {
               onClick={() => setActive("settings")}
               className={`p-2 rounded-xl transition-all duration-200 ${
                 active === "settings"
-                  ? "bg-indigo-500/20 text-indigo-400 dark:text-indigo-300"
-                  : "text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-slate-600 dark:hover:text-slate-100"
+                  ? "bg-indigo-500/20 text-indigo-600 dark:text-indigo-300"
+                  : "text-slate-600 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/10 hover:text-slate-900 dark:hover:text-slate-100"
               }`}
               title={t("Settings")}
             >

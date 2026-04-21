@@ -17,7 +17,6 @@ function nowTime(): string {
 }
 
 function TypingIndicator() {
-  const { t } = useLanguage();
   return (
     <div className="message" style={{ display: "flex", gap: 12, alignItems: "flex-start", marginBottom: 24, animation: "fadeIn 0.3s ease-out" }}>
       <div style={{
@@ -91,7 +90,6 @@ function EmptyState({ onSuggestionClick }: { onSuggestionClick: (text: string) =
 }
 
 export default function ChatOverlayPanel() {
-  const { t } = useLanguage();
   const { isOpen, toggle, close } = useChatOverlay();
   const { sessions, overlaySessionId, setOverlaySessionId, createNewSession, appendMessage } = useChatState();
   const { startFlow, resetFlow } = useChatFlow();
