@@ -140,7 +140,7 @@ export default function Leads({ setActive, setSelectedLead, setInitialMessage }:
               <CircularGauge score={lead.score} />
             </div>
 
-            <div className="bg-black/5 dark:bg-black/20 rounded-xl p-4 mb-5 flex-1 border border-[var(--sidebar-item-border)]">
+            <div className="bg-white/70 backdrop-blur-[24px] shadow-sm dark:bg-black/20 rounded-xl p-4 mb-5 flex-1 border border-[var(--sidebar-item-border)]">
               <div className="flex justify-between mb-3">
                 <span className="text-xs text-[var(--app-text-muted)]">{t("Best Product")}</span>
                 <span className="text-xs text-[var(--app-text)] font-medium">{t(lead.product)}</span>

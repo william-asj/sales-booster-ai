@@ -21,12 +21,14 @@ import {
   HeartCrack,
   UserX,
   CircleMinus,
-  FileEdit,
-  ArrowRight,
-  ChevronRight
+  FileEdit
 } from "lucide-react";
 import { db, LifeEvent, Lead, Page } from "@/lib/data";
 import { useLanguage } from "@/context/LanguageContext";
+
+const RETENTION_TYPES = ["Surrender Intent", "Lapse Warning", "Fund Withdrawal", "Surrender", "Lapse"];
+const CLAIM_TYPES = ["Health Claim", "Death Claim", "Critical Illness Claim", "Freelook"];
+const GROWTH_TYPES = ["Top-Up Request", "Top-Up Reinstate", "Endorsement", "Fund Switching", "Reinstate", "Birthday"];
 
 // Helper to weigh timestamps for sorting (Future -> Present -> Past)
 const getTimestampWeight = (ts: string): number => {
@@ -75,10 +77,6 @@ export default function Events({ setActive, setSelectedLead, setInitialMessage }
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [events, setEvents] = useState<LifeEvent[]>(db.getEvents());
-
-  const RETENTION_TYPES = ["Surrender Intent", "Lapse Warning", "Fund Withdrawal", "Surrender", "Lapse"];
-  const CLAIM_TYPES = ["Health Claim", "Death Claim", "Critical Illness Claim", "Freelook"];
-  const GROWTH_TYPES = ["Top-Up Request", "Top-Up Reinstate", "Endorsement", "Fund Switching", "Reinstate", "Birthday"];
 
   const handleAnalyze = async () => {
     if (!noteText.trim()) return;
@@ -184,7 +182,7 @@ export default function Events({ setActive, setSelectedLead, setInitialMessage }
 
       return matchesSearch;
     });
-  }, [events, searchTerm, activeFilter, t, RETENTION_TYPES, CLAIM_TYPES, GROWTH_TYPES]);
+  }, [events, searchTerm, activeFilter, t]);
 
   const groupedEvents = useMemo(() => {
     const groups: Record<string, LifeEvent[]> = {

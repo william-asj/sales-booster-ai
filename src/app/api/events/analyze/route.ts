@@ -54,8 +54,9 @@ Output ONLY a JSON array of objects matching this schema:
     const events = JSON.parse(responseText);
 
     return NextResponse.json({ events });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("NLP Analysis Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

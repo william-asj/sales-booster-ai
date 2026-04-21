@@ -24,13 +24,13 @@ export default function ThemeToggle({ isCollapsed }: ThemeToggleProps) {
         aria-label="Toggle theme"
       >
         <div className="absolute inset-0 flex justify-between items-center px-1.5 pointer-events-none">
-          <Moon 
-            size={12} 
-            className={`transition-all duration-300 ${isDark ? "text-indigo-300 opacity-100" : "text-slate-400 opacity-0"}`} 
-          />
           <Sun 
             size={12} 
-            className={`transition-all duration-300 ${!isDark ? "text-amber-500 opacity-100" : "text-indigo-300/30 opacity-0"}`} 
+            className={`transition-all duration-300 ${isDark ? "text-amber-500 opacity-100" : "text-slate-400 opacity-0"}`} 
+          />
+          <Moon 
+            size={12} 
+            className={`transition-all duration-300 ${!isDark ? "text-slate-500 opacity-100" : "text-indigo-300/30 opacity-0"}`} 
           />
         </div>
         

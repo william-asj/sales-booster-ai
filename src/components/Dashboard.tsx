@@ -8,8 +8,6 @@ import {
   PieChart,
   Sparkles,
   MessageSquare,
-  Search,
-  Bell,
   ChevronDown,
   ChevronUp,
   Baby,
@@ -228,15 +226,6 @@ export default function Dashboard({ setActive, setSelectedLead, setInitialMessag
         <div>
           <h1 className="text-2xl font-semibold text-[var(--app-header)] m-0">{t("Welcome back, Agent ✨")}</h1>
           <p className="mt-1 text-sm text-[var(--app-text-muted)]">{t("Here's your AI-curated summary for today.")}</p>
-        </div>
-        <div className="flex gap-4">
-          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-[var(--app-text)]">
-            <Search size={18} />
-          </button>
-          <button className="glass-panel btn-hover w-10 h-10 rounded-full flex items-center justify-center text-[var(--app-text)] relative">
-            <Bell size={18} />
-            <div className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full" />
-          </button>
         </div>
       </header>
 
